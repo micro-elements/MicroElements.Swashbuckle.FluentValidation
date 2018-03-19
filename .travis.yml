@@ -1,0 +1,9 @@
+language: csharp
+dotnet: 2.1.3
+os:
+  - linux
+before_script:
+  - chmod a+x ./build.sh
+solution: ./Swashbuckle.FluentValidation.sln
+script:
+  - ./build.sh --target=Travis
