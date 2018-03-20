@@ -3,6 +3,6 @@
   <PropertyGroup>
     <VersionPrefix>0.0.1</VersionPrefix>
     <VersionSuffix></VersionSuffix>
-    <PackageReleaseNotes>Initial version.</PackageReleaseNotes>
+    <PackageReleaseNotes>Added FluentValidationRules.</PackageReleaseNotes>
   </PropertyGroup>
 </Project>

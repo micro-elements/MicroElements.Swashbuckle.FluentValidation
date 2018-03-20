@@ -4,6 +4,6 @@ os:
   - linux
 before_script:
   - chmod a+x ./build.sh
-solution: ./Swashbuckle.FluentValidation.sln
+solution: ./MicroElements.Swashbuckle.FluentValidation.sln
 script:
   - ./build.sh --target=Travis

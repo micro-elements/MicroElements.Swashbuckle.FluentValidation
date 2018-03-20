@@ -9,8 +9,8 @@
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageIconUrl>https://raw.githubusercontent.com/micro-elements/MicroElements/master/image/logo_rounded.png</PackageIconUrl>
-    <PackageProjectUrl>https://github.com/micro-elements/Swashbuckle.FluentValidation</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/micro-elements/Swashbuckle.FluentValidation/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/blob/master/LICENSE</PackageLicenseUrl>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>git://github.com/micro-elements/Swashbuckle.FluentValidation</RepositoryUrl>
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>

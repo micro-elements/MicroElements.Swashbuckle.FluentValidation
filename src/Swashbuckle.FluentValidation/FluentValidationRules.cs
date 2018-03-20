@@ -4,8 +4,11 @@ using FluentValidation.Validators;
 using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
-namespace Swashbuckle.FluentValidation
+namespace MicroElements.Swashbuckle.FluentValidation
 {
+    /// <summary>
+    /// Swagger <see cref="ISchemaFilter"/> that uses FluentValidation validators instead System.ComponentModel based attributes.
+    /// </summary>
     public class FluentValidationRules : ISchemaFilter
     {
         private readonly IValidatorFactory _factory;
@@ -25,7 +28,6 @@ namespace Swashbuckle.FluentValidation
         /// <param name="context"></param>
         public void Apply(Schema model, SchemaFilterContext context)
         {
-
             // use IoC or FluentValidatorFactory to get AbstractValidator<T> instance
             var validator = _factory.GetValidator(context.SystemType);
             if (validator == null) return;
@@ -35,8 +37,7 @@ namespace Swashbuckle.FluentValidation
             var validatorDescriptor = validator.CreateDescriptor();
             foreach (var key in model.Properties.Keys)
             {
-                foreach (var propertyValidator in validatorDescriptor
-                    .GetValidatorsForMember(ToPascalCase(key)))
+                foreach (var propertyValidator in validatorDescriptor.GetValidatorsForMember(ToPascalCase(key)))
                 {
                     if (propertyValidator is NotNullValidator
                         || propertyValidator is NotEmptyValidator)
