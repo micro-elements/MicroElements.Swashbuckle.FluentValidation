@@ -4,7 +4,7 @@
 // ARGUMENTS
 ///////////////////////////////////////////////////////////////////////////////
 
-var solutionFile    = "./Swashbuckle.FluentValidation.sln";
+var solutionFile    = "./MicroElements.Swashbuckle.FluentValidation.sln";
 var target          = Argument("target", "Default");
 var configuration   = Argument("configuration", "Release");
 
