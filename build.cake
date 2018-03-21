@@ -151,7 +151,7 @@ Task("Version")
                 // Update version.props
                 var versionPrefix = versionInfo.MajorMinorPatch;
                 var versionSuffix = versionInfo.PreReleaseTag;
-                var releaseNotes = "Added IsExists and Delete methods.";
+                var releaseNotes = System.IO.File.ReadAllText("CHANGELOG.md");
         var version_props = $@"
         <!-- This file may be overwritten by automation. -->
         <Project>
@@ -170,6 +170,7 @@ Task("Version")
     });
 
 Task("Default")
+    .IsDependentOn("Version")
     .IsDependentOn("Build")
     .IsDependentOn("Test")
     .IsDependentOn("CopyPackages");

@@ -1,8 +1,13 @@
 
-<Project>
-  <PropertyGroup>
-    <VersionPrefix>0.0.1</VersionPrefix>
-    <VersionSuffix></VersionSuffix>
-    <PackageReleaseNotes>Added FluentValidationRules.</PackageReleaseNotes>
-  </PropertyGroup>
-</Project>
+        <!-- This file may be overwritten by automation. -->
+        <Project>
+        <PropertyGroup>
+            <VersionPrefix>0.1.0</VersionPrefix>
+            <VersionSuffix></VersionSuffix>
+            <PackageReleaseNotes>Changes in 0.0.1:
+* Added FluentValidationRules .
+
+Full release notes can be found at 
+https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/blob/master/CHANGELOG.md</PackageReleaseNotes>
+        </PropertyGroup>
+        </Project>
