@@ -24,12 +24,15 @@ namespace SampleWebApi
         {
             services
                 .AddMvc()
+                // Adds fluent validators to Asp.net
                 .AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<CustomerValidator>());
 
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new Info { Title = "My API", Version = "v1" });
-                c.AddFluentValidationRules();
+                // Adds fluent validation rules in swagger
+                //c.AddFluentValidationRules();
+                c.SchemaFilter<FluentValidationRules>();
             });
         }
 

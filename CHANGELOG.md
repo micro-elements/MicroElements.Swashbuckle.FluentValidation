@@ -1,7 +1,7 @@
-Changes in 0.0.2:
+Changes in 0.2.0:
 * Added FluentValidationRulesRegistrator
 
-Changes in 0.0.1:
+Changes in 0.1.0:
 * Added FluentValidationRules.
 
 Full release notes can be found at 
