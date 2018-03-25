@@ -1,12 +1,10 @@
 ﻿using FluentValidation.AspNetCore;
-using MicroElements.Swashbuckle.FluentValidation;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SampleWebApi.Validators;
 using Swashbuckle.AspNetCore.Swagger;
-using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace SampleWebApi
 {
@@ -30,24 +28,20 @@ namespace SampleWebApi
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new Info { Title = "My API", Version = "v1" });
-                // Adds fluent validation rules in swagger
-                //c.AddFluentValidationRules();
-                c.SchemaFilter<FluentValidationRules>();
+                // Adds fluent validation rules to swagger
+                c.AddFluentValidationRules();
             });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-            }
-
             app
-               .UseMvc()
-               .UseSwagger();
+                .UseMvc()
+                // Adds swagger
+                .UseSwagger();
 
+            // Adds swagger UI
             app.UseSwaggerUI(c =>
             {
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
