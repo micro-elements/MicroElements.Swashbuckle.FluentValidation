@@ -1,3 +1,6 @@
+Changes in 0.3.0:
+* FluentValidationRulesRegistrator moved to main swagger namespace
+
 Changes in 0.2.0:
 * Added FluentValidationRulesRegistrator
 
