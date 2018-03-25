@@ -51,3 +51,9 @@ Use FluentValidation rules instead ComponentModel attributes to define swagger s
 
 ## Sample application
 See sample project: https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/tree/master/src/SampleWebApi
+
+## Credits
+
+Initial version of this project was based on
+[Mujahid Daud Khan](https://stackoverflow.com/users/1735196/mujahid-daud-khan) answer on StackOwerflow:
+https://stackoverflow.com/questions/44638195/fluent-validation-with-swagger-in-asp-net-core/49477995#49477995
