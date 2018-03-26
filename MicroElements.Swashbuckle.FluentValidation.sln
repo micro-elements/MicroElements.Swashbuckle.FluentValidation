@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27130.2027
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MicroElements.Swashbuckle.FluentValidation", "src\Swashbuckle.FluentValidation\MicroElements.Swashbuckle.FluentValidation.csproj", "{433D1CD9-A091-43C1-B230-7E25954DA621}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MicroElements.Swashbuckle.FluentValidation", "src\MicroElements.Swashbuckle.FluentValidation\MicroElements.Swashbuckle.FluentValidation.csproj", "{433D1CD9-A091-43C1-B230-7E25954DA621}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleWebApi", "src\SampleWebApi\SampleWebApi.csproj", "{85C61584-C29C-4D5F-9CF6-58329053C9BF}"
 EndProject
