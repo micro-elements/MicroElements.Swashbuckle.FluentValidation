@@ -38,5 +38,16 @@ namespace SampleWebApi.Controllers
 
             return Ok();
         }
+
+        [HttpPost("[action]")]
+        public IActionResult AddSampleWithDataAnnotations([FromBody] SampleWithDataAnnotations sample)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            return Ok();
+        }
     }
 }

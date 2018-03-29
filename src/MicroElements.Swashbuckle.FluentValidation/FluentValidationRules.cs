@@ -36,15 +36,26 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 new FluentValidationRule("Required")
                 {
                     Matches = propertyValidator => propertyValidator is INotNullValidator || propertyValidator is INotEmptyValidator,
-                    Apply = context => context.Schema.Required.Add(context.PropertyKey)
+                    Apply = context =>
+                    {
+                        context.Schema.Required.Add(context.PropertyKey);
+                    }
                 },
-                new FluentValidationRule("MinMax")
+                new FluentValidationRule("NotEmpty")
+                {
+                    Matches = propertyValidator => propertyValidator is INotEmptyValidator,
+                    Apply = context =>
+                    {
+                        context.Schema.Properties[context.PropertyKey].MinLength = 1;
+                    }
+                },
+                new FluentValidationRule("Length")
                 {
                     Matches = propertyValidator => propertyValidator is ILengthValidator,
                     Apply = context =>
                     {
                         var lengthValidator = (ILengthValidator)context.PropertyValidator;
-                        if (lengthValidator.Max > 0)
+                        if(lengthValidator.Max > 0)
                             context.Schema.Properties[context.PropertyKey].MaxLength = lengthValidator.Max;
                         context.Schema.Properties[context.PropertyKey].MinLength = lengthValidator.Min;
                     }
@@ -58,18 +69,57 @@ namespace MicroElements.Swashbuckle.FluentValidation
                         context.Schema.Properties[context.PropertyKey].Pattern = regularExpressionValidator.Expression;
                     }
                 },
-                new FluentValidationRule("GreaterThan")
+                new FluentValidationRule("Comparison")
                 {
                     Matches = propertyValidator => propertyValidator is IComparisonValidator,
                     Apply = context =>
                     {
                         var comparisonValidator = (IComparisonValidator)context.PropertyValidator;
-                        if (comparisonValidator.Comparison == Comparison.GreaterThan)
+                        if (comparisonValidator.ValueToCompare is int)
                         {
-                            //todo
-                        }
+                            int valueToCompare = (int)comparisonValidator.ValueToCompare;
+                            var schemaProperty = context.Schema.Properties[context.PropertyKey];
 
-                        //context.Schema.Properties[context.PropertyKey].Example
+                            if (comparisonValidator.Comparison == Comparison.GreaterThanOrEqual)
+                            {
+                                schemaProperty.Minimum = valueToCompare;
+                            }
+                            else if (comparisonValidator.Comparison == Comparison.GreaterThan)
+                            {
+                                schemaProperty.Minimum = valueToCompare;
+                                schemaProperty.ExclusiveMinimum = true;
+                            }
+                            else if (comparisonValidator.Comparison == Comparison.LessThanOrEqual)
+                            {
+                                schemaProperty.Maximum = valueToCompare;
+                            }
+                            else if (comparisonValidator.Comparison == Comparison.LessThan)
+                            {
+                                schemaProperty.Maximum = valueToCompare;
+                                schemaProperty.ExclusiveMaximum = true;
+                            }
+                        }
+                    }
+                },
+                new FluentValidationRule("Between")
+                {
+                    Matches = propertyValidator => propertyValidator is IBetweenValidator,
+                    Apply = context =>
+                    {
+                        var betweenValidator = (IBetweenValidator)context.PropertyValidator;
+                        var schemaProperty = context.Schema.Properties[context.PropertyKey];
+
+                        if (betweenValidator.From is int && betweenValidator.To is int)
+                        {
+                            schemaProperty.Minimum = (int)betweenValidator.From;
+                            schemaProperty.Maximum = (int)betweenValidator.To;
+
+                            if (betweenValidator is ExclusiveBetweenValidator)
+                            {
+                                schemaProperty.ExclusiveMinimum = true;
+                                schemaProperty.ExclusiveMaximum = true;
+                            }
+                        }
                     }
                 },
             };
@@ -122,26 +172,68 @@ namespace MicroElements.Swashbuckle.FluentValidation
         }
     }
 
+    /// <summary>
+    /// FluentValidationRule.
+    /// </summary>
     public class FluentValidationRule
     {
+        /// <summary>
+        /// Rule name.
+        /// </summary>
         public string Name { get; }
-        public Func<IPropertyValidator, bool> Matches { get; set; }
-        public Action<RuleContext> Apply;
 
+        /// <summary>
+        /// Predicate to match property validator.
+        /// </summary>
+        public Func<IPropertyValidator, bool> Matches { get; set; }
+
+        /// <summary>
+        /// Modify Swagger schema action.
+        /// </summary>
+        public Action<RuleContext> Apply { get; set; }
+
+        /// <summary>
+        /// Creates new instance of <see cref="FluentValidationRule"/>.
+        /// </summary>
+        /// <param name="name">Rule name.</param>
         public FluentValidationRule(string name)
         {
             Name = name;
         }
     }
 
+    /// <summary>
+    /// RuleContext.
+    /// </summary>
     public class RuleContext
     {
+        /// <summary>
+        /// Swagger schema.
+        /// </summary>
         public Schema Schema { get; }
+
+        /// <summary>
+        /// SchemaFilterContext.
+        /// </summary>
         public SchemaFilterContext SchemaFilterContext { get; }
+
+        /// <summary>
+        /// Property name.
+        /// </summary>
         public string PropertyKey { get; }
+
+        /// <summary>
+        /// Property validator.
+        /// </summary>
         public IPropertyValidator PropertyValidator { get; }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Creates new instance of <see cref="RuleContext"/>.
+        /// </summary>
+        /// <param name="schema">Swagger schema.</param>
+        /// <param name="schemaFilterContext">SchemaFilterContext.</param>
+        /// <param name="propertyKey">Property name.</param>
+        /// <param name="propertyValidator">Property validator.</param>
         public RuleContext(Schema schema, SchemaFilterContext schemaFilterContext, string propertyKey, IPropertyValidator propertyValidator)
         {
             Schema = schema;
