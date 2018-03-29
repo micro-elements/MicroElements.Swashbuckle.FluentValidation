@@ -123,7 +123,7 @@ new FluentValidationRule("Pattern")
 ```
 
 ### Swagger Sample model screenshot
-![SwaggerSample](image/SwaggerSample.png "SwaggerSample")
+![SwaggerSample](image/swagger_sample.png "SwaggerSample")
 
 ## Credits
 
