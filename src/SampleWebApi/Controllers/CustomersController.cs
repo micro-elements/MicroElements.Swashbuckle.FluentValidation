@@ -17,8 +17,8 @@ namespace SampleWebApi.Controllers
             } };
         }
 
-        [HttpPost]
-        public IActionResult Add([FromBody] Customer customer)
+        [HttpPost("[action]")]
+        public IActionResult AddCustomer([FromBody] Customer customer)
         {
             if (!ModelState.IsValid)
             {
@@ -28,5 +28,15 @@ namespace SampleWebApi.Controllers
             return Ok();
         }
 
+        [HttpPost("[action]")]
+        public IActionResult AddSample([FromBody] Sample sample)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            return Ok();
+        }
     }
 }
