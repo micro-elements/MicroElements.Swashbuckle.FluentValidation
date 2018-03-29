@@ -55,14 +55,43 @@ Note: For WebApi see: https://github.com/micro-elements/MicroElements.Swashbuckl
 See sample project: https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/tree/master/src/SampleWebApi
 
 ## Supported validators
-- INotNullValidator
-- INotEmptyValidator
-- ILengthValidator
-- IRegularExpressionValidator
-- IComparisonValidator
-- IBetweenValidator
+* INotNullValidator (NotNull)
+* INotEmptyValidator (NotEmpty)
+* ILengthValidator (Length, MinimumLength, MaximumLength, ExactLength)
+* IRegularExpressionValidator (Email, Matches)
+* IComparisonValidator (GreaterThan, GreaterThanOrEqual, LessThan, LessThanOrEqual)
+* IBetweenValidator (InclusiveBetween, ExclusiveBetween)
 
-## Sample
+## Extensibility
+You can register FluentValidationRule in ServiceCollection.
+
+User defined rule name replaces default rule with the same.
+Full list of default rules can be get by `FluentValidationRules.CreateDefaultRules()`
+
+List or default rules:
+* Required
+* NotEmpty
+* Length
+* Pattern
+* Comparison
+* Between
+
+Example of rule:
+```
+new FluentValidationRule("Pattern")
+{
+    Matches = propertyValidator => propertyValidator is IRegularExpressionValidator,
+    Apply = context =>
+    {
+        var regularExpressionValidator = (IRegularExpressionValidator)context.PropertyValidator;
+        context.Schema.Properties[context.PropertyKey].Pattern = regularExpressionValidator.Expression;
+    }
+},
+```
+
+## Samples
+
+### Swagger Sample model and validator
 
 ```csharp
     public class Sample
@@ -92,6 +121,9 @@ See sample project: https://github.com/micro-elements/MicroElements.Swashbuckle.
         }
     }
 ```
+
+### Swagger Sample model screenshot
+![SwaggerSample](image/SwaggerSample.png "SwaggerSample")
 
 ## Credits
 

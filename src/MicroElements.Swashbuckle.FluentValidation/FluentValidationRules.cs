@@ -20,16 +20,24 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// Creates new instance of <see cref="FluentValidationRules"/>
         /// </summary>
         /// <param name="validatorFactory">Validator factory.</param>
-        /// <param name="rules">External Fluentvalidation rules.</param>
+        /// <param name="rules">External Fluentvalidation rules. Rule with the same name replaces default rule.</param>
         public FluentValidationRules(IValidatorFactory validatorFactory, IEnumerable<FluentValidationRule> rules = null)
         {
             _validatorFactory = validatorFactory;
             _rules = CreateDefaultRules();
             if (rules != null)
-                _rules = _rules.Concat(rules).ToList();
+            {
+                var ruleMap = _rules.ToDictionary(rule => rule.Name, rule => rule);
+                foreach (var rule in rules)
+                {
+                    // Add or replace rule
+                    ruleMap[rule.Name] = rule;
+                }
+                _rules = ruleMap.Values.ToList();
+            }
         }
 
-        private static FluentValidationRule[] CreateDefaultRules()
+        public static FluentValidationRule[] CreateDefaultRules()
         {
             return new[]
             {
