@@ -12,7 +12,7 @@ Note: For WebApi see: https://github.com/micro-elements/MicroElements.Swashbuckl
 ### 1. Reference packages in your web project:
 ```xml
     <PackageReference Include="FluentValidation.AspNetCore" Version="7.5.2" />
-    <PackageReference Include="MicroElements.Swashbuckle.FluentValidation" Version="0.2.0" />
+    <PackageReference Include="MicroElements.Swashbuckle.FluentValidation" Version="0.4.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="2.3.0" />
 ```
 
@@ -105,6 +105,9 @@ new FluentValidationRule("Pattern")
 
         public int ValueInRange { get; set; }
         public int ValueInRangeExclusive { get; set; }
+
+        public float ValueInRangeFloat { get; set; }
+        public double ValueInRangeDouble { get; set; }
     }
 
     public class SampleValidator : AbstractValidator<Sample>
@@ -118,6 +121,10 @@ new FluentValidationRule("Pattern")
 
             RuleFor(sample => sample.ValueInRange).GreaterThanOrEqualTo(5).LessThanOrEqualTo(10);
             RuleFor(sample => sample.ValueInRangeExclusive).GreaterThan(5).LessThan(10);
+
+            // WARNING: Swashbuckle implements minimum and maximim as int so you will loss fraction part of float and double numbers
+            RuleFor(sample => sample.ValueInRangeFloat).InclusiveBetween(1.1f, 5.3f);
+            RuleFor(sample => sample.ValueInRangeDouble).ExclusiveBetween(2.2, 7.5f);
         }
     }
 ```

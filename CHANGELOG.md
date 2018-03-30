@@ -1,3 +1,6 @@
+Changes in 0.5.0:
+* Supported float and double values for IComparisonValidator and IBetweenValidator
+
 Changes in 0.4.0:
 * Refactored to easy add new rules
 * Added ability to add rules through DI

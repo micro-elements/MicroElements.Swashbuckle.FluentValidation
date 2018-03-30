@@ -14,6 +14,9 @@ namespace SampleWebApi.Contracts
 
         public int ValueInRange { get; set; }
         public int ValueInRangeExclusive { get; set; }
+
+        public float ValueInRangeFloat { get; set; }
+        public double ValueInRangeDouble { get; set; }
     }
 
     public class SampleValidator : AbstractValidator<Sample>
@@ -27,6 +30,10 @@ namespace SampleWebApi.Contracts
 
             RuleFor(sample => sample.ValueInRange).GreaterThanOrEqualTo(5).LessThanOrEqualTo(10);
             RuleFor(sample => sample.ValueInRangeExclusive).GreaterThan(5).LessThan(10);
+
+            // WARNING: Swashbuckle implements minimum and maximim as int so you will loss fraction part of float and double numbers
+            RuleFor(sample => sample.ValueInRangeFloat).InclusiveBetween(1.1f, 5.3f);
+            RuleFor(sample => sample.ValueInRangeDouble).ExclusiveBetween(2.2, 7.5f);
         }
     }
 
@@ -48,5 +55,11 @@ namespace SampleWebApi.Contracts
 
         [Range(5, 10)]
         public int ValueInRange { get; set; }
+
+        [Range(5.1f, 10.2f)]
+        public float ValueInRangeFloat { get; set; }
+
+        [Range(5.1, 10.2)]
+        public double ValueInRangeDouble { get; set; }
     }
 }

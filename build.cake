@@ -149,7 +149,7 @@ Task("Version")
                 Information($"SemVer: {versionInfo.SemVer}");
                 Information($"BuildMetaData: {versionInfo.BuildMetaData}");
                 // Update version.props
-                var versionPrefix = "0.4.0";
+                var versionPrefix = "0.5.0";
                 var versionSuffix = "";
                 var releaseNotes = System.IO.File.ReadAllText("CHANGELOG.md");
         var version_props = $@"

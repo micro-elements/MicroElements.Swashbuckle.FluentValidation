@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using FluentValidation;
 using FluentValidation.Validators;
@@ -83,9 +84,9 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     Apply = context =>
                     {
                         var comparisonValidator = (IComparisonValidator)context.PropertyValidator;
-                        if (comparisonValidator.ValueToCompare is int)
+                        if (comparisonValidator.ValueToCompare.IsNumeric())
                         {
-                            int valueToCompare = (int)comparisonValidator.ValueToCompare;
+                            int valueToCompare = comparisonValidator.ValueToCompare.NumericToInt();
                             var schemaProperty = context.Schema.Properties[context.PropertyKey];
 
                             if (comparisonValidator.Comparison == Comparison.GreaterThanOrEqual)
@@ -117,14 +118,22 @@ namespace MicroElements.Swashbuckle.FluentValidation
                         var betweenValidator = (IBetweenValidator)context.PropertyValidator;
                         var schemaProperty = context.Schema.Properties[context.PropertyKey];
 
-                        if (betweenValidator.From is int && betweenValidator.To is int)
+                        if (betweenValidator.From.IsNumeric())
                         {
-                            schemaProperty.Minimum = (int)betweenValidator.From;
-                            schemaProperty.Maximum = (int)betweenValidator.To;
+                            schemaProperty.Minimum = betweenValidator.From.NumericToInt();
 
                             if (betweenValidator is ExclusiveBetweenValidator)
                             {
                                 schemaProperty.ExclusiveMinimum = true;
+                            }
+                        }
+
+                        if (betweenValidator.To.IsNumeric())
+                        {
+                            schemaProperty.Maximum = betweenValidator.To.NumericToInt();
+
+                            if (betweenValidator is ExclusiveBetweenValidator)
+                            {
                                 schemaProperty.ExclusiveMaximum = true;
                             }
                         }
@@ -147,7 +156,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
             foreach (var key in schema.Properties.Keys)
             {
-                foreach (var propertyValidator in validatorDescriptor.GetValidatorsForMember(ToCamelCase(key)))
+                foreach (var propertyValidator in validatorDescriptor.GetValidatorsForMember(key.ToCamelCase()))
                 {
                     foreach (var rule in _rules)
                     {
@@ -159,95 +168,13 @@ namespace MicroElements.Swashbuckle.FluentValidation
                             }
                             catch (Exception e)
                             {
+                                Debug.WriteLine(e.Message);
                                 //todo: logger
                             }
                         }
                     }
                 }
             }
-        }
-
-        /// <summary>
-        /// Converts string to CamelCase to match .net standard naming conventions.
-        /// </summary>
-        /// <param name="inputString">Input string.</param>
-        /// <returns>CamelCase variant of input string.</returns>
-        private static string ToCamelCase(string inputString)
-        {
-            if (inputString == null) return null;
-            if (inputString.Length < 2) return inputString.ToUpper();
-            return inputString.Substring(0, 1).ToUpper() + inputString.Substring(1);
-        }
-    }
-
-    /// <summary>
-    /// FluentValidationRule.
-    /// </summary>
-    public class FluentValidationRule
-    {
-        /// <summary>
-        /// Rule name.
-        /// </summary>
-        public string Name { get; }
-
-        /// <summary>
-        /// Predicate to match property validator.
-        /// </summary>
-        public Func<IPropertyValidator, bool> Matches { get; set; }
-
-        /// <summary>
-        /// Modify Swagger schema action.
-        /// </summary>
-        public Action<RuleContext> Apply { get; set; }
-
-        /// <summary>
-        /// Creates new instance of <see cref="FluentValidationRule"/>.
-        /// </summary>
-        /// <param name="name">Rule name.</param>
-        public FluentValidationRule(string name)
-        {
-            Name = name;
-        }
-    }
-
-    /// <summary>
-    /// RuleContext.
-    /// </summary>
-    public class RuleContext
-    {
-        /// <summary>
-        /// Swagger schema.
-        /// </summary>
-        public Schema Schema { get; }
-
-        /// <summary>
-        /// SchemaFilterContext.
-        /// </summary>
-        public SchemaFilterContext SchemaFilterContext { get; }
-
-        /// <summary>
-        /// Property name.
-        /// </summary>
-        public string PropertyKey { get; }
-
-        /// <summary>
-        /// Property validator.
-        /// </summary>
-        public IPropertyValidator PropertyValidator { get; }
-
-        /// <summary>
-        /// Creates new instance of <see cref="RuleContext"/>.
-        /// </summary>
-        /// <param name="schema">Swagger schema.</param>
-        /// <param name="schemaFilterContext">SchemaFilterContext.</param>
-        /// <param name="propertyKey">Property name.</param>
-        /// <param name="propertyValidator">Property validator.</param>
-        public RuleContext(Schema schema, SchemaFilterContext schemaFilterContext, string propertyKey, IPropertyValidator propertyValidator)
-        {
-            Schema = schema;
-            SchemaFilterContext = schemaFilterContext;
-            PropertyKey = propertyKey;
-            PropertyValidator = propertyValidator;
         }
     }
 }
