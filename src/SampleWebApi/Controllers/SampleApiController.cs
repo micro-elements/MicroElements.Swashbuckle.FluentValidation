@@ -5,7 +5,7 @@ using SampleWebApi.Contracts;
 namespace SampleWebApi.Controllers
 {
     [Route("api/[controller]")]
-    public class CustomersController : Controller
+    public class SampleApiController : Controller
     {
         [HttpGet]
         public IEnumerable<Customer> Get()
@@ -41,6 +41,28 @@ namespace SampleWebApi.Controllers
 
         [HttpPost("[action]")]
         public IActionResult AddSampleWithDataAnnotations([FromBody] SampleWithDataAnnotations sample)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            return Ok();
+        }
+
+        [HttpPost("[action]")]
+        public IActionResult AddObjectA([FromBody] ObjectA objectA)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            return Ok();
+        }
+
+        [HttpPost("[action]")]
+        public IActionResult AddSampleWithNoRequired([FromBody] SampleWithNoRequired customer)
         {
             if (!ModelState.IsValid)
             {

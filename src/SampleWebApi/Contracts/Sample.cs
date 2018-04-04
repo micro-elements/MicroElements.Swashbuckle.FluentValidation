@@ -62,4 +62,20 @@ namespace SampleWebApi.Contracts
         [Range(5.1, 10.2)]
         public double ValueInRangeDouble { get; set; }
     }
+
+    // https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/issues/6
+    public class SampleWithNoRequired
+    {
+        public string PropertyWithNoRules { get; set; }
+
+        public int ValueInRange { get; set; }
+    }
+
+    public class SampleWithNoRequiredValidator : AbstractValidator<SampleWithNoRequired>
+    {
+        public SampleWithNoRequiredValidator()
+        {
+            RuleFor(sample => sample.ValueInRange).GreaterThanOrEqualTo(5).LessThanOrEqualTo(10);
+        }
+    }
 }

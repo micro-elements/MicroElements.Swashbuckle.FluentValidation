@@ -1,3 +1,6 @@
+Changes in 0.6.0:
+* Fixed: GH-6: Removed empty required array from swagger schema
+
 Changes in 0.5.0:
 * Supported float and double values for IComparisonValidator and IBetweenValidator
 

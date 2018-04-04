@@ -47,6 +47,8 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     Matches = propertyValidator => propertyValidator is INotNullValidator || propertyValidator is INotEmptyValidator,
                     Apply = context =>
                     {
+                        if (context.Schema.Required == null)
+                            context.Schema.Required = new List<string>();
                         context.Schema.Required.Add(context.PropertyKey);
                     }
                 },
@@ -148,9 +150,6 @@ namespace MicroElements.Swashbuckle.FluentValidation
             var validator = _validatorFactory.GetValidator(context.SystemType);
             if (validator == null)
                 return;
-
-            if (schema.Required == null)
-                schema.Required = new List<string>();
 
             var validatorDescriptor = validator.CreateDescriptor();
 
