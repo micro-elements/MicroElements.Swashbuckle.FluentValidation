@@ -38,6 +38,51 @@ namespace MicroElements.Swashbuckle.FluentValidation
             }
         }
 
+        /// <inheritdoc />
+        public void Apply(Schema schema, SchemaFilterContext context)
+        {
+            IValidator validator = null;
+            try
+            {
+                validator = _validatorFactory.GetValidator(context.SystemType);
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine(e);
+                //todo: logger
+            }
+            if (validator == null)
+                return;
+
+            var validatorDescriptor = validator.CreateDescriptor();
+
+            foreach (var key in schema.Properties.Keys)
+            {
+                foreach (var propertyValidator in validatorDescriptor.GetValidatorsForMember(key.ToCamelCase()))
+                {
+                    foreach (var rule in _rules)
+                    {
+                        if (rule.Matches(propertyValidator))
+                        {
+                            try
+                            {
+                                rule.Apply(new RuleContext(schema, context, key, propertyValidator));
+                            }
+                            catch (Exception e)
+                            {
+                                Debug.WriteLine(e.Message);
+                                //todo: logger
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Creates default rules.
+        /// Can be overriden by name.
+        /// </summary>
         public static FluentValidationRule[] CreateDefaultRules()
         {
             return new[]
@@ -142,38 +187,6 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     }
                 },
             };
-        }
-
-        /// <inheritdoc />
-        public void Apply(Schema schema, SchemaFilterContext context)
-        {
-            var validator = _validatorFactory.GetValidator(context.SystemType);
-            if (validator == null)
-                return;
-
-            var validatorDescriptor = validator.CreateDescriptor();
-
-            foreach (var key in schema.Properties.Keys)
-            {
-                foreach (var propertyValidator in validatorDescriptor.GetValidatorsForMember(key.ToCamelCase()))
-                {
-                    foreach (var rule in _rules)
-                    {
-                        if (rule.Matches(propertyValidator))
-                        {
-                            try
-                            {
-                                rule.Apply(new RuleContext(schema, context, key, propertyValidator));
-                            }
-                            catch (Exception e)
-                            {
-                                Debug.WriteLine(e.Message);
-                                //todo: logger
-                            }
-                        }
-                    }
-                }
-            }
         }
     }
 }

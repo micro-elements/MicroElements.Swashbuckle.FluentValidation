@@ -4,6 +4,9 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 // ReSharper disable once CheckNamespace
 namespace Swashbuckle.AspNetCore.Swagger
 {
+    /// <summary>
+    /// Registration extensions.
+    /// </summary>
     public static class FluentValidationRulesRegistrator
     {
         /// <summary>
