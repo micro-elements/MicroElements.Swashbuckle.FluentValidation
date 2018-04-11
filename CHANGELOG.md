@@ -1,3 +1,10 @@
+Changes in 0.7.0:
+* Improved stability and diagnostics
+* Added GetValidator error handling, ApplyRule error handling
+* Added ability to work without provided FluentValidation (does not break anything)
+* Added ability to use Microsoft.Extensions.Logging.Abstractions (no additional dependencies)
+* Added logging in error points (logs as warnings)
+
 Changes in 0.6.0:
 * Fixed: GH-6: Removed empty required array from swagger schema
 

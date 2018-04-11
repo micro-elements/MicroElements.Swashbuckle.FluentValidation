@@ -12,8 +12,8 @@ Note: For WebApi see: https://github.com/micro-elements/MicroElements.Swashbuckl
 ### 1. Reference packages in your web project:
 ```xml
     <PackageReference Include="FluentValidation.AspNetCore" Version="7.5.2" />
-    <PackageReference Include="MicroElements.Swashbuckle.FluentValidation" Version="0.4.0" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="2.3.0" />
+    <PackageReference Include="MicroElements.Swashbuckle.FluentValidation" Version="0.7.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="2.4.0" />
 ```
 
 ### 2. Change Startup.cs
@@ -33,6 +33,9 @@ Note: For WebApi see: https://github.com/micro-elements/MicroElements.Swashbuckl
                 // Adds fluent validation rules to swagger
                 c.AddFluentValidationRules();
             });
+
+            // Adds logging
+            services.AddLogging(builder => builder.AddConsole());
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

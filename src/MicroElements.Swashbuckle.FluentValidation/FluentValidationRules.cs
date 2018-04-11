@@ -61,7 +61,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             }
             catch (Exception e)
             {
-                _logger?.LogWarning(0, e, "GetValidator for type {0} fails.", context.SystemType);
+                _logger?.LogWarning(0, e, $"GetValidator for type '{context.SystemType}' fails.");
             }
 
             if (validator == null)
@@ -83,7 +83,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                             }
                             catch (Exception e)
                             {
-                                _logger?.LogWarning(0, e, $"Apply rule {rule.Name} for key {key} fails.");
+                                _logger?.LogWarning(0, e, $"Error on apply rule '{rule.Name}' for key '{key}'.");
                             }
                         }
                     }
