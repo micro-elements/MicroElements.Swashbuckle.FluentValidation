@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using FluentValidation;
 using FluentValidation.Validators;
+using JetBrains.Annotations;
+using Microsoft.Extensions.Logging;
 using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
@@ -15,6 +16,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
     public class FluentValidationRules : ISchemaFilter
     {
         private readonly IValidatorFactory _validatorFactory;
+        private readonly ILogger _logger;
         private readonly IReadOnlyList<FluentValidationRule> _rules;
 
         /// <summary>
@@ -22,9 +24,14 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// </summary>
         /// <param name="validatorFactory">Validator factory.</param>
         /// <param name="rules">External Fluentvalidation rules. Rule with the same name replaces default rule.</param>
-        public FluentValidationRules(IValidatorFactory validatorFactory, IEnumerable<FluentValidationRule> rules = null)
+        /// <param name="loggerFactory"><see cref="ILoggerFactory"/> for logging. Can be null.</param>
+        public FluentValidationRules(
+            [CanBeNull] IValidatorFactory validatorFactory = null,
+            [CanBeNull] IEnumerable<FluentValidationRule> rules = null,
+            [CanBeNull] ILoggerFactory loggerFactory = null)
         {
             _validatorFactory = validatorFactory;
+            _logger = loggerFactory?.CreateLogger(typeof(FluentValidationRules));
             _rules = CreateDefaultRules();
             if (rules != null)
             {
@@ -41,6 +48,12 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <inheritdoc />
         public void Apply(Schema schema, SchemaFilterContext context)
         {
+            if (_validatorFactory == null)
+            {
+                _logger?.LogWarning(0, "ValidatorFactory is not provided. Please register FluentValidation.");
+                return;
+            }
+
             IValidator validator = null;
             try
             {
@@ -48,9 +61,9 @@ namespace MicroElements.Swashbuckle.FluentValidation
             }
             catch (Exception e)
             {
-                Debug.WriteLine(e);
-                //todo: logger
+                _logger?.LogWarning(0, e, "GetValidator for type {0} fails.", context.SystemType);
             }
+
             if (validator == null)
                 return;
 
@@ -70,8 +83,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                             }
                             catch (Exception e)
                             {
-                                Debug.WriteLine(e.Message);
-                                //todo: logger
+                                _logger?.LogWarning(0, e, $"Apply rule {rule.Name} for key {key} fails.");
                             }
                         }
                     }
