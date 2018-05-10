@@ -106,7 +106,8 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     {
                         if (context.Schema.Required == null)
                             context.Schema.Required = new List<string>();
-                        context.Schema.Required.Add(context.PropertyKey);
+                        if(!context.Schema.Required.Contains(context.PropertyKey))
+                            context.Schema.Required.Add(context.PropertyKey);
                     }
                 },
                 new FluentValidationRule("NotEmpty")
