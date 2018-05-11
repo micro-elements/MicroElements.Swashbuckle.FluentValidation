@@ -149,8 +149,8 @@ Task("Version")
                 Information($"SemVer: {versionInfo.SemVer}");
                 Information($"BuildMetaData: {versionInfo.BuildMetaData}");
                 // Update version.props
-                var versionPrefix = "0.7.0";
-                var versionSuffix = "";
+                var versionPrefix = "0.8.0";
+                var versionSuffix = "beta.1";
                 var releaseNotes = System.IO.File.ReadAllText("CHANGELOG.md");
         var version_props = $@"
         <!-- This file may be overwritten by automation. -->

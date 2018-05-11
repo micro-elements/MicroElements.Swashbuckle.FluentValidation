@@ -1,3 +1,7 @@
+Changes in 0.8.0:
+* New feature: FluentValidation rules for operation parameters binded from models with validators. Adds swagger validation for parameters: Required, MinLength, MaxLength, Minimum, Maximum, Pattern (for DataAnnotation only Required works).
+* Fixed: Possible double Required
+
 Changes in 0.7.0:
 * Improved stability and diagnostics
 * Added GetValidator error handling, ApplyRule error handling
