@@ -16,6 +16,7 @@ namespace Swashbuckle.AspNetCore.Swagger
         public static void AddFluentValidationRules(this SwaggerGenOptions options)
         {
             options.SchemaFilter<FluentValidationRules>();
+            options.OperationFilter<FluentValidationOperationFilter>();
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace MicroElements.Swashbuckle.FluentValidation
 {
@@ -25,8 +26,27 @@ namespace MicroElements.Swashbuckle.FluentValidation
         public static string ToCamelCase(this string inputString)
         {
             if (inputString == null) return null;
-            if (inputString.Length < 2) return inputString.ToUpper();
+            if (inputString == string.Empty) return string.Empty;
+            if (char.IsUpper(inputString[0])) return inputString;
             return inputString.Substring(0, 1).ToUpper() + inputString.Substring(1);
+        }
+
+        /// <summary>
+        /// Converts string to lowerCamelCase.
+        /// </summary>
+        /// <param name="inputString">Input string.</param>
+        /// <returns>lowerCamelCase string.</returns>
+        public static string ToLowerCamelCase(this string inputString)
+        {
+            if (inputString == null) return null;
+            if (inputString == string.Empty) return string.Empty;
+            if (char.IsLower(inputString[0])) return inputString;
+            return inputString.Substring(0, 1).ToLower() + inputString.Substring(1);
+        }
+
+        public static Dictionary<TKey, TValue> NotNull<TKey, TValue>(this Dictionary<TKey, TValue> dictionary)
+        {
+            return dictionary ?? new Dictionary<TKey, TValue>();
         }
     }
 }
