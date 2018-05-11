@@ -7,8 +7,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MicroElements.Swashbuckle.F
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SampleWebApi", "src\SampleWebApi\SampleWebApi.csproj", "{85C61584-C29C-4D5F-9CF6-58329053C9BF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApiSecured", "WebApiSecured\WebApiSecured.csproj", "{43550E96-2A20-49D2-97C8-DE0F3F3EC00E}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,10 +21,6 @@ Global
 		{85C61584-C29C-4D5F-9CF6-58329053C9BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{85C61584-C29C-4D5F-9CF6-58329053C9BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{85C61584-C29C-4D5F-9CF6-58329053C9BF}.Release|Any CPU.Build.0 = Release|Any CPU
-		{43550E96-2A20-49D2-97C8-DE0F3F3EC00E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{43550E96-2A20-49D2-97C8-DE0F3F3EC00E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{43550E96-2A20-49D2-97C8-DE0F3F3EC00E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{43550E96-2A20-49D2-97C8-DE0F3F3EC00E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
