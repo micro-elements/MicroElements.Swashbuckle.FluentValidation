@@ -1,5 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using FluentValidation;
+using FluentValidation.Validators;
+using JetBrains.Annotations;
 
 namespace MicroElements.Swashbuckle.FluentValidation
 {
@@ -44,9 +48,34 @@ namespace MicroElements.Swashbuckle.FluentValidation
             return inputString.Substring(0, 1).ToLower() + inputString.Substring(1);
         }
 
-        public static Dictionary<TKey, TValue> NotNull<TKey, TValue>(this Dictionary<TKey, TValue> dictionary)
+        /// <summary>
+        /// Returns not null dictionary.
+        /// </summary>
+        [NotNull]
+        public static Dictionary<TKey, TValue> NotNull<TKey, TValue>([CanBeNull] this Dictionary<TKey, TValue> dictionary)
         {
             return dictionary ?? new Dictionary<TKey, TValue>();
+        }
+
+        /// <summary>
+        /// Returns not null enumeration.
+        /// </summary>
+        [NotNull]
+        public static IEnumerable<TValue> NotNull<TValue>([CanBeNull] this IEnumerable<TValue> collection)
+        {
+            return collection ?? Array.Empty<TValue>();
+        }
+
+        /// <summary>
+        /// Returns validators by property name ignoring name case.
+        /// </summary>
+        /// <param name="validatorDescriptor">Validation metadata.</param>
+        /// <param name="name">Property name.</param>
+        /// <returns>enumaration or null.</returns>
+        [CanBeNull]
+        public static IEnumerable<IPropertyValidator> GetValidatorsForMemberIgnoreCase(this IValidatorDescriptor validatorDescriptor, string name)
+        {
+            return validatorDescriptor.GetMembersWithValidators().FirstOrDefault(grouping => grouping.Key.Equals(name, StringComparison.InvariantCultureIgnoreCase));
         }
     }
 }

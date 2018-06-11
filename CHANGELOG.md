@@ -1,5 +1,6 @@
 Changes in 0.8.0:
-* New feature: FluentValidation rules for operation parameters binded from models with validators. Adds swagger validation for parameters: Required, MinLength, MaxLength, Minimum, Maximum, Pattern (for DataAnnotation only Required works).
+* New feature: FluentValidation rules for get operation parameters binded from models with validators. Adds swagger validation for parameters: Required, MinLength, MaxLength, Minimum, Maximum, Pattern (DataAnnotation works only with [Required]).
+* Fixed: GH-10: Now member search is IgnoreCase
 * Fixed: Possible double Required
 
 Changes in 0.7.0:

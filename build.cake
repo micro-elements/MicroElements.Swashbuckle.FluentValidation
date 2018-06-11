@@ -78,7 +78,7 @@ Task("Restore")
 	//DotNetCoreRestore(solutionFile, settings);
 });
 
-Task("Build")    
+Task("Build")
     .IsDependentOn("Restore")
     .Does(() =>
 {	
@@ -150,7 +150,7 @@ Task("Version")
                 Information($"BuildMetaData: {versionInfo.BuildMetaData}");
                 // Update version.props
                 var versionPrefix = "0.8.0";
-                var versionSuffix = "beta.1";
+                var versionSuffix = "beta.2";
                 var releaseNotes = System.IO.File.ReadAllText("CHANGELOG.md");
         var version_props = $@"
         <!-- This file may be overwritten by automation. -->

@@ -71,7 +71,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
             foreach (var key in schema.Properties.Keys)
             {
-                foreach (var propertyValidator in validatorDescriptor.GetValidatorsForMember(key.ToCamelCase()))
+                foreach (var propertyValidator in validatorDescriptor.GetValidatorsForMemberIgnoreCase(key).NotNull())
                 {
                     foreach (var rule in _rules)
                     {

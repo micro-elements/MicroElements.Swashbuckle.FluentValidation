@@ -17,6 +17,10 @@ namespace SampleWebApi.Contracts
 
         public float ValueInRangeFloat { get; set; }
         public double ValueInRangeDouble { get; set; }
+
+        // ReSharper disable once InconsistentNaming
+        // https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/issues/10
+        public string javaStyleProperty { get; set; }
     }
 
     public class SampleValidator : AbstractValidator<Sample>
@@ -34,6 +38,8 @@ namespace SampleWebApi.Contracts
             // WARNING: Swashbuckle implements minimum and maximim as int so you will loss fraction part of float and double numbers
             RuleFor(sample => sample.ValueInRangeFloat).InclusiveBetween(1.1f, 5.3f);
             RuleFor(sample => sample.ValueInRangeDouble).ExclusiveBetween(2.2, 7.5f);
+
+            RuleFor(sample => sample.javaStyleProperty).MaximumLength(6);
         }
     }
 

@@ -60,7 +60,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             foreach (var operationParameter in operation.Parameters)
             {
                 var apiParameterDescription = context.ApiDescription.ParameterDescriptions.FirstOrDefault(description =>
-                    description.Name == operationParameter.Name);
+                    description.Name.Equals(operationParameter.Name, StringComparison.InvariantCultureIgnoreCase));
 
                 if (apiParameterDescription != null)
                 {
@@ -68,10 +68,12 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     if(parameterType==null)
                         continue;
                     var validator = _validatorFactory.GetValidator(parameterType);
+                    if (validator == null)
+                        continue;
 
                     var descriptor = validator.CreateDescriptor();
                     var key = apiParameterDescription.ModelMetadata.PropertyName;
-                    var validatorsForMember = descriptor.GetValidatorsForMember(key);
+                    var validatorsForMember = descriptor.GetValidatorsForMemberIgnoreCase(key).NotNull();
 
                     Schema schema = null;
                     foreach (var propertyValidator in validatorsForMember)
@@ -96,12 +98,13 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     }
 
                     if (schema?.Required != null)
-                        operationParameter.Required = schema.Required.Contains(key.ToLowerCamelCase());
+                        operationParameter.Required = schema.Required.Contains(key, StringComparer.InvariantCultureIgnoreCase);
                     if (schema !=null)
                     {
                         if (operationParameter is PartialSchema partialSchema)
                         {
-                            if (schema.Properties.TryGetValue(key.ToLowerCamelCase(), out var property))
+                            if (schema.Properties.TryGetValue(key.ToLowerCamelCase(), out var property) 
+                                || schema.Properties.TryGetValue(key, out property))
                             {
                                 partialSchema.MinLength = property.MinLength;
                                 partialSchema.MaxLength = property.MaxLength;
