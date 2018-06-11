@@ -4,16 +4,19 @@
 # This is the modified Cake bootstrapper script for Linux and OS X.
 ##########################################################################
 
+echo "Starting build.sh"
+
 CAKE_VERSION=0.27.2
-DEVOPS_VERSION=0.5.0-beta.3
+DEVOPS_VERSION=0.5.0-beta.4
 
 # Define directories.
 SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 TOOLS_DIR=$SCRIPT_DIR/tools
-CAKE_DLL=$TOOLS_DIR/Cake.CoreCLR.$CAKE_VERSION/Cake.dll
+CAKE_DLL=$TOOLS_DIR/cake.coreclr/$CAKE_VERSION/Cake.dll
 NUGET_URL="https://www.nuget.org/api/v2/package"
 
-SCRIPT="build.cake"
+SCRIPT="$TOOLS_DIR/microelements.devops/$DEVOPS_VERSION/scripts/main.cake"
+CAKE_PROPS_PATH=$TOOLS_DIR/cake.props
 CAKE_ARGUMENTS=()
 
 # Parse arguments.
@@ -26,11 +29,30 @@ for i in "$@"; do
     shift
 done
 
+CAKE_ARGUMENTS+=("--rootDir=\"$SCRIPT_DIR\"");
+
+echo "===========VARIABLES============"
+echo "SCRIPT_DIR: $SCRIPT_DIR"
+echo "TOOLS_DIR: $TOOLS_DIR"
+echo "CAKE_DLL: $CAKE_DLL"
+echo "NUGET_URL: $NUGET_URL"
+echo "CAKE_PROPS_PATH: $CAKE_PROPS_PATH"
+echo "CAKE_ARGUMENTS: $CAKE_ARGUMENTS"
+
 ###########################################################################
 # RESTORE CAKE AND LIBS
 ###########################################################################
 
-$cake_props = @"
+# Make sure the tools folder exist.
+if [ ! -d "$TOOLS_DIR" ]; then
+  mkdir "$TOOLS_DIR"
+fi
+
+# Write cake.props to tools folder.
+if [ ! -f "$CAKE_PROPS_PATH" ]
+then
+    echo "cake.props doesnot exists"
+    cat > "$CAKE_PROPS_PATH" <<EOL
 <Project Sdk="Microsoft.NET.Sdk">
 <PropertyGroup>
   <TargetFramework>netstandard2.0</TargetFramework>
@@ -41,18 +63,13 @@ $cake_props = @"
   <PackageReference Include="MicroElements.DevOps" Version="$DEVOPS_VERSION" />
 </ItemGroup>
 </Project>
-"@
-
-$cake_props_path = "/tools/cake.props"
-
-if [ -f "$cake_props_path" ]
-then 
-    mkdir -p $TOOLS_DIR
-    echo "$cake_props" > "$cake_props_path"
+EOL
+    echo "cake.props written to $CAKE_PROPS_PATH"
+    cat "$CAKE_PROPS_PATH"
 fi
 
 # Restore Cake
-exec dotnet restore $cake_props_path --packages $TOOLS_DIR
+dotnet restore $CAKE_PROPS_PATH --packages $TOOLS_DIR
 
 # Start Cake
 echo "Running build script..."
