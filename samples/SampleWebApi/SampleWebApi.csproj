@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MicroElements.Swashbuckle.FluentValidation\MicroElements.Swashbuckle.FluentValidation.csproj" />
+    <ProjectReference Include="..\..\src\MicroElements.Swashbuckle.FluentValidation\MicroElements.Swashbuckle.FluentValidation.csproj" />
   </ItemGroup>
 
 </Project>

@@ -67,6 +67,9 @@ namespace SampleWebApi.Contracts
 
         [Range(5.1, 10.2)]
         public double ValueInRangeDouble { get; set; }
+
+        [MaxLength(6)]
+        public string javaStyleProperty { get; set; }
     }
 
     // https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/issues/6

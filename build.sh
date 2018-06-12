@@ -7,7 +7,7 @@
 echo "Starting build.sh"
 
 CAKE_VERSION=0.27.2
-DEVOPS_VERSION=0.5.0-beta.6
+DEVOPS_VERSION=0.5.0-rc.1
 
 # Define directories.
 SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
