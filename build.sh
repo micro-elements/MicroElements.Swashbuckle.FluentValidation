@@ -37,7 +37,7 @@ echo "TOOLS_DIR: $TOOLS_DIR"
 echo "CAKE_DLL: $CAKE_DLL"
 echo "NUGET_URL: $NUGET_URL"
 echo "CAKE_PROPS_PATH: $CAKE_PROPS_PATH"
-echo "CAKE_ARGUMENTS: $CAKE_ARGUMENTS"
+echo "CAKE_ARGUMENTS: ${CAKE_ARGUMENTS[*]}"
 
 ###########################################################################
 # RESTORE CAKE AND LIBS
