@@ -69,7 +69,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
             var validatorDescriptor = validator.CreateDescriptor();
 
-            foreach (var key in schema.Properties.Keys)
+            foreach (var key in schema?.Properties?.Keys ?? Array.Empty<string>())
             {
                 foreach (var propertyValidator in validatorDescriptor.GetValidatorsForMemberIgnoreCase(key).NotNull())
                 {
