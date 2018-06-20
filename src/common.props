@@ -4,7 +4,7 @@
   <PropertyGroup>
     <Product>MicroElements</Product>
     <Copyright>Alexey Petryashev 2018</Copyright>
-    <Authors>alexey.petriashev,MicroElements</Authors>
+    <Authors>alexey.petriashev;MicroElements</Authors>
     <NoWarn>$(NoWarn);1701;1702;1705;CS1591;CS1570</NoWarn>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -18,7 +18,7 @@
     <GenerateNeutralResourcesLanguageAttribute>false</GenerateNeutralResourcesLanguageAttribute>
     <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
     <LangVersion>latest</LangVersion>
-    <DebugType>embedded</DebugType>    
-  </PropertyGroup>  
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
 
 </Project>

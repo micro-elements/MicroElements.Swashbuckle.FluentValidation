@@ -1,3 +1,6 @@
+# Changes in 0.8.1:
+* Fixed: GH-12: Fixed NullReferenceException, if schema.Properties is null
+
 # Changes in 0.8.0:
 * New feature: FluentValidation rules for get operation parameters binded from models with validators. Adds swagger validation for parameters: Required, MinLength, MaxLength, Minimum, Maximum, Pattern (DataAnnotation works only with [Required]).
 * Fixed: GH-10: Now member search is IgnoreCase
