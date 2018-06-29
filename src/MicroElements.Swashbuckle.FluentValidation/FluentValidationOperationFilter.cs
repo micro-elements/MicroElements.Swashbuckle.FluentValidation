@@ -99,7 +99,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
                     if (schema?.Required != null)
                         operationParameter.Required = schema.Required.Contains(key, StringComparer.InvariantCultureIgnoreCase);
-                    if (schema !=null)
+                    if (schema != null && schema.Properties != null)
                     {
                         if (operationParameter is PartialSchema partialSchema)
                         {

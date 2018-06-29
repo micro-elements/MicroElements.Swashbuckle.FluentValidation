@@ -1,3 +1,6 @@
+# Changes in 0.8.2:
+* Fixed: GH-13: Fixed warning with null schema.Properties
+* 
 # Changes in 0.8.1:
 * Fixed: GH-12: Fixed NullReferenceException, if schema.Properties is null
 
