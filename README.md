@@ -3,16 +3,24 @@ Use FluentValidation rules instead ComponentModel attributes to define swagger s
 
 Note: For WebApi see: https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation.WebApi
 
-## Latest Builds, Packages
-[![NuGet](https://img.shields.io/nuget/v/MicroElements.Swashbuckle.FluentValidation.svg)](https://www.nuget.org/packages/MicroElements.Swashbuckle.FluentValidation/)
-[![Travis](https://img.shields.io/travis/micro-elements/MicroElements.Swashbuckle.FluentValidation/master.svg?label=travis%20build)](https://travis-ci.org/micro-elements/MicroElements.Swashbuckle.FluentValidation)
+## Statuses
+[![License](https://img.shields.io/github/license/micro-elements/MicroElements.Swashbuckle.FluentValidation.svg)](https://raw.githubusercontent.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/master/LICENSE)
+[![NuGetVersion](https://img.shields.io/nuget/v/MicroElements.Swashbuckle.FluentValidation.svg)](https://www.nuget.org/packages/MicroElements.Swashbuckle.FluentValidation)
+![NuGetDownloads](https://img.shields.io/nuget/dt/MicroElements.Swashbuckle.FluentValidation.svg)
+[![MyGetVersion](https://img.shields.io/myget/micro-elements/v/MicroElements.Swashbuckle.FluentValidation.svg)](https://www.myget.org/feed/micro-elements/package/nuget/MicroElements.Swashbuckle.FluentValidation)
+
+[![Travis](https://img.shields.io/travis/micro-elements/MicroElements.Swashbuckle.FluentValidation/master.svg?logo=travis)](https://travis-ci.org/micro-elements/MicroElements.Swashbuckle.FluentValidation)
+[![AppVeyor](https://img.shields.io/appveyor/ci/micro-elements/microelements-swashbuckle-fluentvalidation.svg?logo=appveyor)](https://ci.appveyor.com/project/micro-elements/microelements-swashbuckle-fluentvalidation)
+[![Coverage Status](https://img.shields.io/coveralls/micro-elements/MicroElements.Swashbuckle.FluentValidation.svg)](https://coveralls.io/r/micro-elements/MicroElements.Swashbuckle.FluentValidation)
+
+[![Gitter](https://img.shields.io/gitter/room/micro-elements/MicroElements.Swashbuckle.FluentValidation.svg)](https://gitter.im/micro-elements/MicroElements.Swashbuckle.FluentValidation)
 
 ## Usage
 
 ### 1. Reference packages in your web project:
 ```xml
     <PackageReference Include="FluentValidation.AspNetCore" Version="7.5.2" />
-    <PackageReference Include="MicroElements.Swashbuckle.FluentValidation" Version="0.7.0" />
+    <PackageReference Include="MicroElements.Swashbuckle.FluentValidation" Version="1.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="2.4.0" />
 ```
 
@@ -140,3 +148,4 @@ new FluentValidationRule("Pattern")
 Initial version of this project was based on
 [Mujahid Daud Khan](https://stackoverflow.com/users/1735196/mujahid-daud-khan) answer on StackOwerflow:
 https://stackoverflow.com/questions/44638195/fluent-validation-with-swagger-in-asp-net-core/49477995#49477995
+

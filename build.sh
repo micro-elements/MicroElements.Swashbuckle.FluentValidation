@@ -6,16 +6,19 @@
 
 echo "Starting build.sh"
 
-CAKE_VERSION=0.27.2
-DEVOPS_VERSION=0.5.0-rc.1
+CAKE_VERSION=0.29.0
+DEVOPS_VERSION=1.6.0
+NUGET_URL=https://api.nuget.org/v3/index.json
+NUGET_BETA_URL=https://www.myget.org/F/micro-elements/api/v3/index.json
 
 # Define directories.
 SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 TOOLS_DIR=$SCRIPT_DIR/tools
 CAKE_DLL=$TOOLS_DIR/cake.coreclr/$CAKE_VERSION/Cake.dll
-NUGET_URL="https://www.nuget.org/api/v2/package"
 
+# Script to run.
 SCRIPT="$TOOLS_DIR/microelements.devops/$DEVOPS_VERSION/scripts/main.cake"
+
 CAKE_PROPS_PATH=$TOOLS_DIR/cake.props
 CAKE_ARGUMENTS=()
 
@@ -30,6 +33,8 @@ for i in "$@"; do
 done
 
 CAKE_ARGUMENTS+=("--rootDir=\"$SCRIPT_DIR\"");
+CAKE_ARGUMENTS+=("--devOpsVersion=$DEVOPS_VERSION");
+CAKE_ARGUMENTS+=("--devOpsRoot=\"$TOOLS_DIR/microelements.devops/$DEVOPS_VERSION\"");
 
 echo "===========VARIABLES============"
 echo "SCRIPT_DIR: $SCRIPT_DIR"
@@ -59,7 +64,6 @@ then
 </PropertyGroup>
 <ItemGroup>
   <PackageReference Include="Cake.CoreCLR" Version="$CAKE_VERSION" />
-  <PackageReference Include="Cake.Bakery" Version="0.2.0" />
   <PackageReference Include="MicroElements.DevOps" Version="$DEVOPS_VERSION" />
 </ItemGroup>
 </Project>
@@ -69,7 +73,7 @@ EOL
 fi
 
 # Restore Cake
-dotnet restore $CAKE_PROPS_PATH --packages $TOOLS_DIR
+dotnet restore $CAKE_PROPS_PATH --packages $TOOLS_DIR --source "$NUGET_URL" --source "$NUGET_BETA_URL"
 
 # Start Cake
 echo "Running build script..."

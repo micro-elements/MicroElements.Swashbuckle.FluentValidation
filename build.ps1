@@ -20,11 +20,18 @@ if(!$PSScriptRoot){
     $PSScriptRoot = Split-Path $MyInvocation.MyCommand.Path -Parent
 }
 
-$CAKE_VERSION = "0.27.2"
-$DEVOPS_VERSION = "0.5.0-rc.1"
+$CAKE_VERSION = "0.29.0"
+$CAKE_BAKERY_VERSION = "0.3.0"
+$DEVOPS_VERSION = "1.6.0"
+$NUGET_URL = "https://api.nuget.org/v3/index.json"
+$NUGET_BETA_URL = "https://www.myget.org/F/micro-elements/api/v3/index.json"
+#$NUGET_URL = "file://C:\NuGet"
 
 $TOOLS_DIR = Join-Path $PSScriptRoot "tools"
 $CAKE_DLL = Join-Path $TOOLS_DIR "Cake.CoreCLR/$CAKE_VERSION/Cake.dll"
+
+# Script to run.
+# $Script = Join-Path $TOOLS_DIR "microelements.devops/$DEVOPS_VERSION/scripts/main.cake"
 
 $cake_props = @"
 <Project Sdk="Microsoft.NET.Sdk">
@@ -33,7 +40,7 @@ $cake_props = @"
 </PropertyGroup>
 <ItemGroup>
   <PackageReference Include="Cake.CoreCLR" Version="$CAKE_VERSION" />
-  <PackageReference Include="Cake.Bakery" Version="0.2.0" />
+  <PackageReference Include="Cake.Bakery" Version="$CAKE_BAKERY_VERSION" />
   <PackageReference Include="MicroElements.DevOps" Version="$DEVOPS_VERSION" />
 </ItemGroup>
 </Project>
@@ -48,16 +55,16 @@ if(!(Test-Path $cake_props_path))
 }
 
 # Restore Cake
-&dotnet restore $cake_props_path --packages $TOOLS_DIR
+&dotnet restore $cake_props_path --packages $TOOLS_DIR --source @("$NUGET_URL") --source @("$NUGET_BETA_URL")
 
 # Build Cake arguments
-$Script = Join-Path $TOOLS_DIR "microelements.devops/$DEVOPS_VERSION/scripts/main.cake"
-
 $cakeArguments = @("$Script");
 if ($Target) { $cakeArguments += "-target=$Target" }
 if ($Configuration) { $cakeArguments += "-configuration=$Configuration" }
 if ($Verbosity) { $cakeArguments += "-verbosity=$Verbosity" }
-$cakeArguments += ("-rootDir="+@("$PSScriptRoot"));
+$cakeArguments += ("--rootDir="+@("$PSScriptRoot"));
+$cakeArguments += ("--devOpsVersion=$DEVOPS_VERSION");
+$cakeArguments += ("--devOpsRoot=""$TOOLS_DIR/microelements.devops/$DEVOPS_VERSION""");
 $cakeArguments += $ScriptArgs
 
 # Start Cake
