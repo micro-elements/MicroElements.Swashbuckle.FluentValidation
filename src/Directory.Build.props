@@ -4,4 +4,10 @@
     <PackageReference Include="JetBrains.Annotations" Version="11.1.0" PrivateAssets="All" />
     <DotNetCliToolReference Include="dotnet-sourcelink" Version="2.8.0" />
   </ItemGroup>
+  <PropertyGroup>
+    <DebugType>embedded</DebugType>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
 </Project>

@@ -1,0 +1,9 @@
+image: Visual Studio 2017
+build_script:
+- ps: .\build.ps1 -Target AppVeyor
+test: off
+skip_commits:
+  files:    
+    - '**/*.md'
+artifacts:
+- path: artifacts/packages/*.nupkg

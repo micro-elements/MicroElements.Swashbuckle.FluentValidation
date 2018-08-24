@@ -5,20 +5,11 @@
     <Product>MicroElements</Product>
     <Copyright>Alexey Petryashev 2018</Copyright>
     <Authors>alexey.petriashev;MicroElements</Authors>
-    <NoWarn>$(NoWarn);1701;1702;1705;CS1591;CS1570</NoWarn>
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageIconUrl>https://raw.githubusercontent.com/micro-elements/MicroElements/master/image/logo_rounded.png</PackageIconUrl>
     <PackageProjectUrl>https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/blob/master/LICENSE</PackageLicenseUrl>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>git://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation</RepositoryUrl>
-    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
-    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
-    <GenerateNeutralResourcesLanguageAttribute>false</GenerateNeutralResourcesLanguageAttribute>
-    <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
-    <LangVersion>latest</LangVersion>
-    <DebugType>embedded</DebugType>
   </PropertyGroup>
 
 </Project>

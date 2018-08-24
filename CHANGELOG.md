@@ -1,5 +1,7 @@
 # Changes in 1.0.0:
 * Updated samples and documentation
+* Build scripts replaced with MicroElements.Devops
+* Build: added SourceLink
 
 # Changes in 0.8.2:
 * Fixed: GH-13: Fixed warning with null schema.Properties
