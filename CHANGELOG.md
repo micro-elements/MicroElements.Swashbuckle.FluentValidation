@@ -1,5 +1,5 @@
 # Changes in 1.0.0:
-* Added ScopedSwaggerMiddleware to resolve error "Cannot resolve 'IValidator<T>' from root provider because it requires scoped service 'TDependency'"
+* Added ScopedSwaggerMiddleware to resolve error "Cannot resolve 'MyValidator' from root provider because it requires scoped service 'TDependency'"
 * Updated samples and documentation
 * Build scripts migrated to MicroElements.Devops
 * Build: added SourceLink
