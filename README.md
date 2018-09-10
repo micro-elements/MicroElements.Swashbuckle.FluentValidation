@@ -152,7 +152,7 @@ See BlogValidator in sample.
 
 ## Common problems and workarounds
 
-### System.InvalidOperationException: 'Cannot resolve 'IValidator<T>' from root provider because it requires scoped service 'TDependency'.
+### Error: System.InvalidOperationException: 'Cannot resolve 'IValidator<T>' from root provider because it requires scoped service 'TDependency'.
 
 #### Workaround 1 (Set ValidateScopes to false)
 
@@ -197,7 +197,7 @@ public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         .UseScopedSwagger();
 ```
 
-## Problem: I cant use several validators og one type.
+## Problem: I cant use several validators of one type.
 
 Example: You split validator into several small validators but AspNetCore uses only one of them.
 
