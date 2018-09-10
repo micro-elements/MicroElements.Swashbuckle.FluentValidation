@@ -51,6 +51,7 @@ namespace SampleWebApi.Contracts
         public string TransactionId { get; set; }
 
         [RegularExpression(Constants.GuidRegex)]
+        [Required]
         [FromHeader(Name = "RequestId")]
         public string RequestId { get; set; }
     }

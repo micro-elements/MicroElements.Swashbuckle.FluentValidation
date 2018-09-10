@@ -143,9 +143,69 @@ new FluentValidationRule("Pattern")
 ### Swagger Sample model screenshot
 ![SwaggerSample](image/swagger_sample.png "SwaggerSample")
 
+## Get params bounded to validatable models
+
+MicroElements.Swashbuckle.FluentValidation updates swagger schema for operation parameters bounded to validatable models.
+
+## Defining rules dynamically from database.
+See BlogValidator in sample.
+
+## Common problems and workarounds
+
+### System.InvalidOperationException: 'Cannot resolve 'IValidator<T>' from root provider because it requires scoped service 'TDependency'.
+
+#### Workaround 1 (Set ValidateScopes to false)
+
+```csharp
+public static IWebHost BuildWebHost(string[] args) =>
+    WebHost.CreateDefaultBuilder(args)
+        // Needed for using scoped services (for example DbContext) in validators
+        .UseDefaultServiceProvider(options => options.ValidateScopes = false)
+        .UseStartup<Startup>()
+        .Build();
+```
+
+#### Workaround 2 (Use ServiceProviderScopedValidatorFactory)
+
+```csharp
+public void ConfigureServices(IServiceCollection services)
+{
+    services
+        .AddMvc()
+        // Adds fluent validators to Asp.net
+        .AddFluentValidation(c =>
+        {
+            c.RegisterValidatorsFromAssemblyContaining<Startup>();
+            // Optionaly set validator factory if you have problems with scope resolve inside validators.
+            c.ValidatorFactoryType = typeof(ServiceProviderScopedValidatorFactory);
+        });
+
+```
+See source of ScopedServiceProviderValidatorFactory in 
+https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/tree/master/src/SampleWebApi
+
+#### Workaround 3 (Use ScopedSwaggerMiddleware)
+
+Replace `UseSwagger` for `UseScopedSwagger`:
+
+```csharp
+public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+{
+    app
+        .UseMvc()
+        // Use scoped swagger if you have problems with scoped services in validators
+        .UseScopedSwagger();
+```
+
+## Problem: I cant use several validators og one type.
+
+Example: You split validator into several small validators but AspNetCore uses only one of them.
+
+Workaround: Hide small validator and 
+use `Include` to include other validation rules to one "Main" validator.
+
 ## Credits
 
 Initial version of this project was based on
 [Mujahid Daud Khan](https://stackoverflow.com/users/1735196/mujahid-daud-khan) answer on StackOwerflow:
 https://stackoverflow.com/questions/44638195/fluent-validation-with-swagger-in-asp-net-core/49477995#49477995
-

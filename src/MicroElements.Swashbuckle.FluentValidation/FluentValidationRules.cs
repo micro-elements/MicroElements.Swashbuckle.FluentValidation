@@ -23,7 +23,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// Creates new instance of <see cref="FluentValidationRules"/>
         /// </summary>
         /// <param name="validatorFactory">Validator factory.</param>
-        /// <param name="rules">External Fluentvalidation rules. Rule with the same name replaces default rule.</param>
+        /// <param name="rules">External FluentValidation rules. Rule with the same name replaces default rule.</param>
         /// <param name="loggerFactory"><see cref="ILoggerFactory"/> for logging. Can be null.</param>
         public FluentValidationRules(
             [CanBeNull] IValidatorFactory validatorFactory = null,
@@ -56,7 +56,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
             IValidator validator = null;
             try
-            {
+            {       
                 validator = _validatorFactory.GetValidator(context.SystemType);
             }
             catch (Exception e)

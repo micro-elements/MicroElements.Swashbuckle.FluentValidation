@@ -12,6 +12,8 @@ namespace SampleWebApi
 
         public static IWebHost BuildWebHost(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
+                // Needed for using scoped services (for example DbContext) in validators
+                //.UseDefaultServiceProvider(options => options.ValidateScopes = false)
                 .UseStartup<Startup>()
                 .Build();
     }
