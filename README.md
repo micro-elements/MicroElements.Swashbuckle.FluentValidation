@@ -1,9 +1,11 @@
 # MicroElements.Swashbuckle.FluentValidation
+
 Use FluentValidation rules instead ComponentModel attributes to define swagger schema.
 
 Note: For WebApi see: https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation.WebApi
 
 ## Statuses
+
 [![License](https://img.shields.io/github/license/micro-elements/MicroElements.Swashbuckle.FluentValidation.svg)](https://raw.githubusercontent.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/master/LICENSE)
 [![NuGetVersion](https://img.shields.io/nuget/v/MicroElements.Swashbuckle.FluentValidation.svg)](https://www.nuget.org/packages/MicroElements.Swashbuckle.FluentValidation)
 ![NuGetDownloads](https://img.shields.io/nuget/dt/MicroElements.Swashbuckle.FluentValidation.svg)
@@ -18,6 +20,7 @@ Note: For WebApi see: https://github.com/micro-elements/MicroElements.Swashbuckl
 ## Usage
 
 ### 1. Reference packages in your web project:
+
 ```xml
     <PackageReference Include="FluentValidation.AspNetCore" Version="7.5.2" />
     <PackageReference Include="MicroElements.Swashbuckle.FluentValidation" Version="1.0.0" />
@@ -63,9 +66,11 @@ Note: For WebApi see: https://github.com/micro-elements/MicroElements.Swashbuckl
 ```
 
 ## Sample application
+
 See sample project: https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/tree/master/src/SampleWebApi
 
 ## Supported validators
+
 * INotNullValidator (NotNull)
 * INotEmptyValidator (NotEmpty)
 * ILengthValidator (Length, MinimumLength, MaximumLength, ExactLength)
@@ -74,12 +79,14 @@ See sample project: https://github.com/micro-elements/MicroElements.Swashbuckle.
 * IBetweenValidator (InclusiveBetween, ExclusiveBetween)
 
 ## Extensibility
+
 You can register FluentValidationRule in ServiceCollection.
 
 User defined rule name replaces default rule with the same.
 Full list of default rules can be get by `FluentValidationRules.CreateDefaultRules()`
 
 List or default rules:
+
 * Required
 * NotEmpty
 * Length
@@ -88,7 +95,8 @@ List or default rules:
 * Between
 
 Example of rule:
-```
+
+```csharp
 new FluentValidationRule("Pattern")
 {
     Matches = propertyValidator => propertyValidator is IRegularExpressionValidator,
@@ -141,50 +149,24 @@ new FluentValidationRule("Pattern")
 ```
 
 ### Swagger Sample model screenshot
+
 ![SwaggerSample](image/swagger_sample.png "SwaggerSample")
 
 ## Get params bounded to validatable models
 
 MicroElements.Swashbuckle.FluentValidation updates swagger schema for operation parameters bounded to validatable models.
 
-## Defining rules dynamically from database.
+## Defining rules dynamically from database
+
 See BlogValidator in sample.
 
 ## Common problems and workarounds
 
-### Error: System.InvalidOperationException: 'Cannot resolve 'IValidator<T>' from root provider because it requires scoped service 'TDependency'.
+### Error: `System.InvalidOperationException: 'Cannot resolve 'IValidator<T>' from root provider because it requires scoped service 'TDependency'`
 
-#### Workaround 1 (Set ValidateScopes to false)
+Workarounds in order or preference:
 
-```csharp
-public static IWebHost BuildWebHost(string[] args) =>
-    WebHost.CreateDefaultBuilder(args)
-        // Needed for using scoped services (for example DbContext) in validators
-        .UseDefaultServiceProvider(options => options.ValidateScopes = false)
-        .UseStartup<Startup>()
-        .Build();
-```
-
-#### Workaround 2 (Use ServiceProviderScopedValidatorFactory)
-
-```csharp
-public void ConfigureServices(IServiceCollection services)
-{
-    services
-        .AddMvc()
-        // Adds fluent validators to Asp.net
-        .AddFluentValidation(c =>
-        {
-            c.RegisterValidatorsFromAssemblyContaining<Startup>();
-            // Optionaly set validator factory if you have problems with scope resolve inside validators.
-            c.ValidatorFactoryType = typeof(ServiceProviderScopedValidatorFactory);
-        });
-
-```
-See source of ScopedServiceProviderValidatorFactory in 
-https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/tree/master/src/SampleWebApi
-
-#### Workaround 3 (Use ScopedSwaggerMiddleware)
+#### Workaround 1 (Use ScopedSwaggerMiddleware)
 
 Replace `UseSwagger` for `UseScopedSwagger`:
 
@@ -197,15 +179,44 @@ public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         .UseScopedSwagger();
 ```
 
-## Problem: I cant use several validators of one type.
+#### Workaround 2 (Set ValidateScopes to false)
+
+```csharp
+public static IWebHost BuildWebHost(string[] args) =>
+    WebHost.CreateDefaultBuilder(args)
+        // Needed for using scoped services (for example DbContext) in validators
+        .UseDefaultServiceProvider(options => options.ValidateScopes = false)
+        .UseStartup<Startup>()
+        .Build();
+```
+
+#### Workaround 3 (Use ServiceProviderScopedValidatorFactory)
+
+```csharp
+public void ConfigureServices(IServiceCollection services)
+{
+    services
+        .AddMvc()
+        // Adds fluent validators to Asp.net
+        .AddFluentValidation(c =>
+        {
+            c.RegisterValidatorsFromAssemblyContaining<Startup>();
+            // Optionally set validator factory if you have problems with scope resolve inside validators.
+            c.ValidatorFactoryType = typeof(ServiceProviderScopedValidatorFactory);
+        });
+
+```
+
+See source of ScopedServiceProviderValidatorFactory: https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/tree/master/src/SampleWebApi
+
+## Problem: I cant use several validators of one type
 
 Example: You split validator into several small validators but AspNetCore uses only one of them.
 
-Workaround: Hide small validator and 
-use `Include` to include other validation rules to one "Main" validator.
+Workaround: Hide small validator and use `Include` to include other validation rules to one "Main" validator.
 
 ## Credits
 
 Initial version of this project was based on
-[Mujahid Daud Khan](https://stackoverflow.com/users/1735196/mujahid-daud-khan) answer on StackOwerflow:
+[Mujahid Daud Khan](https://stackoverflow.com/users/1735196/mujahid-daud-khan) answer on StackOverflow:
 https://stackoverflow.com/questions/44638195/fluent-validation-with-swagger-in-asp-net-core/49477995#49477995
