@@ -1,6 +1,5 @@
 # MicroElements.Swashbuckle.FluentValidation
-
-Use FluentValidation rules instead ComponentModel attributes to define swagger schema.
+Use FluentValidation rules instead of ComponentModel attributes to define swagger schema.
 
 Note: For WebApi see: https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation.WebApi
 
@@ -22,47 +21,47 @@ Note: For WebApi see: https://github.com/micro-elements/MicroElements.Swashbuckl
 ### 1. Reference packages in your web project:
 
 ```xml
-    <PackageReference Include="FluentValidation.AspNetCore" Version="7.5.2" />
-    <PackageReference Include="MicroElements.Swashbuckle.FluentValidation" Version="1.0.0" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="2.4.0" />
+<PackageReference Include="FluentValidation.AspNetCore" Version="7.5.2" />
+<PackageReference Include="MicroElements.Swashbuckle.FluentValidation" Version="1.0.0" />
+<PackageReference Include="Swashbuckle.AspNetCore" Version="2.4.0" />
 ```
 
 ### 2. Change Startup.cs
 
 ```csharp
-        // This method gets called by the runtime. Use this method to add services to the container.
-        public void ConfigureServices(IServiceCollection services)
-        {
-            services
-                .AddMvc()
-                // Adds fluent validators to Asp.net
-                .AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<CustomerValidator>());
+// This method gets called by the runtime. Use this method to add services to the container.
+public void ConfigureServices(IServiceCollection services)
+{
+    services
+        .AddMvc()
+        // Adds fluent validators to Asp.net
+        .AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<CustomerValidator>());
 
-            services.AddSwaggerGen(c =>
-            {
-                c.SwaggerDoc("v1", new Info { Title = "My API", Version = "v1" });
-                // Adds fluent validation rules to swagger
-                c.AddFluentValidationRules();
-            });
+    services.AddSwaggerGen(c =>
+    {
+        c.SwaggerDoc("v1", new Info { Title = "My API", Version = "v1" });
+        // Adds fluent validation rules to swagger
+        c.AddFluentValidationRules();
+    });
 
-            // Adds logging
-            services.AddLogging(builder => builder.AddConsole());
-        }
+    // Adds logging
+    services.AddLogging(builder => builder.AddConsole());
+}
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
-        {
-            app
-                .UseMvc()
-                // Adds swagger
-                .UseSwagger();
+// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+{
+    app
+        .UseMvc()
+        // Adds swagger
+        .UseSwagger();
 
-            // Adds swagger UI
-            app.UseSwaggerUI(c =>
-            {
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
-            });
-        }
+    // Adds swagger UI
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
+    });
+}
 ```
 
 ## Sample application
@@ -113,44 +112,67 @@ new FluentValidationRule("Pattern")
 ### Swagger Sample model and validator
 
 ```csharp
-    public class Sample
+public class Sample
+{
+    public string PropertyWithNoRules { get; set; }
+
+    public string NotNull { get; set; }
+    public string NotEmpty { get; set; }
+    public string EmailAddress { get; set; }
+    public string RegexField { get; set; }
+
+    public int ValueInRange { get; set; }
+    public int ValueInRangeExclusive { get; set; }
+
+    public float ValueInRangeFloat { get; set; }
+    public double ValueInRangeDouble { get; set; }
+}
+
+public class SampleValidator : AbstractValidator<Sample>
+{
+    public SampleValidator()
     {
-        public string PropertyWithNoRules { get; set; }
+        RuleFor(sample => sample.NotNull).NotNull();
+        RuleFor(sample => sample.NotEmpty).NotEmpty();
+        RuleFor(sample => sample.EmailAddress).EmailAddress();
+        RuleFor(sample => sample.RegexField).Matches(@"(\d{4})-(\d{2})-(\d{2})");
 
-        public string NotNull { get; set; }
-        public string NotEmpty { get; set; }
-        public string EmailAddress { get; set; }
-        public string RegexField { get; set; }
+        RuleFor(sample => sample.ValueInRange).GreaterThanOrEqualTo(5).LessThanOrEqualTo(10);
+        RuleFor(sample => sample.ValueInRangeExclusive).GreaterThan(5).LessThan(10);
 
-        public int ValueInRange { get; set; }
-        public int ValueInRangeExclusive { get; set; }
-
-        public float ValueInRangeFloat { get; set; }
-        public double ValueInRangeDouble { get; set; }
+        // WARNING: Swashbuckle implements minimum and maximim as int so you will loss fraction part of float and double numbers
+        RuleFor(sample => sample.ValueInRangeFloat).InclusiveBetween(1.1f, 5.3f);
+        RuleFor(sample => sample.ValueInRangeDouble).ExclusiveBetween(2.2, 7.5f);
     }
-
-    public class SampleValidator : AbstractValidator<Sample>
-    {
-        public SampleValidator()
-        {
-            RuleFor(sample => sample.NotNull).NotNull();
-            RuleFor(sample => sample.NotEmpty).NotEmpty();
-            RuleFor(sample => sample.EmailAddress).EmailAddress();
-            RuleFor(sample => sample.RegexField).Matches(@"(\d{4})-(\d{2})-(\d{2})");
-
-            RuleFor(sample => sample.ValueInRange).GreaterThanOrEqualTo(5).LessThanOrEqualTo(10);
-            RuleFor(sample => sample.ValueInRangeExclusive).GreaterThan(5).LessThan(10);
-
-            // WARNING: Swashbuckle implements minimum and maximim as int so you will loss fraction part of float and double numbers
-            RuleFor(sample => sample.ValueInRangeFloat).InclusiveBetween(1.1f, 5.3f);
-            RuleFor(sample => sample.ValueInRangeDouble).ExclusiveBetween(2.2, 7.5f);
-        }
-    }
+}
 ```
 
 ### Swagger Sample model screenshot
 
 ![SwaggerSample](image/swagger_sample.png "SwaggerSample")
+
+### Validator with Include
+
+```csharp
+public class CustomerValidator : AbstractValidator<Customer>
+{
+    public CustomerValidator()
+    {
+        RuleFor(customer => customer.Surname).NotEmpty();
+        RuleFor(customer => customer.Forename).NotEmpty().WithMessage("Please specify a first name");
+
+        Include(new CustomerAddressValidator());
+    }
+}
+
+internal class CustomerAddressValidator : AbstractValidator<Customer>
+{
+    public CustomerAddressValidator()
+    {
+        RuleFor(customer => customer.Address).Length(20, 250);
+    }
+}
+```
 
 ## Get params bounded to validatable models
 
@@ -213,7 +235,7 @@ See source of ScopedServiceProviderValidatorFactory: https://github.com/micro-el
 
 Example: You split validator into several small validators but AspNetCore uses only one of them.
 
-Workaround: Hide small validator and use `Include` to include other validation rules to one "Main" validator.
+Workaround: Hide dependent validators with `internal` and use `Include` to include other validation rules to one "Main" validator.
 
 ## Credits
 

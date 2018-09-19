@@ -71,7 +71,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// </summary>
         /// <param name="validatorDescriptor">Validation metadata.</param>
         /// <param name="name">Property name.</param>
-        /// <returns>enumaration or null.</returns>
+        /// <returns>enumeration or null.</returns>
         [CanBeNull]
         public static IEnumerable<IPropertyValidator> GetValidatorsForMemberIgnoreCase(this IValidatorDescriptor validatorDescriptor, string name)
         {

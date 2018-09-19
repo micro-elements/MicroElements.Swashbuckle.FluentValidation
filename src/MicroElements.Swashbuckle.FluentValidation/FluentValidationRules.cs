@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using FluentValidation;
+using FluentValidation.Internal;
 using FluentValidation.Validators;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
@@ -67,7 +68,29 @@ namespace MicroElements.Swashbuckle.FluentValidation
             if (validator == null)
                 return;
 
-            var validatorDescriptor = validator.CreateDescriptor();
+            ApplyRulesToSchema(schema, context, validator);
+
+            try
+            {
+                // Note: IValidatorDescriptor doesn't return IncludeRules so we need to get validators manually.
+                var includeRules = (validator as IEnumerable<IValidationRule>).NotNull().OfType<IncludeRule>();
+                var childAdapters = includeRules.SelectMany(includeRule => includeRule.Validators).OfType<ChildValidatorAdaptor>();
+                foreach (var adapter in childAdapters)
+                {
+                    var propertyValidatorContext = new PropertyValidatorContext(new ValidationContext(null), null, String.Empty);
+                    var includeValidator = adapter.GetValidator(propertyValidatorContext);
+                    ApplyRulesToSchema(schema, context, includeValidator);
+                }
+            }
+            catch (Exception e)
+            {
+                _logger?.LogWarning(0, e, $"Applying IncludeRules for type '{context.SystemType}' fails.");
+            }
+        }
+
+        private void ApplyRulesToSchema(Schema schema, SchemaFilterContext context, IValidator validator)
+        {
+            IValidatorDescriptor validatorDescriptor = validator.CreateDescriptor();
 
             foreach (var key in schema?.Properties?.Keys ?? Array.Empty<string>())
             {
