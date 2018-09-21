@@ -62,9 +62,10 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 var apiParameterDescription = context.ApiDescription.ParameterDescriptions.FirstOrDefault(description =>
                     description.Name.Equals(operationParameter.Name, StringComparison.InvariantCultureIgnoreCase));
 
-                if (apiParameterDescription != null)
+                var modelMetadata = apiParameterDescription?.ModelMetadata;
+                if (modelMetadata != null)
                 {
-                    var parameterType = apiParameterDescription.ModelMetadata.ContainerType;
+                    var parameterType = modelMetadata.ContainerType;
                     if(parameterType==null)
                         continue;
                     var validator = _validatorFactory.GetValidator(parameterType);
@@ -72,7 +73,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                         continue;
 
                     var descriptor = validator.CreateDescriptor();
-                    var key = apiParameterDescription.ModelMetadata.PropertyName;
+                    var key = modelMetadata.PropertyName;
                     var validatorsForMember = descriptor.GetValidatorsForMemberIgnoreCase(key).NotNull();
 
                     Schema schema = null;
@@ -99,7 +100,8 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
                     if (schema?.Required != null)
                         operationParameter.Required = schema.Required.Contains(key, StringComparer.InvariantCultureIgnoreCase);
-                    if (schema != null && schema.Properties != null)
+
+                    if (schema?.Properties != null)
                     {
                         if (operationParameter is PartialSchema partialSchema)
                         {
