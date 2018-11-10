@@ -169,7 +169,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                         var comparisonValidator = (IComparisonValidator)context.PropertyValidator;
                         if (comparisonValidator.ValueToCompare.IsNumeric())
                         {
-                            int valueToCompare = comparisonValidator.ValueToCompare.NumericToInt();
+                            var valueToCompare = comparisonValidator.ValueToCompare.NumericToDouble();
                             var schemaProperty = context.Schema.Properties[context.PropertyKey];
 
                             if (comparisonValidator.Comparison == Comparison.GreaterThanOrEqual)
@@ -203,7 +203,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
                         if (betweenValidator.From.IsNumeric())
                         {
-                            schemaProperty.Minimum = betweenValidator.From.NumericToInt();
+                            schemaProperty.Minimum = betweenValidator.From.NumericToDouble();
 
                             if (betweenValidator is ExclusiveBetweenValidator)
                             {
@@ -213,7 +213,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
                         if (betweenValidator.To.IsNumeric())
                         {
-                            schemaProperty.Maximum = betweenValidator.To.NumericToInt();
+                            schemaProperty.Maximum = betweenValidator.To.NumericToDouble();
 
                             if (betweenValidator is ExclusiveBetweenValidator)
                             {

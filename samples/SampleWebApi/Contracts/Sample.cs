@@ -36,8 +36,8 @@ namespace SampleWebApi.Contracts
             RuleFor(sample => sample.ValueInRangeExclusive).GreaterThan(5).LessThan(10);
 
             // WARNING: Swashbuckle implements minimum and maximim as int so you will loss fraction part of float and double numbers
-            RuleFor(sample => sample.ValueInRangeFloat).InclusiveBetween(1.1f, 5.3f);
-            RuleFor(sample => sample.ValueInRangeDouble).ExclusiveBetween(2.2, 7.5f);
+            RuleFor(sample => sample.ValueInRangeFloat).InclusiveBetween(5.1f, 10.2f);
+            RuleFor(sample => sample.ValueInRangeDouble).ExclusiveBetween(5.1, 10.2);
 
             RuleFor(sample => sample.javaStyleProperty).MaximumLength(6);
         }

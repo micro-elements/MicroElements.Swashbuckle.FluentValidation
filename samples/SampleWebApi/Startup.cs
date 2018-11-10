@@ -9,8 +9,11 @@ using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using SampleWebApi.DbModels;
+using SampleWebApi.ValidatorFactories;
 using Swashbuckle.AspNetCore.Swagger;
+using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace SampleWebApi
 {
@@ -43,6 +46,8 @@ namespace SampleWebApi
             // One more way to set custom factory.
             //services = services.Replace(ServiceDescriptor.Scoped<IValidatorFactory, ScopedServiceProviderValidatorFactory>());
 
+            //IOptions<SwaggerGeneratorOptions>
+            //services.AddO
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new Info { Title = "My API", Version = "v1" });
