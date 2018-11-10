@@ -22,8 +22,8 @@ Note: For WebApi see: https://github.com/micro-elements/MicroElements.Swashbuckl
 
 ```xml
 <PackageReference Include="FluentValidation.AspNetCore" Version="7.5.2" />
-<PackageReference Include="MicroElements.Swashbuckle.FluentValidation" Version="1.0.0" />
-<PackageReference Include="Swashbuckle.AspNetCore" Version="2.4.0" />
+<PackageReference Include="MicroElements.Swashbuckle.FluentValidation" Version="1.1.0" />
+<PackageReference Include="Swashbuckle.AspNetCore" Version="3.0.0" />
 ```
 
 ### 2. Change Startup.cs
@@ -63,6 +63,13 @@ public void Configure(IApplicationBuilder app, IHostingEnvironment env)
     });
 }
 ```
+
+## Version compatibility
+
+MicroElements.Swashbuckle.FluentValidation | Swashbuckle.AspNetCore | FluentValidation
+---------|----------|---------
+ <=1.1.0 | <=3.0.0 | >=7.2.0
+ >=2.0.0 | >=4.0.0 | >=7.2.0
 
 ## Sample application
 
