@@ -33,7 +33,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
         public async Task Invoke(HttpContext httpContext, ISwaggerProvider swaggerProvider)
         {
-            await new SwaggerMiddleware(_next, swaggerProvider, _mvcJsonOptions, _options).Invoke(httpContext);
+            await new SwaggerMiddleware(_next, _mvcJsonOptions, _options).Invoke(httpContext, swaggerProvider);
         }
     }
 

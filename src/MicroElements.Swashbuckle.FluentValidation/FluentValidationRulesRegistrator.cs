@@ -1,4 +1,5 @@
 ﻿using MicroElements.Swashbuckle.FluentValidation;
+using Microsoft.Extensions.DependencyInjection;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 // ReSharper disable once CheckNamespace
