@@ -6,7 +6,7 @@ using FluentValidation.Internal;
 using FluentValidation.Validators;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
-using Swashbuckle.AspNetCore.Swagger;
+using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace MicroElements.Swashbuckle.FluentValidation
@@ -47,7 +47,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
         }
 
         /// <inheritdoc />
-        public void Apply(Schema schema, SchemaFilterContext context)
+        public void Apply(OpenApiSchema schema, SchemaFilterContext context)
         {
             if (_validatorFactory == null)
             {
@@ -88,7 +88,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             }
         }
 
-        private void ApplyRulesToSchema(Schema schema, SchemaFilterContext context, IValidator validator)
+        private void ApplyRulesToSchema(OpenApiSchema schema, SchemaFilterContext context, IValidator validator)
         {
             IValidatorDescriptor validatorDescriptor = validator.CreateDescriptor();
 
@@ -128,7 +128,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     Apply = context =>
                     {
                         if (context.Schema.Required == null)
-                            context.Schema.Required = new List<string>();
+                            context.Schema.Required = new SortedSet<string>();
                         if(!context.Schema.Required.Contains(context.PropertyKey))
                             context.Schema.Required.Add(context.PropertyKey);
                     }
@@ -174,20 +174,20 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
                             if (comparisonValidator.Comparison == Comparison.GreaterThanOrEqual)
                             {
-                                schemaProperty.Minimum = valueToCompare;
+                                schemaProperty.Minimum = (decimal?) valueToCompare;
                             }
                             else if (comparisonValidator.Comparison == Comparison.GreaterThan)
                             {
-                                schemaProperty.Minimum = valueToCompare;
+                                schemaProperty.Minimum = (decimal?) valueToCompare;
                                 schemaProperty.ExclusiveMinimum = true;
                             }
                             else if (comparisonValidator.Comparison == Comparison.LessThanOrEqual)
                             {
-                                schemaProperty.Maximum = valueToCompare;
+                                schemaProperty.Maximum = (decimal?) valueToCompare;
                             }
                             else if (comparisonValidator.Comparison == Comparison.LessThan)
                             {
-                                schemaProperty.Maximum = valueToCompare;
+                                schemaProperty.Maximum = (decimal?) valueToCompare;
                                 schemaProperty.ExclusiveMaximum = true;
                             }
                         }
@@ -203,7 +203,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
                         if (betweenValidator.From.IsNumeric())
                         {
-                            schemaProperty.Minimum = betweenValidator.From.NumericToDouble();
+                            schemaProperty.Minimum = (decimal?) betweenValidator.From.NumericToDouble();
 
                             if (betweenValidator is ExclusiveBetweenValidator)
                             {
@@ -213,7 +213,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
                         if (betweenValidator.To.IsNumeric())
                         {
-                            schemaProperty.Maximum = betweenValidator.To.NumericToDouble();
+                            schemaProperty.Maximum = (decimal?) betweenValidator.To.NumericToDouble();
 
                             if (betweenValidator is ExclusiveBetweenValidator)
                             {

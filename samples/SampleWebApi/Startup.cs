@@ -9,11 +9,9 @@ using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+using Microsoft.OpenApi.Models;
 using SampleWebApi.DbModels;
-using SampleWebApi.ValidatorFactories;
 using Swashbuckle.AspNetCore.Swagger;
-using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace SampleWebApi
 {
@@ -50,7 +48,7 @@ namespace SampleWebApi
             //services.AddO
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new Info { Title = "My API", Version = "v1" });
+                c.SwaggerDoc("v1", new OpenApiInfo(){ Title = "My API", Version = "v1" });
                 // Adds fluent validation rules to swagger
                 c.AddFluentValidationRules();
             });

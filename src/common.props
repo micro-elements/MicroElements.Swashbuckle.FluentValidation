@@ -3,7 +3,7 @@
   
   <PropertyGroup>
     <Product>MicroElements</Product>
-    <Copyright>Alexey Petryashev 2018</Copyright>
+    <Copyright>Alexey Petryashev 2019</Copyright>
     <Authors>alexey.petriashev;MicroElements</Authors>
     <PackageIconUrl>https://raw.githubusercontent.com/micro-elements/MicroElements/master/image/logo_rounded.png</PackageIconUrl>
     <PackageProjectUrl>https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation</PackageProjectUrl>

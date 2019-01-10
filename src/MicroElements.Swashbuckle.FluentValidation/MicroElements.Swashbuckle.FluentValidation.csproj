@@ -11,7 +11,7 @@
 
   <ItemGroup>
     <PackageReference Include="FluentValidation" Version="7.2.0" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="4.0.1" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="5.0.0-beta" />
   </ItemGroup>
 
 </Project>

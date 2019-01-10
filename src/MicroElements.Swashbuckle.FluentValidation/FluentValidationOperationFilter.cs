@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using FluentValidation;
 using JetBrains.Annotations;
+using Microsoft.AspNetCore.JsonPatch.Operations;
 using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
@@ -40,7 +42,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
         }
 
         /// <inheritdoc />
-        public void Apply(Operation operation, OperationFilterContext context)
+        public void Apply(OpenApiOperation operation, OperationFilterContext context)
         {
             try
             {
@@ -52,7 +54,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             }
         }
 
-        void ApplyInternal(Operation operation, OperationFilterContext context)
+        void ApplyInternal(OpenApiOperation operation, OperationFilterContext context)
         {
             if (operation.Parameters == null)
                 return;
@@ -76,7 +78,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     var key = modelMetadata.PropertyName;
                     var validatorsForMember = descriptor.GetValidatorsForMemberIgnoreCase(key).NotNull();
 
-                    Schema schema = null;
+                    OpenApiSchema schema = null;
                     foreach (var propertyValidator in validatorsForMember)
                     {
                         foreach (var rule in _rules)
@@ -85,7 +87,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                             {
                                 try
                                 {
-                                    if (!context.SchemaRegistry.Definitions.TryGetValue(parameterType.Name, out schema))
+                                    if (!context.SchemaRegistry.Schemas.TryGetValue(parameterType.Name, out schema))
                                         schema = context.SchemaRegistry.GetOrRegister(parameterType);
 
                                     rule.Apply(new RuleContext(schema, new SchemaFilterContext(parameterType, null, context.SchemaRegistry), key.ToLowerCamelCase(), propertyValidator));
@@ -103,20 +105,21 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
                     if (schema?.Properties != null)
                     {
-                        if (operationParameter is PartialSchema partialSchema)
-                        {
-                            if (schema.Properties.TryGetValue(key.ToLowerCamelCase(), out var property) 
-                                || schema.Properties.TryGetValue(key, out property))
-                            {
-                                partialSchema.MinLength = property.MinLength;
-                                partialSchema.MaxLength = property.MaxLength;
-                                partialSchema.Pattern = property.Pattern;
-                                partialSchema.Minimum = property.Minimum;
-                                partialSchema.Maximum = property.Maximum;
-                                partialSchema.ExclusiveMaximum = property.ExclusiveMaximum;
-                                partialSchema.ExclusiveMinimum = property.ExclusiveMinimum;
-                            }
-                        }
+                        //todo:v5
+                        //if (operationParameter is PartialSchema partialSchema)
+                        //{
+                        //    if (schema.Properties.TryGetValue(key.ToLowerCamelCase(), out var property) 
+                        //        || schema.Properties.TryGetValue(key, out property))
+                        //    {
+                        //        partialSchema.MinLength = property.MinLength;
+                        //        partialSchema.MaxLength = property.MaxLength;
+                        //        partialSchema.Pattern = property.Pattern;
+                        //        partialSchema.Minimum = property.Minimum;
+                        //        partialSchema.Maximum = property.Maximum;
+                        //        partialSchema.ExclusiveMaximum = property.ExclusiveMaximum;
+                        //        partialSchema.ExclusiveMinimum = property.ExclusiveMinimum;
+                        //    }
+                        //}
                     }
                 }
             }  

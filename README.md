@@ -22,8 +22,8 @@ Note: For WebApi see: https://github.com/micro-elements/MicroElements.Swashbuckl
 
 ```xml
 <PackageReference Include="FluentValidation.AspNetCore" Version="7.5.2" />
-<PackageReference Include="MicroElements.Swashbuckle.FluentValidation" Version="1.1.0" />
-<PackageReference Include="Swashbuckle.AspNetCore" Version="3.0.0" />
+<PackageReference Include="MicroElements.Swashbuckle.FluentValidation" Version="3.0.0-alpha.1" />
+<PackageReference Include="Swashbuckle.AspNetCore" Version="5.0.0-beta" />
 ```
 
 ### 2. Change Startup.cs
@@ -39,7 +39,7 @@ public void ConfigureServices(IServiceCollection services)
 
     services.AddSwaggerGen(c =>
     {
-        c.SwaggerDoc("v1", new Info { Title = "My API", Version = "v1" });
+        c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
         // Adds fluent validation rules to swagger
         c.AddFluentValidationRules();
     });
@@ -67,9 +67,11 @@ public void Configure(IApplicationBuilder app, IHostingEnvironment env)
 ## Version compatibility
 
 MicroElements.Swashbuckle.FluentValidation | Swashbuckle.AspNetCore | FluentValidation
----------|----------|---------
- <=1.1.0 | <=3.0.0 | >=7.2.0
- >=2.0.0 | >=4.0.0 | >=7.2.0
+---------|----------------|---------
+ <=1.1.0 | [3.0.0, 4.0.0) | >=7.2.0
+ >=2.0.0 | [4.0.0, 5.0.0) | >=7.2.0
+ >=3.0.0 | [5.0.0, 6.0.0) | >=7.2.0
+
 
 ## Sample application
 
