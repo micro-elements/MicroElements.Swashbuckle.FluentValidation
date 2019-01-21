@@ -15,7 +15,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <summary>
         /// Is supported swagger numeric type.
         /// </summary>
-        public static bool IsNumeric(this object value) => value is int || value is long || value is float || value is double;
+        public static bool IsNumeric(this object value) => value is int || value is long || value is float || value is double || value is decimal;
 
         /// <summary>
         /// Convert numeric to int.
