@@ -23,6 +23,11 @@ namespace MicroElements.Swashbuckle.FluentValidation
         public static int NumericToInt(this object value) => Convert.ToInt32(value);
 
         /// <summary>
+        /// Convert numeric to double.
+        /// </summary>
+        public static double NumericToDouble(this object value) => Convert.ToDouble(value);
+
+        /// <summary>
         /// Converts string to CamelCase to match .net standard naming conventions.
         /// </summary>
         /// <param name="inputString">Input string.</param>
