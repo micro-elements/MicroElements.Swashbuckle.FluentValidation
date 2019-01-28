@@ -1,3 +1,6 @@
+# Changes in 2.0.0-beta.3:
+* Added: Numeric types includes decimal
+
 # Changes in 2.0.0-beta.2:
 * Swashbuckle.AspNetCore restricted to version [4.0.0, 5.0.0)
 
