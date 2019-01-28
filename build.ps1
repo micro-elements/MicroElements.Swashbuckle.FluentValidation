@@ -22,7 +22,7 @@ if(!$PSScriptRoot){
 
 $CAKE_VERSION = "0.29.0"
 $CAKE_BAKERY_VERSION = "0.3.0"
-$DEVOPS_VERSION = "1.6.0"
+$DEVOPS_VERSION = "1.8.1"
 $NUGET_URL = "https://api.nuget.org/v3/index.json"
 $NUGET_BETA_URL = "https://www.myget.org/F/micro-elements/api/v3/index.json"
 #$NUGET_URL = "file://C:\NuGet"
