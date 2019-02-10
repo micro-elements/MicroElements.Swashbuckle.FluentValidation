@@ -73,8 +73,13 @@ namespace MicroElements.Swashbuckle.FluentValidation
             try
             {
                 // Note: IValidatorDescriptor doesn't return IncludeRules so we need to get validators manually.
-                var includeRules = (validator as IEnumerable<IValidationRule>).NotNull().OfType<IncludeRule>();
-                var childAdapters = includeRules.SelectMany(includeRule => includeRule.Validators).OfType<ChildValidatorAdaptor>();
+                var childAdapters = (validator as IEnumerable<IValidationRule>)
+                    .NotNull()
+                    .OfType<IncludeRule>()
+                    .Where(includeRule => includeRule.Condition == null && includeRule.AsyncCondition == null)
+                    .SelectMany(includeRule => includeRule.Validators)
+                    .OfType<ChildValidatorAdaptor>();
+
                 foreach (var adapter in childAdapters)
                 {
                     var propertyValidatorContext = new PropertyValidatorContext(new ValidationContext(null), null, String.Empty);
@@ -90,11 +95,11 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
         private void ApplyRulesToSchema(Schema schema, SchemaFilterContext context, IValidator validator)
         {
-            IValidatorDescriptor validatorDescriptor = validator.CreateDescriptor();
-
             foreach (var key in schema?.Properties?.Keys ?? Array.Empty<string>())
             {
-                foreach (var propertyValidator in validatorDescriptor.GetValidatorsForMemberIgnoreCase(key).NotNull())
+                var validators = validator.GetValidatorsForMemberIgnoreCase(key);
+
+                foreach (var propertyValidator in validators)
                 {
                     foreach (var rule in _rules)
                     {

@@ -72,9 +72,8 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     if (validator == null)
                         continue;
 
-                    var descriptor = validator.CreateDescriptor();
                     var key = modelMetadata.PropertyName;
-                    var validatorsForMember = descriptor.GetValidatorsForMemberIgnoreCase(key).NotNull();
+                    var validatorsForMember = validator.GetValidatorsForMemberIgnoreCase(key);
 
                     Schema schema = null;
                     foreach (var propertyValidator in validatorsForMember)
