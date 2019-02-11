@@ -1,3 +1,6 @@
+# Changes in 2.0.0-beta.4:
+* Breaking Changes: FluentValidation updated to 8.1.3 to support when/unless (PR#27)
+
 # Changes in 2.0.0-beta.3:
 * Added: Numeric types includes decimal
 
