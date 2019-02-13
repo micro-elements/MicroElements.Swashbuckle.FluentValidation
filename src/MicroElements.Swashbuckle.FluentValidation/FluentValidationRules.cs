@@ -72,24 +72,30 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
             try
             {
-                // Note: IValidatorDescriptor doesn't return IncludeRules so we need to get validators manually.
-                var childAdapters = (validator as IEnumerable<IValidationRule>)
-                    .NotNull()
-                    .OfType<IncludeRule>()
-                    .Where(includeRule => includeRule.Condition == null && includeRule.AsyncCondition == null)
-                    .SelectMany(includeRule => includeRule.Validators)
-                    .OfType<ChildValidatorAdaptor>();
-
-                foreach (var adapter in childAdapters)
-                {
-                    var propertyValidatorContext = new PropertyValidatorContext(new ValidationContext(null), null, String.Empty);
-                    var includeValidator = adapter.GetValidator(propertyValidatorContext);
-                    ApplyRulesToSchema(schema, context, includeValidator);
-                }
+                AddRulesFromIncludedValidators(schema, context, validator);
             }
             catch (Exception e)
             {
                 _logger?.LogWarning(0, e, $"Applying IncludeRules for type '{context.SystemType}' fails.");
+            }
+        }
+
+        private void AddRulesFromIncludedValidators(Schema schema, SchemaFilterContext context, IValidator validator)
+        {
+            // Note: IValidatorDescriptor doesn't return IncludeRules so we need to get validators manually.
+            var childAdapters = (validator as IEnumerable<IValidationRule>)
+                .NotNull()
+                .OfType<IncludeRule>()
+                .Where(includeRule => includeRule.Condition == null && includeRule.AsyncCondition == null)
+                .SelectMany(includeRule => includeRule.Validators)
+                .OfType<ChildValidatorAdaptor>();
+
+            foreach (var adapter in childAdapters)
+            {
+                var propertyValidatorContext = new PropertyValidatorContext(new ValidationContext(null), null, string.Empty);
+                var includeValidator = adapter.GetValidator(propertyValidatorContext);
+                ApplyRulesToSchema(schema, context, includeValidator);
+                AddRulesFromIncludedValidators(schema, context, includeValidator);
             }
         }
 
