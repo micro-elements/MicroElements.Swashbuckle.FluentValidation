@@ -1,3 +1,6 @@
+# Changes in 2.0.0-beta.5:
+* Changes: Running through included validators recursively to add the entire tree (PR#29)
+
 # Changes in 2.0.0-beta.4:
 * Breaking Changes: FluentValidation updated to 8.1.3 to support when/unless (PR#27)
 
