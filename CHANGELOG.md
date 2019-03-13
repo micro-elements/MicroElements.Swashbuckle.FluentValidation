@@ -15,6 +15,9 @@
 * Schema Minimum and Maximum now supports doubles (was only int)
 * WARNING: ScopedSwaggerMiddleware doesn't work as expected because Swashbuckle.AspNetCore changed a lot. Looking for workaround.
 
+# Changes in 1.2.0:
+* Added: Numeric types includes decimal
+
 # Changes in 1.1.0:
 * Swashbuckle.AspNetCore version locked to versions [1.1.0-3.0.0] because version 4.0.0 has breaking changes. Next version will be 2.0.0 according semver.
 
