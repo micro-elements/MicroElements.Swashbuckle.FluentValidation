@@ -4,6 +4,7 @@ using System.Linq;
 using FluentValidation;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
@@ -25,7 +26,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             [CanBeNull] ILoggerFactory loggerFactory = null)
         {
             _validatorFactory = validatorFactory;
-            _logger = loggerFactory?.CreateLogger(typeof(FluentValidationRules));
+            _logger = loggerFactory?.CreateLogger(typeof(FluentValidationRules)) ?? NullLogger.Instance;
             _rules = FluentValidationRules.CreateDefaultRules();
             if (rules != null)
             {
@@ -48,7 +49,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             }
             catch (Exception e)
             {
-                _logger?.LogWarning(0, e, $"Error on apply rules for operation '{operation.OperationId}'.");
+                _logger.LogWarning(0, e, $"Error on apply rules for operation '{operation.OperationId}'.");
             }
         }
 
@@ -87,11 +88,22 @@ namespace MicroElements.Swashbuckle.FluentValidation
                                     if (!context.SchemaRegistry.Definitions.TryGetValue(parameterType.Name, out schema))
                                         schema = context.SchemaRegistry.GetOrRegister(parameterType);
 
-                                    rule.Apply(new RuleContext(schema, new SchemaFilterContext(parameterType, null, context.SchemaRegistry), key.ToLowerCamelCase(), propertyValidator));
+                                    if (schema.Properties == null)
+                                        schema = context.SchemaRegistry.Definitions[parameterType.Name];
+
+                                    if (schema.Properties != null)
+                                    {
+                                        rule.Apply(new RuleContext(schema, new SchemaFilterContext(parameterType, null, context.SchemaRegistry), key.ToLowerCamelCase(), propertyValidator));
+                                        _logger.LogDebug($"Rule {rule.Name} applied for property {key}");
+                                    }
+                                    else
+                                    {
+                                        _logger.LogDebug($"Rule {rule.Name} skipped for property {key}");
+                                    }
                                 }
                                 catch (Exception e)
                                 {
-                                    _logger?.LogWarning(0, e, $"Error on apply rule '{rule.Name}' for key '{key}'.");
+                                    _logger.LogWarning(0, e, $"Error on apply rule '{rule.Name}' for key '{key}'.");
                                 }
                             }
                         }

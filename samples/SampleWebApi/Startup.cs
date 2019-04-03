@@ -56,7 +56,7 @@ namespace SampleWebApi
             });
 
             // Adds logging
-            services.AddLogging(builder => builder.AddConsole());
+            services.AddLogging(builder => builder.AddConsole().AddFilter(level => true));
 
             // Register database
             services.AddDbContext<BloggingDbContext>(
