@@ -36,6 +36,7 @@ namespace SampleWebApi.Contracts
 
         [Required]
         [FromHeader]
+        [MaxLength(10)]
         public string ValueFromHeader { get; set; }
 
         [Required]
