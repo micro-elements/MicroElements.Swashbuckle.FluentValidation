@@ -22,7 +22,7 @@ Note: For WebApi see: https://github.com/micro-elements/MicroElements.Swashbuckl
 
 ```xml
 <PackageReference Include="FluentValidation.AspNetCore" Version="7.5.2" />
-<PackageReference Include="MicroElements.Swashbuckle.FluentValidation" Version="2.0.0-beta.2" />
+<PackageReference Include="MicroElements.Swashbuckle.FluentValidation" Version="2.0.0" />
 <PackageReference Include="Swashbuckle.AspNetCore" Version="4.0.1" />
 ```
 

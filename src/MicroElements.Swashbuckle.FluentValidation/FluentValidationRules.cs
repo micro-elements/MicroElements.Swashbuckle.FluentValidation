@@ -6,6 +6,7 @@ using FluentValidation.Internal;
 using FluentValidation.Validators;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
@@ -32,7 +33,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             [CanBeNull] ILoggerFactory loggerFactory = null)
         {
             _validatorFactory = validatorFactory;
-            _logger = loggerFactory?.CreateLogger(typeof(FluentValidationRules));
+            _logger = loggerFactory?.CreateLogger(typeof(FluentValidationRules)) ?? NullLogger.Instance;
             _rules = CreateDefaultRules();
             if (rules != null)
             {
@@ -51,7 +52,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
         {
             if (_validatorFactory == null)
             {
-                _logger?.LogWarning(0, "ValidatorFactory is not provided. Please register FluentValidation.");
+                _logger.LogWarning(0, "ValidatorFactory is not provided. Please register FluentValidation.");
                 return;
             }
 
@@ -62,7 +63,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             }
             catch (Exception e)
             {
-                _logger?.LogWarning(0, e, $"GetValidator for type '{context.SystemType}' fails.");
+                _logger.LogWarning(0, e, $"GetValidator for type '{context.SystemType}' fails.");
             }
 
             if (validator == null)
@@ -76,7 +77,38 @@ namespace MicroElements.Swashbuckle.FluentValidation
             }
             catch (Exception e)
             {
-                _logger?.LogWarning(0, e, $"Applying IncludeRules for type '{context.SystemType}' fails.");
+                _logger.LogWarning(0, e, $"Applying IncludeRules for type '{context.SystemType}' fails.");
+            }
+        }
+
+        private void ApplyRulesToSchema(Schema schema, SchemaFilterContext context, IValidator validator)
+        {
+            var lazyLog = new LazyLog(_logger,
+                logger => logger.LogDebug($"Applying FluentValidation rules to swagger schema for type '{context.SystemType}'."));
+
+            foreach (var key in schema?.Properties?.Keys ?? Array.Empty<string>())
+            {
+                var validators = validator.GetValidatorsForMemberIgnoreCase(key);
+
+                foreach (var propertyValidator in validators)
+                {
+                    foreach (var rule in _rules)
+                    {
+                        if (rule.Matches(propertyValidator))
+                        {
+                            try
+                            {
+                                lazyLog.LogOnce();
+                                rule.Apply(new RuleContext(schema, context, key, propertyValidator));
+                                _logger.LogDebug($"Rule '{rule.Name}' applied for property '{context.SystemType.Name}.{key}'");
+                            }
+                            catch (Exception e)
+                            {
+                                _logger.LogWarning(0, e, $"Error on apply rule '{rule.Name}' for property '{context.SystemType.Name}.{key}'.");
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -96,32 +128,6 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 var includeValidator = adapter.GetValidator(propertyValidatorContext);
                 ApplyRulesToSchema(schema, context, includeValidator);
                 AddRulesFromIncludedValidators(schema, context, includeValidator);
-            }
-        }
-
-        private void ApplyRulesToSchema(Schema schema, SchemaFilterContext context, IValidator validator)
-        {
-            foreach (var key in schema?.Properties?.Keys ?? Array.Empty<string>())
-            {
-                var validators = validator.GetValidatorsForMemberIgnoreCase(key);
-
-                foreach (var propertyValidator in validators)
-                {
-                    foreach (var rule in _rules)
-                    {
-                        if (rule.Matches(propertyValidator))
-                        {
-                            try
-                            {
-                                rule.Apply(new RuleContext(schema, context, key, propertyValidator));
-                            }
-                            catch (Exception e)
-                            {
-                                _logger?.LogWarning(0, e, $"Error on apply rule '{rule.Name}' for key '{key}'.");
-                            }
-                        }
-                    }
-                }
             }
         }
 

@@ -1,7 +1,11 @@
+# Changes in 2.0.1:
+* Fixed: GH-24: NullReferenceException on apply rule for operations.
+* Changes: Added more debug logging.
+
 # Changes in 2.0.0:
 * Swashbuckle.AspNetCore updated and restricted to version [4.0.0, 5.0.0)
-* Breaking Changes: FluentValidation updated to 8.1.3 to support when/unless (PR#27)
-* Changes: Running through included validators recursively to add the entire tree (PR#29)
+* Breaking Changes: FluentValidation updated to 8.1.3 to support when/unless (PR#27) by @emilssonn
+* Changes: Running through included validators recursively to add the entire tree (PR#29) by @runebaekkelund
 * Changes: Numeric types includes decimal
 * Changes: Schema Minimum and Maximum now supports doubles (was only int)
 * WARNING: ScopedSwaggerMiddleware doesn't work as expected because Swashbuckle.AspNetCore changed a lot. Looking for workaround.

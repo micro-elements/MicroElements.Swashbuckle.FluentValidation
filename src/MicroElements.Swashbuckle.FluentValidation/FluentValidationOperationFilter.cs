@@ -76,6 +76,9 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     var key = modelMetadata.PropertyName;
                     var validatorsForMember = validator.GetValidatorsForMemberIgnoreCase(key);
 
+                    var lazyLog = new LazyLog(_logger,
+                        logger => logger.LogDebug($"Applying FluentValidation rules to swagger schema for type '{parameterType}' from operation '{operation.OperationId}'."));
+
                     Schema schema = null;
                     foreach (var propertyValidator in validatorsForMember)
                     {
@@ -93,17 +96,18 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
                                     if (schema.Properties != null)
                                     {
+                                        lazyLog.LogOnce();
                                         rule.Apply(new RuleContext(schema, new SchemaFilterContext(parameterType, null, context.SchemaRegistry), key.ToLowerCamelCase(), propertyValidator));
-                                        _logger.LogDebug($"Rule {rule.Name} applied for property {key}");
+                                        _logger.LogDebug($"Rule '{rule.Name}' applied for property '{parameterType.Name}.{key}'.");
                                     }
                                     else
                                     {
-                                        _logger.LogDebug($"Rule {rule.Name} skipped for property {key}");
+                                        _logger.LogDebug($"Rule '{rule.Name}' skipped for property '{parameterType.Name}.{key}'.");
                                     }
                                 }
                                 catch (Exception e)
                                 {
-                                    _logger.LogWarning(0, e, $"Error on apply rule '{rule.Name}' for key '{key}'.");
+                                    _logger.LogWarning(0, e, $"Error on apply rule '{rule.Name}' for property '{parameterType.Name}.{key}'.");
                                 }
                             }
                         }
