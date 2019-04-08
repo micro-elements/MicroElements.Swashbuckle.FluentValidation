@@ -5,6 +5,7 @@ using FluentValidation;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
@@ -16,15 +17,18 @@ namespace MicroElements.Swashbuckle.FluentValidation
     /// </summary>
     public class FluentValidationOperationFilter : IOperationFilter
     {
+        private readonly SwaggerGenOptions _swaggerGenOptions;
         private readonly IValidatorFactory _validatorFactory;
         private readonly ILogger _logger;
         private readonly IReadOnlyList<FluentValidationRule> _rules;
 
         public FluentValidationOperationFilter(
+            IOptions<SwaggerGenOptions> swaggerGenOptions,
             [CanBeNull] IValidatorFactory validatorFactory = null,
             [CanBeNull] IEnumerable<FluentValidationRule> rules = null,
             [CanBeNull] ILoggerFactory loggerFactory = null)
         {
+            _swaggerGenOptions = swaggerGenOptions.Value;
             _validatorFactory = validatorFactory;
             _logger = loggerFactory?.CreateLogger(typeof(FluentValidationRules)) ?? NullLogger.Instance;
             _rules = FluentValidationRules.CreateDefaultRules();
@@ -58,6 +62,8 @@ namespace MicroElements.Swashbuckle.FluentValidation
             if (operation.Parameters == null)
                 return;
 
+            var schemaIdSelector = _swaggerGenOptions.SchemaRegistryOptions.SchemaIdSelector;
+
             foreach (var operationParameter in operation.Parameters)
             {
                 var apiParameterDescription = context.ApiDescription.ParameterDescriptions.FirstOrDefault(description =>
@@ -67,7 +73,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 if (modelMetadata != null)
                 {
                     var parameterType = modelMetadata.ContainerType;
-                    if(parameterType==null)
+                    if (parameterType == null)
                         continue;
                     var validator = _validatorFactory.GetValidator(parameterType);
                     if (validator == null)
@@ -88,11 +94,12 @@ namespace MicroElements.Swashbuckle.FluentValidation
                             {
                                 try
                                 {
-                                    if (!context.SchemaRegistry.Definitions.TryGetValue(parameterType.Name, out schema))
+                                    var schemaId = schemaIdSelector(parameterType);
+                                    if (!context.SchemaRegistry.Definitions.TryGetValue(schemaId, out schema))
                                         schema = context.SchemaRegistry.GetOrRegister(parameterType);
 
                                     if (schema.Properties == null)
-                                        schema = context.SchemaRegistry.Definitions[parameterType.Name];
+                                        schema = context.SchemaRegistry.Definitions[schemaId];
 
                                     if (schema.Properties != null)
                                     {
