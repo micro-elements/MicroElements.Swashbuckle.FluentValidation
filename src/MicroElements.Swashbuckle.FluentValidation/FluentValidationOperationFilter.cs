@@ -62,7 +62,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             if (operation.Parameters == null)
                 return;
 
-            var schemaIdSelector = _swaggerGenOptions.SchemaRegistryOptions.SchemaIdSelector;
+            var schemaIdSelector = _swaggerGenOptions.SchemaRegistryOptions.SchemaIdSelector ?? new SchemaRegistryOptions().SchemaIdSelector;
 
             foreach (var operationParameter in operation.Parameters)
             {
@@ -95,10 +95,11 @@ namespace MicroElements.Swashbuckle.FluentValidation
                                 try
                                 {
                                     var schemaId = schemaIdSelector(parameterType);
+
                                     if (!context.SchemaRegistry.Definitions.TryGetValue(schemaId, out schema))
                                         schema = context.SchemaRegistry.GetOrRegister(parameterType);
 
-                                    if (schema.Properties == null)
+                                    if (schema.Properties == null && context.SchemaRegistry.Definitions.ContainsKey(schemaId))
                                         schema = context.SchemaRegistry.Definitions[schemaId];
 
                                     if (schema.Properties != null)

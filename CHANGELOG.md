@@ -1,3 +1,6 @@
+# Changes in 2.1.0:
+* Changes: Allow to use SwaggerGenOptions.CustomSchemaIds (PR#31) by @mkjeff
+
 # Changes in 2.0.1:
 * Fixed: GH-24: NullReferenceException on apply rule for operations.
 * Changes: Added more debug logging.
