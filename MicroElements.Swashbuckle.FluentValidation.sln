@@ -10,9 +10,12 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{77EF15D5-47D6-4CF0-9BD6-A3120C3854FF}"
 	ProjectSection(SolutionItems) = preProject
 		CHANGELOG.md = CHANGELOG.md
+		src\common.props = src\common.props
 		README.md = README.md
 		version.props = version.props
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MicroElements.Swashbuckle.FluentValidation.Tests", "test\MicroElements.Swashbuckle.FluentValidation.Tests\MicroElements.Swashbuckle.FluentValidation.Tests.csproj", "{AAA88B0E-AA41-402F-B41B-AE95DBBD746C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -28,6 +31,10 @@ Global
 		{FEDDFEAF-E8D0-4E7D-BCDC-AEFE3517BEAD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FEDDFEAF-E8D0-4E7D-BCDC-AEFE3517BEAD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FEDDFEAF-E8D0-4E7D-BCDC-AEFE3517BEAD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AAA88B0E-AA41-402F-B41B-AE95DBBD746C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AAA88B0E-AA41-402F-B41B-AE95DBBD746C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AAA88B0E-AA41-402F-B41B-AE95DBBD746C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AAA88B0E-AA41-402F-B41B-AE95DBBD746C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

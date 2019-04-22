@@ -5,6 +5,8 @@ using FluentValidation;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.JsonPatch.Operations;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
@@ -17,17 +19,20 @@ namespace MicroElements.Swashbuckle.FluentValidation
     /// </summary>
     public class FluentValidationOperationFilter : IOperationFilter
     {
+        private readonly SwaggerGenOptions _swaggerGenOptions;
         private readonly IValidatorFactory _validatorFactory;
         private readonly ILogger _logger;
         private readonly IReadOnlyList<FluentValidationRule> _rules;
 
         public FluentValidationOperationFilter(
+            IOptions<SwaggerGenOptions> swaggerGenOptions,
             [CanBeNull] IValidatorFactory validatorFactory = null,
             [CanBeNull] IEnumerable<FluentValidationRule> rules = null,
             [CanBeNull] ILoggerFactory loggerFactory = null)
         {
+            _swaggerGenOptions = swaggerGenOptions.Value;
             _validatorFactory = validatorFactory;
-            _logger = loggerFactory?.CreateLogger(typeof(FluentValidationRules));
+            _logger = loggerFactory?.CreateLogger(typeof(FluentValidationRules)) ?? NullLogger.Instance;
             _rules = FluentValidationRules.CreateDefaultRules();
             if (rules != null)
             {
@@ -50,7 +55,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             }
             catch (Exception e)
             {
-                _logger?.LogWarning(0, e, $"Error on apply rules for operation '{operation.OperationId}'.");
+                _logger.LogWarning(0, e, $"Error on apply rules for operation '{operation.OperationId}'.");
             }
         }
 
@@ -58,6 +63,8 @@ namespace MicroElements.Swashbuckle.FluentValidation
         {
             if (operation.Parameters == null)
                 return;
+
+            var schemaIdSelector = _swaggerGenOptions.SchemaRegistryOptions.SchemaIdSelector ?? new SchemaRegistryOptions().SchemaIdSelector;
 
             foreach (var operationParameter in operation.Parameters)
             {
@@ -68,15 +75,17 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 if (modelMetadata != null)
                 {
                     var parameterType = modelMetadata.ContainerType;
-                    if(parameterType==null)
+                    if (parameterType == null)
                         continue;
                     var validator = _validatorFactory.GetValidator(parameterType);
                     if (validator == null)
                         continue;
 
-                    var descriptor = validator.CreateDescriptor();
                     var key = modelMetadata.PropertyName;
-                    var validatorsForMember = descriptor.GetValidatorsForMemberIgnoreCase(key).NotNull();
+                    var validatorsForMember = validator.GetValidatorsForMemberIgnoreCase(key);
+
+                    var lazyLog = new LazyLog(_logger,
+                        logger => logger.LogDebug($"Applying FluentValidation rules to swagger schema for type '{parameterType}' from operation '{operation.OperationId}'."));
 
                     OpenApiSchema schema = null;
                     foreach (var propertyValidator in validatorsForMember)
@@ -87,14 +96,28 @@ namespace MicroElements.Swashbuckle.FluentValidation
                             {
                                 try
                                 {
-                                    if (!context.SchemaRegistry.Schemas.TryGetValue(parameterType.Name, out schema))
+                                    var schemaId = schemaIdSelector(parameterType);
+
+                                    if (!context.SchemaRegistry.Schemas.TryGetValue(schemaId, out schema))
                                         schema = context.SchemaRegistry.GetOrRegister(parameterType);
 
-                                    rule.Apply(new RuleContext(schema, new SchemaFilterContext(parameterType, null, context.SchemaRegistry), key.ToLowerCamelCase(), propertyValidator));
+                                    if (schema.Properties == null && context.SchemaRegistry.Schemas.ContainsKey(schemaId))
+                                        schema = context.SchemaRegistry.Schemas[schemaId];
+
+                                    if (schema.Properties != null && schema.Properties.Count > 0)
+                                    {
+                                        lazyLog.LogOnce();
+                                        rule.Apply(new RuleContext(schema, new SchemaFilterContext(parameterType, null, context.SchemaRegistry), key.ToLowerCamelCase(), propertyValidator));
+                                        _logger.LogDebug($"Rule '{rule.Name}' applied for property '{parameterType.Name}.{key}'.");
+                                    }
+                                    else
+                                    {
+                                        _logger.LogDebug($"Rule '{rule.Name}' skipped for property '{parameterType.Name}.{key}'.");
+                                    }
                                 }
                                 catch (Exception e)
                                 {
-                                    _logger?.LogWarning(0, e, $"Error on apply rule '{rule.Name}' for key '{key}'.");
+                                    _logger.LogWarning(0, e, $"Error on apply rule '{rule.Name}' for property '{parameterType.Name}.{key}'.");
                                 }
                             }
                         }
@@ -105,10 +128,11 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
                     if (schema?.Properties != null)
                     {
-                        //todo:v5
-                        //if (operationParameter is PartialSchema partialSchema)
+                        //todo: v5
+                        //var partialSchema = operationParameter.Schema;
+                        //if (partialSchema !=null)
                         //{
-                        //    if (schema.Properties.TryGetValue(key.ToLowerCamelCase(), out var property) 
+                        //    if (schema.Properties.TryGetValue(key.ToLowerCamelCase(), out var property)
                         //        || schema.Properties.TryGetValue(key, out property))
                         //    {
                         //        partialSchema.MinLength = property.MinLength;

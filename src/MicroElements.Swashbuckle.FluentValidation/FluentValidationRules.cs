@@ -7,6 +7,8 @@ using FluentValidation.Validators;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
+using Microsoft.Extensions.Logging.Abstractions;
+using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace MicroElements.Swashbuckle.FluentValidation
@@ -32,7 +34,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             [CanBeNull] ILoggerFactory loggerFactory = null)
         {
             _validatorFactory = validatorFactory;
-            _logger = loggerFactory?.CreateLogger(typeof(FluentValidationRules));
+            _logger = loggerFactory?.CreateLogger(typeof(FluentValidationRules)) ?? NullLogger.Instance;
             _rules = CreateDefaultRules();
             if (rules != null)
             {
@@ -51,7 +53,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
         {
             if (_validatorFactory == null)
             {
-                _logger?.LogWarning(0, "ValidatorFactory is not provided. Please register FluentValidation.");
+                _logger.LogWarning(0, "ValidatorFactory is not provided. Please register FluentValidation.");
                 return;
             }
 
@@ -62,7 +64,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             }
             catch (Exception e)
             {
-                _logger?.LogWarning(0, e, $"GetValidator for type '{context.SystemType}' fails.");
+                _logger.LogWarning(0, e, $"GetValidator for type '{context.SystemType}' fails.");
             }
 
             if (validator == null)
@@ -72,29 +74,24 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
             try
             {
-                // Note: IValidatorDescriptor doesn't return IncludeRules so we need to get validators manually.
-                var includeRules = (validator as IEnumerable<IValidationRule>).NotNull().OfType<IncludeRule>();
-                var childAdapters = includeRules.SelectMany(includeRule => includeRule.Validators).OfType<ChildValidatorAdaptor>();
-                foreach (var adapter in childAdapters)
-                {
-                    var propertyValidatorContext = new PropertyValidatorContext(new ValidationContext(null), null, String.Empty);
-                    var includeValidator = adapter.GetValidator(propertyValidatorContext);
-                    ApplyRulesToSchema(schema, context, includeValidator);
-                }
+                AddRulesFromIncludedValidators(schema, context, validator);
             }
             catch (Exception e)
             {
-                _logger?.LogWarning(0, e, $"Applying IncludeRules for type '{context.SystemType}' fails.");
+                _logger.LogWarning(0, e, $"Applying IncludeRules for type '{context.SystemType}' fails.");
             }
         }
 
         private void ApplyRulesToSchema(OpenApiSchema schema, SchemaFilterContext context, IValidator validator)
         {
-            IValidatorDescriptor validatorDescriptor = validator.CreateDescriptor();
+            var lazyLog = new LazyLog(_logger,
+                logger => logger.LogDebug($"Applying FluentValidation rules to swagger schema for type '{context.SystemType}'."));
 
             foreach (var key in schema?.Properties?.Keys ?? Array.Empty<string>())
             {
-                foreach (var propertyValidator in validatorDescriptor.GetValidatorsForMemberIgnoreCase(key).NotNull())
+                var validators = validator.GetValidatorsForMemberIgnoreCase(key);
+
+                foreach (var propertyValidator in validators)
                 {
                     foreach (var rule in _rules)
                     {
@@ -102,15 +99,36 @@ namespace MicroElements.Swashbuckle.FluentValidation
                         {
                             try
                             {
+                                lazyLog.LogOnce();
                                 rule.Apply(new RuleContext(schema, context, key, propertyValidator));
+                                _logger.LogDebug($"Rule '{rule.Name}' applied for property '{context.SystemType.Name}.{key}'");
                             }
                             catch (Exception e)
                             {
-                                _logger?.LogWarning(0, e, $"Error on apply rule '{rule.Name}' for key '{key}'.");
+                                _logger.LogWarning(0, e, $"Error on apply rule '{rule.Name}' for property '{context.SystemType.Name}.{key}'.");
                             }
                         }
                     }
                 }
+            }
+        }
+
+        private void AddRulesFromIncludedValidators(OpenApiSchema schema, SchemaFilterContext context, IValidator validator)
+        {
+            // Note: IValidatorDescriptor doesn't return IncludeRules so we need to get validators manually.
+            var childAdapters = (validator as IEnumerable<IValidationRule>)
+                .NotNull()
+                .OfType<IncludeRule>()
+                .Where(includeRule => includeRule.Condition == null && includeRule.AsyncCondition == null)
+                .SelectMany(includeRule => includeRule.Validators)
+                .OfType<ChildValidatorAdaptor>();
+
+            foreach (var adapter in childAdapters)
+            {
+                var propertyValidatorContext = new PropertyValidatorContext(new ValidationContext(null), null, string.Empty);
+                var includeValidator = adapter.GetValidator(propertyValidatorContext);
+                ApplyRulesToSchema(schema, context, includeValidator);
+                AddRulesFromIncludedValidators(schema, context, includeValidator);
             }
         }
 

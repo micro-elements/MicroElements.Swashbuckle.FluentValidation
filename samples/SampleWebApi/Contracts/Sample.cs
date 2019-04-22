@@ -17,6 +17,7 @@ namespace SampleWebApi.Contracts
 
         public float ValueInRangeFloat { get; set; }
         public double ValueInRangeDouble { get; set; }
+        public decimal DecimalValue { get; set; }
 
         // ReSharper disable once InconsistentNaming
         // https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/issues/10
@@ -35,9 +36,9 @@ namespace SampleWebApi.Contracts
             RuleFor(sample => sample.ValueInRange).GreaterThanOrEqualTo(5).LessThanOrEqualTo(10);
             RuleFor(sample => sample.ValueInRangeExclusive).GreaterThan(5).LessThan(10);
 
-            // WARNING: Swashbuckle implements minimum and maximim as int so you will loss fraction part of float and double numbers
             RuleFor(sample => sample.ValueInRangeFloat).InclusiveBetween(5.1f, 10.2f);
             RuleFor(sample => sample.ValueInRangeDouble).ExclusiveBetween(5.1, 10.2);
+            RuleFor(sample => sample.DecimalValue).InclusiveBetween(1.333m, 200.333m);
 
             RuleFor(sample => sample.javaStyleProperty).MaximumLength(6);
         }
@@ -67,6 +68,9 @@ namespace SampleWebApi.Contracts
 
         [Range(5.1, 10.2)]
         public double ValueInRangeDouble { get; set; }
+
+        [Range(1.333, 200.333)]
+        public decimal DecimalValue { get; set; }
 
         [MaxLength(6)]
         public string javaStyleProperty { get; set; }

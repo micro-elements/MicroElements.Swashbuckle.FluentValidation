@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using FluentValidation;
+using FluentValidation.Internal;
 using FluentValidation.Validators;
 using JetBrains.Annotations;
 
@@ -15,7 +16,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <summary>
         /// Is supported swagger numeric type.
         /// </summary>
-        public static bool IsNumeric(this object value) => value is int || value is long || value is float || value is double;
+        public static bool IsNumeric(this object value) => value is int || value is long || value is float || value is double || value is decimal;
 
         /// <summary>
         /// Convert numeric to int.
@@ -74,13 +75,16 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <summary>
         /// Returns validators by property name ignoring name case.
         /// </summary>
-        /// <param name="validatorDescriptor">Validation metadata.</param>
+        /// <param name="validator">Validator</param>
         /// <param name="name">Property name.</param>
         /// <returns>enumeration or null.</returns>
-        [CanBeNull]
-        public static IEnumerable<IPropertyValidator> GetValidatorsForMemberIgnoreCase(this IValidatorDescriptor validatorDescriptor, string name)
+        public static IEnumerable<IPropertyValidator> GetValidatorsForMemberIgnoreCase(this IValidator validator, string name)
         {
-            return validatorDescriptor.GetMembersWithValidators().FirstOrDefault(grouping => grouping.Key.Equals(name, StringComparison.InvariantCultureIgnoreCase));
+            return (validator as IEnumerable<IValidationRule>)
+                .NotNull()
+                .OfType<PropertyRule>()
+                .Where(propertyRule => propertyRule.Condition == null && propertyRule.AsyncCondition == null && propertyRule.PropertyName?.Equals(name, StringComparison.InvariantCultureIgnoreCase) == true)
+                .SelectMany(propertyRule => propertyRule.Validators);
         }
     }
 }
