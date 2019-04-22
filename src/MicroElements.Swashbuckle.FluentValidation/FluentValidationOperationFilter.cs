@@ -128,22 +128,21 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
                     if (schema?.Properties != null)
                     {
-                        //todo: v5
-                        //var partialSchema = operationParameter.Schema;
-                        //if (partialSchema !=null)
-                        //{
-                        //    if (schema.Properties.TryGetValue(key.ToLowerCamelCase(), out var property)
-                        //        || schema.Properties.TryGetValue(key, out property))
-                        //    {
-                        //        partialSchema.MinLength = property.MinLength;
-                        //        partialSchema.MaxLength = property.MaxLength;
-                        //        partialSchema.Pattern = property.Pattern;
-                        //        partialSchema.Minimum = property.Minimum;
-                        //        partialSchema.Maximum = property.Maximum;
-                        //        partialSchema.ExclusiveMaximum = property.ExclusiveMaximum;
-                        //        partialSchema.ExclusiveMinimum = property.ExclusiveMinimum;
-                        //    }
-                        //}
+                        var parameterSchema = operationParameter.Schema;
+                        if (parameterSchema != null)
+                        {
+                            if (schema.Properties.TryGetValue(key.ToLowerCamelCase(), out var property)
+                                || schema.Properties.TryGetValue(key, out property))
+                            {
+                                parameterSchema.MinLength = property.MinLength;
+                                parameterSchema.MaxLength = property.MaxLength;
+                                parameterSchema.Pattern = property.Pattern;
+                                parameterSchema.Minimum = property.Minimum;
+                                parameterSchema.Maximum = property.Maximum;
+                                parameterSchema.ExclusiveMaximum = property.ExclusiveMaximum;
+                                parameterSchema.ExclusiveMinimum = property.ExclusiveMinimum;
+                            }
+                        }
                     }
                 }
             }  
