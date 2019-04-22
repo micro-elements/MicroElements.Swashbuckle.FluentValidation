@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Xunit;
@@ -20,7 +21,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
         [Fact]
         public void Apply_DelegatesToSpecifiedFilter_IfTypeDecoratedWithFilterAttribute()
         {
-            IEnumerable<Schema> schemas;
+            IEnumerable<OpenApiSchema> schemas;
             var filterContexts = new[]
             {
                 FilterContextFor(typeof(SwaggerAnnotatedClass)),
@@ -28,7 +29,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
 
             schemas = filterContexts.Select(c =>
             {
-                var schema = new Schema();
+                var schema = new OpenApiSchema();
                 Subject().Apply(schema, c);
                 return schema;
             });

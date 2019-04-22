@@ -1,9 +1,6 @@
 # Changes in 3.0.0-alpha.1:
 * Swashbuckle.AspNetCore updated to version >= 5.0.0-beta
 
-# Changes in 2.0.0-beta.1:
-* Swashbuckle.AspNetCore updated to version >= 4.0.0
-* Schema Minimum and Maximum now supports doubles (was only int)
 # Changes in 2.1.0:
 * Changes: Allow to use SwaggerGenOptions.CustomSchemaIds (PR#31) by @mkjeff
 
