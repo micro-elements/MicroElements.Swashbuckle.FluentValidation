@@ -2,7 +2,7 @@
 // IMPORTS
 ///////////////////////////////////////////////////////////////////////////////
 
-#load tools/microelements.devops/1.8.1/scripts/imports.cake
+#load tools/microelements.devops/1.9.0/scripts/imports.cake
 
 ///////////////////////////////////////////////////////////////////////////////
 // SCRIPT ARGS AND CONVENTIONS
@@ -34,9 +34,7 @@ Task("CopyPackagesToArtifacts")
     .Does(() => CopyPackagesToArtifacts(args));
 
 Task("UploadPackages")
-    .WithCriteria(()=>args.UploadPackages)
-    .WithCriteria(()=>args.Version.IsRelease)
-    .Does(() => UploadPackages(args));
+    .Does(() => UploadPackagesIfNeeded(args));
 
 Task("DoVersioning")
     .Does(() => DoVersioning(args));
