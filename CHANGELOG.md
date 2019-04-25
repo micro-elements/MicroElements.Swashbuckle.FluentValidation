@@ -1,8 +1,11 @@
+# Changes in 2.1.1:
+* Fixed MinLength rewrite by MaxLength validator #32
+
 # Changes in 2.1.0:
 * Changes: Allow to use SwaggerGenOptions.CustomSchemaIds (PR#31) by @mkjeff
 
 # Changes in 2.0.1:
-* Fixed: GH-24: NullReferenceException on apply rule for operations.
+* Fixed: #24: NullReferenceException on apply rule for operations.
 * Changes: Added more debug logging.
 
 # Changes in 2.0.0:
@@ -28,14 +31,14 @@
 * Build: added SourceLink
 
 # Changes in 0.8.2:
-* Fixed: GH-13: Fixed warning with null schema.Properties
+* Fixed: #13: Fixed warning with null schema.Properties
 
 # Changes in 0.8.1:
-* Fixed: GH-12: Fixed NullReferenceException, if schema.Properties is null
+* Fixed: #12: Fixed NullReferenceException, if schema.Properties is null
 
 # Changes in 0.8.0:
 * New feature: FluentValidation rules for get operation parameters binded from models with validators. Adds swagger validation for parameters: Required, MinLength, MaxLength, Minimum, Maximum, Pattern (DataAnnotation works only with [Required]).
-* Fixed: GH-10: Now member search is IgnoreCase
+* Fixed: #10: Now member search is IgnoreCase
 * Fixed: Possible double Required
 
 # Changes in 0.7.0:
@@ -46,7 +49,7 @@
 * Added logging in error points (logs as warnings)
 
 # Changes in 0.6.0:
-* Fixed: GH-6: Removed empty required array from swagger schema
+* Fixed: #6: Removed empty required array from swagger schema
 
 # Changes in 0.5.0:
 * Supported float and double values for IComparisonValidator and IBetweenValidator

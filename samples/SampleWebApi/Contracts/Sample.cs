@@ -19,6 +19,8 @@ namespace SampleWebApi.Contracts
         public double ValueInRangeDouble { get; set; }
         public decimal DecimalValue { get; set; }
 
+        public string NotEmptyWithMaxLength { get; set; }
+
         // ReSharper disable once InconsistentNaming
         // https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/issues/10
         public string javaStyleProperty { get; set; }
@@ -41,6 +43,8 @@ namespace SampleWebApi.Contracts
             RuleFor(sample => sample.DecimalValue).InclusiveBetween(1.333m, 200.333m);
 
             RuleFor(sample => sample.javaStyleProperty).MaximumLength(6);
+
+            RuleFor(sample => sample.NotEmptyWithMaxLength).NotEmpty().MaximumLength(50);
         }
     }
 
@@ -74,6 +78,10 @@ namespace SampleWebApi.Contracts
 
         [MaxLength(6)]
         public string javaStyleProperty { get; set; }
+
+        [MinLength(1)]
+        [MaxLength(50)]
+        public string NotEmptyWithMaxLength { get; set; }
     }
 
     // https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/issues/6
