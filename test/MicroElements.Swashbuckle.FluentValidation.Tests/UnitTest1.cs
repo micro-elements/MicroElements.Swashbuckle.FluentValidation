@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
-using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Xunit;
 
@@ -42,7 +41,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
 
         private SchemaFilterContext FilterContextFor(Type type)
         {
-            return new SchemaFilterContext(type, null, null);
+            return new SchemaFilterContext(new ApiModel(type), null, null);
         }
 
         private FluentValidationRules Subject()

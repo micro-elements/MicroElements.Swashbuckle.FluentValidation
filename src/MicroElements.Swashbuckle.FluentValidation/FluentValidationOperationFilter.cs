@@ -107,7 +107,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                                     if (schema.Properties != null && schema.Properties.Count > 0)
                                     {
                                         lazyLog.LogOnce();
-                                        rule.Apply(new RuleContext(schema, new SchemaFilterContext(parameterType, null, context.SchemaRepository, null), key.ToLowerCamelCase(), propertyValidator));
+                                        rule.Apply(new RuleContext(schema, new SchemaFilterContext(new ApiModel(parameterType), context.SchemaRepository, context.SchemaGenerator), key.ToLowerCamelCase(), propertyValidator));
                                         _logger.LogDebug($"Rule '{rule.Name}' applied for property '{parameterType.Name}.{key}'.");
                                     }
                                     else
