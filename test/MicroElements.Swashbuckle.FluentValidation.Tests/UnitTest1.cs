@@ -42,7 +42,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
 
         private SchemaFilterContext FilterContextFor(Type type)
         {
-            return new SchemaFilterContext(type, null, null);
+            return new SchemaFilterContext(type, null, null, null);
         }
 
         private FluentValidationRules Subject()

@@ -165,9 +165,14 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     Apply = context =>
                     {
                         var lengthValidator = (ILengthValidator)context.PropertyValidator;
+
                         if(lengthValidator.Max > 0)
                             context.Schema.Properties[context.PropertyKey].MaxLength = lengthValidator.Max;
-                        context.Schema.Properties[context.PropertyKey].MinLength = lengthValidator.Min;
+
+                        if (lengthValidator is MinimumLengthValidator
+                            || lengthValidator is ExactLengthValidator
+                            || context.Schema.Properties[context.PropertyKey].MinLength == null)
+                            context.Schema.Properties[context.PropertyKey].MinLength = lengthValidator.Min;
                     }
                 },
                 new FluentValidationRule("Pattern")
