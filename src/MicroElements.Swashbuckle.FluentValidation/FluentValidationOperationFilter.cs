@@ -3,12 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using FluentValidation;
 using JetBrains.Annotations;
-using Microsoft.AspNetCore.JsonPatch.Operations;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
-using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace MicroElements.Swashbuckle.FluentValidation
@@ -64,7 +62,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             if (operation.Parameters == null)
                 return;
 
-            var schemaIdSelector = _swaggerGenOptions.SchemaRegistryOptions.SchemaIdSelector ?? new SchemaRegistryOptions().SchemaIdSelector;
+            var schemaIdSelector = _swaggerGenOptions.SchemaGeneratorOptions.SchemaIdSelector ?? new SchemaGeneratorOptions().SchemaIdSelector;
 
             foreach (var operationParameter in operation.Parameters)
             {
@@ -98,16 +96,18 @@ namespace MicroElements.Swashbuckle.FluentValidation
                                 {
                                     var schemaId = schemaIdSelector(parameterType);
 
-                                    if (!context.SchemaRegistry.Schemas.TryGetValue(schemaId, out schema))
-                                        schema = context.SchemaRegistry.GetOrRegister(parameterType);
+                                    if (!context.SchemaRepository.Schemas.TryGetValue(schemaId, out schema))
+                                    {
+                                        schema = context.SchemaGenerator.GenerateSchema(parameterType, context.SchemaRepository);
+                                    }
 
-                                    if (schema.Properties == null && context.SchemaRegistry.Schemas.ContainsKey(schemaId))
-                                        schema = context.SchemaRegistry.Schemas[schemaId];
+                                    if (schema.Properties == null && context.SchemaRepository.Schemas.ContainsKey(schemaId))
+                                        schema = context.SchemaRepository.Schemas[schemaId];
 
                                     if (schema.Properties != null && schema.Properties.Count > 0)
                                     {
                                         lazyLog.LogOnce();
-                                        rule.Apply(new RuleContext(schema, new SchemaFilterContext(parameterType, null, context.SchemaRegistry), key.ToLowerCamelCase(), propertyValidator));
+                                        rule.Apply(new RuleContext(schema, new SchemaFilterContext(parameterType, null, context.SchemaRepository, null), key.ToLowerCamelCase(), propertyValidator));
                                         _logger.LogDebug($"Rule '{rule.Name}' applied for property '{parameterType.Name}.{key}'.");
                                     }
                                     else

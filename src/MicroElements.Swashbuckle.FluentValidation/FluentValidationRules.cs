@@ -60,11 +60,11 @@ namespace MicroElements.Swashbuckle.FluentValidation
             IValidator validator = null;
             try
             {       
-                validator = _validatorFactory.GetValidator(context.SystemType);
+                validator = _validatorFactory.GetValidator(context.Type);
             }
             catch (Exception e)
             {
-                _logger.LogWarning(0, e, $"GetValidator for type '{context.SystemType}' fails.");
+                _logger.LogWarning(0, e, $"GetValidator for type '{context.Type}' fails.");
             }
 
             if (validator == null)
@@ -78,14 +78,14 @@ namespace MicroElements.Swashbuckle.FluentValidation
             }
             catch (Exception e)
             {
-                _logger.LogWarning(0, e, $"Applying IncludeRules for type '{context.SystemType}' fails.");
+                _logger.LogWarning(0, e, $"Applying IncludeRules for type '{context.Type}' fails.");
             }
         }
 
         private void ApplyRulesToSchema(OpenApiSchema schema, SchemaFilterContext context, IValidator validator)
         {
             var lazyLog = new LazyLog(_logger,
-                logger => logger.LogDebug($"Applying FluentValidation rules to swagger schema for type '{context.SystemType}'."));
+                logger => logger.LogDebug($"Applying FluentValidation rules to swagger schema for type '{context.Type}'."));
 
             foreach (var key in schema?.Properties?.Keys ?? Array.Empty<string>())
             {
@@ -101,11 +101,11 @@ namespace MicroElements.Swashbuckle.FluentValidation
                             {
                                 lazyLog.LogOnce();
                                 rule.Apply(new RuleContext(schema, context, key, propertyValidator));
-                                _logger.LogDebug($"Rule '{rule.Name}' applied for property '{context.SystemType.Name}.{key}'");
+                                _logger.LogDebug($"Rule '{rule.Name}' applied for property '{context.Type.Name}.{key}'");
                             }
                             catch (Exception e)
                             {
-                                _logger.LogWarning(0, e, $"Error on apply rule '{rule.Name}' for property '{context.SystemType.Name}.{key}'.");
+                                _logger.LogWarning(0, e, $"Error on apply rule '{rule.Name}' for property '{context.Type.Name}.{key}'.");
                             }
                         }
                     }
