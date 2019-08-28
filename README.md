@@ -225,6 +225,9 @@ public static IWebHost BuildWebHost(string[] args) =>
 ```csharp
 public void ConfigureServices(IServiceCollection services)
 {
+    // ServiceProviderScopedValidatorFactory requires access to HttpContext
+    services.AddHttpContextAccessor();
+
     services
         .AddMvc()
         // Adds fluent validators to Asp.net
@@ -234,10 +237,9 @@ public void ConfigureServices(IServiceCollection services)
             // Optionally set validator factory if you have problems with scope resolve inside validators.
             c.ValidatorFactoryType = typeof(ServiceProviderScopedValidatorFactory);
         });
-
 ```
 
-See source of ScopedServiceProviderValidatorFactory: https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/tree/master/src/SampleWebApi
+See source of ScopedServiceProviderValidatorFactory: https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/tree/master/src/MicroElements.Swashbuckle.FluentValidation/ServiceProviderScopedValidatorFactory.cs
 
 ## Problem: I cant use several validators of one type
 
