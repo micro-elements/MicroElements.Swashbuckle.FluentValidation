@@ -29,6 +29,9 @@ namespace SampleWebApi
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            // HttpContextServiceProviderValidatorFactory requires access to HttpContext
+            services.AddHttpContextAccessor();
+
             services
                 .AddMvc()
                 // Adds fluent validators to Asp.net
@@ -36,7 +39,7 @@ namespace SampleWebApi
                 {
                     c.RegisterValidatorsFromAssemblyContaining<Startup>();
                     // Optionally set validator factory if you have problems with scope resolve inside validators.
-                    // c.ValidatorFactoryType = typeof(CustomValidatorFactory);
+                    c.ValidatorFactoryType = typeof(HttpContextServiceProviderValidatorFactory);
                 });
 
             // Register all validators as IValidator?
@@ -72,10 +75,10 @@ namespace SampleWebApi
             app
                 .UseMvc()
                 // Adds swagger
-                //.UseSwagger()
+                .UseSwagger()
 
                 // Use scoped swagger if you have problems with scoped services in validators
-                .UseScopedSwagger();
+                //.UseScopedSwagger();
             ;
 
             // Adds swagger UI
