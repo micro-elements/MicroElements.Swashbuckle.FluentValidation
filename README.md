@@ -21,8 +21,8 @@ Note: For WebApi see: https://github.com/micro-elements/MicroElements.Swashbuckl
 ### 1. Reference packages in your web project:
 
 ```xml
-<PackageReference Include="FluentValidation.AspNetCore" Version="7.5.2" />
-<PackageReference Include="MicroElements.Swashbuckle.FluentValidation" Version="2.0.0" />
+<PackageReference Include="FluentValidation.AspNetCore" Version="8.1.3" />
+<PackageReference Include="MicroElements.Swashbuckle.FluentValidation" Version="2.2.0" />
 <PackageReference Include="Swashbuckle.AspNetCore" Version="4.0.1" />
 ```
 
@@ -220,12 +220,12 @@ public static IWebHost BuildWebHost(string[] args) =>
         .Build();
 ```
 
-#### Workaround 3 (Use ServiceProviderScopedValidatorFactory)
+#### Workaround 3 (Use HttpContextServiceProviderValidatorFactory) by @WarpSpideR
 
 ```csharp
 public void ConfigureServices(IServiceCollection services)
 {
-    // ServiceProviderScopedValidatorFactory requires access to HttpContext
+    // HttpContextServiceProviderValidatorFactory requires access to HttpContext
     services.AddHttpContextAccessor();
 
     services
@@ -235,11 +235,9 @@ public void ConfigureServices(IServiceCollection services)
         {
             c.RegisterValidatorsFromAssemblyContaining<Startup>();
             // Optionally set validator factory if you have problems with scope resolve inside validators.
-            c.ValidatorFactoryType = typeof(ServiceProviderScopedValidatorFactory);
+            c.ValidatorFactoryType = typeof(HttpContextServiceProviderValidatorFactory);
         });
 ```
-
-See source of ScopedServiceProviderValidatorFactory: https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/tree/master/src/MicroElements.Swashbuckle.FluentValidation/ServiceProviderScopedValidatorFactory.cs
 
 ## Problem: I cant use several validators of one type
 

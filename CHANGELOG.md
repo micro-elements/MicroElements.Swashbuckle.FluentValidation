@@ -1,3 +1,6 @@
+# Changes in 2.2.0:
+* Added HttpContextServiceProviderValidatorFactory to resolve scoped Dependency Injection (PR#34) by @WarpSpideR
+
 # Changes in 2.1.1:
 * Fixed MinLength rewrite by MaxLength validator #32
 
