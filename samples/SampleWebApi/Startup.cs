@@ -28,7 +28,7 @@ namespace SampleWebApi
         public void ConfigureServices(IServiceCollection services)
         {
             services
-                .AddMvc()
+                .AddControllers()
                 // Adds fluent validators to Asp.net
                 .AddFluentValidation(c =>
                 {
@@ -68,7 +68,7 @@ namespace SampleWebApi
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
             app
-                .UseMvc()
+                //.UseMvc()
                 // Adds swagger
                 //.UseSwagger()
 
