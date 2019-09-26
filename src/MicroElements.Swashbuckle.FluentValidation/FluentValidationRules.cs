@@ -8,7 +8,6 @@ using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using Microsoft.Extensions.Logging.Abstractions;
-using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace MicroElements.Swashbuckle.FluentValidation
@@ -60,11 +59,11 @@ namespace MicroElements.Swashbuckle.FluentValidation
             IValidator validator = null;
             try
             {       
-                validator = _validatorFactory.GetValidator(context.Type);
+                validator = _validatorFactory.GetValidator(context.ApiModel.Type);
             }
             catch (Exception e)
             {
-                _logger.LogWarning(0, e, $"GetValidator for type '{context.Type}' fails.");
+                _logger.LogWarning(0, e, $"GetValidator for type '{context.ApiModel.Type}' fails.");
             }
 
             if (validator == null)
@@ -78,14 +77,14 @@ namespace MicroElements.Swashbuckle.FluentValidation
             }
             catch (Exception e)
             {
-                _logger.LogWarning(0, e, $"Applying IncludeRules for type '{context.Type}' fails.");
+                _logger.LogWarning(0, e, $"Applying IncludeRules for type '{context.ApiModel.Type}' fails.");
             }
         }
 
         private void ApplyRulesToSchema(OpenApiSchema schema, SchemaFilterContext context, IValidator validator)
         {
             var lazyLog = new LazyLog(_logger,
-                logger => logger.LogDebug($"Applying FluentValidation rules to swagger schema for type '{context.Type}'."));
+                logger => logger.LogDebug($"Applying FluentValidation rules to swagger schema for type '{context.ApiModel.Type}'."));
 
             foreach (var key in schema?.Properties?.Keys ?? Array.Empty<string>())
             {
@@ -101,11 +100,11 @@ namespace MicroElements.Swashbuckle.FluentValidation
                             {
                                 lazyLog.LogOnce();
                                 rule.Apply(new RuleContext(schema, context, key, propertyValidator));
-                                _logger.LogDebug($"Rule '{rule.Name}' applied for property '{context.Type.Name}.{key}'");
+                                _logger.LogDebug($"Rule '{rule.Name}' applied for property '{context.ApiModel.Type.Name}.{key}'");
                             }
                             catch (Exception e)
                             {
-                                _logger.LogWarning(0, e, $"Error on apply rule '{rule.Name}' for property '{context.Type.Name}.{key}'.");
+                                _logger.LogWarning(0, e, $"Error on apply rule '{rule.Name}' for property '{context.ApiModel.Type.Name}.{key}'.");
                             }
                         }
                     }
