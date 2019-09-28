@@ -65,7 +65,7 @@ namespace SampleWebApi
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app)
         {
             app
                 //.UseMvc()
@@ -89,7 +89,7 @@ namespace SampleWebApi
         private static void TestDatabaseSeed(IApplicationBuilder app)
         {
             var bloggingContext = app.ApplicationServices.CreateScope().ServiceProvider.GetService<BloggingDbContext>();
-            if (!EnumerableExtensions.Any(bloggingContext.Metadata))
+            if (!bloggingContext.Metadata.Any())
             {
                 // Example of defining rules dynamically from database.
                 bloggingContext.Metadata.Add(new ValidationMetadata
