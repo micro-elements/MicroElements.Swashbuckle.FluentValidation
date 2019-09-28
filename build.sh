@@ -60,7 +60,7 @@ then
     cat > "$CAKE_PROPS_PATH" <<EOL
 <Project Sdk="Microsoft.NET.Sdk">
 <PropertyGroup>
-  <TargetFramework>netstandard2.0</TargetFramework>
+  <TargetFramework>netcoreapp3.0</TargetFramework>
 </PropertyGroup>
 <ItemGroup>
   <PackageReference Include="Cake.CoreCLR" Version="$CAKE_VERSION" />
