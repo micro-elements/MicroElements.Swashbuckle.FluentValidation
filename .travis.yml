@@ -7,4 +7,4 @@ os:
 before_script:
   - chmod a+x ./build.sh
 script:
-  - ./build.sh --target Travis --verbosity normal
+  - ./build.sh --target="Travis" --verbosity="normal"
