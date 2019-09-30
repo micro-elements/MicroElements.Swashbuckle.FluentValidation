@@ -78,4 +78,4 @@ dotnet tool restore
 echo "Running build script..."
 echo "SCRIPT: $SCRIPT"
 echo "CAKE_ARGUMENTS: $CAKE_ARGUMENTS"
-exec dotnet dotnet-cake $SCRIPT "${CAKE_ARGUMENTS[@]}"
+exec dotnet dotnet-cake "$SCRIPT" "${CAKE_ARGUMENTS[@]}"
