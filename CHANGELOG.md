@@ -1,3 +1,7 @@
+# Changes in 3.0.0-rc.1:
+* Swashbuckle.AspNetCore updated to version >= 5.0.0-rc3 (PR#35 by @vova-lantsov-dev)
+* Reintegrated features from 2.2.0
+
 # Changes in 3.0.0-beta.1:
 * Swashbuckle.AspNetCore updated to version >= 5.0.0-rc2 (many breaking changes)
 
