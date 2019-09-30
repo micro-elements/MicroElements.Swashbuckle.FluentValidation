@@ -75,8 +75,8 @@ dotnet restore $CAKE_PROPS_PATH --packages $TOOLS_DIR --source "$NUGET_URL"
 dotnet tool restore
 
 # Start Cake
-exec dotnet cake --help
 echo "Running build script..."
 CMD="dotnet cake $SCRIPT ${CAKE_ARGUMENTS[@]}"
+CMD="dotnet cake $TOOLS_DIR/MicroElements.DevOps/$DEVOPS_VERSION/scripts/main.cake --target=Travis"
 echo $CMD
 exec $CMD
