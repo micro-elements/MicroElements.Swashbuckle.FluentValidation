@@ -80,5 +80,5 @@ echo "SCRIPT: $SCRIPT"
 echo "CAKE_ARGUMENTS: ${CAKE_ARGUMENTS[@]}"
 
 CMD="dotnet cake \"$SCRIPT\" ${CAKE_ARGUMENTS[@]}"
-echo CMD
-exec CMD
+echo $CMD
+exec $CMD
