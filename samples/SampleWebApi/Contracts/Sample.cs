@@ -78,6 +78,10 @@ namespace SampleWebApi.Contracts
 
         [MaxLength(6)]
         public string javaStyleProperty { get; set; }
+
+        [MinLength(1)]
+        [MaxLength(50)]
+        public string NotEmptyWithMaxLength { get; set; }
     }
 
     // https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/issues/6
