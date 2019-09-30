@@ -4,6 +4,9 @@
 # Changes in 3.0.0-alpha.1:
 * Swashbuckle.AspNetCore updated to version >= 5.0.0-beta
 
+# Changes in 2.2.0:
+* Added HttpContextServiceProviderValidatorFactory to resolve scoped Dependency Injection (PR#34) by @WarpSpideR
+
 # Changes in 2.1.1:
 * Fixed MinLength rewrite by MaxLength validator #32
 
