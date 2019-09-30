@@ -6,7 +6,7 @@
 
 echo "Starting build.sh"
 
-CAKE_VERSION=0.29.0
+CAKE_VERSION=0.34.1
 DEVOPS_VERSION=1.9.1
 NUGET_URL=https://api.nuget.org/v3/index.json
 NUGET_BETA_URL=https://www.myget.org/F/micro-elements/api/v3/index.json
@@ -63,7 +63,6 @@ then
   <TargetFramework>netcoreapp3.0</TargetFramework>
 </PropertyGroup>
 <ItemGroup>
-  <PackageReference Include="Cake.CoreCLR" Version="$CAKE_VERSION" />
   <PackageReference Include="MicroElements.DevOps" Version="$DEVOPS_VERSION" />
 </ItemGroup>
 </Project>
@@ -73,9 +72,10 @@ EOL
 fi
 
 # Restore Cake
+dotnet tool restore
 dotnet restore $CAKE_PROPS_PATH --packages $TOOLS_DIR --source "$NUGET_URL" --source "$NUGET_BETA_URL"
 
 # Start Cake
 echo "Running build script..."
 echo "CakeArguments: $CAKE_ARGUMENTS"
-exec dotnet "$CAKE_DLL" $SCRIPT "${CAKE_ARGUMENTS[@]}"
+exec dotnet-cake $SCRIPT "${CAKE_ARGUMENTS[@]}"
