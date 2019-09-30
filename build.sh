@@ -15,7 +15,7 @@ SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 TOOLS_DIR=$SCRIPT_DIR/tools
 
 # Script to run.
-SCRIPT="$TOOLS_DIR/microelements.devops/$DEVOPS_VERSION/scripts/main.cake"
+SCRIPT="$TOOLS_DIR/MicroElements.DevOps/$DEVOPS_VERSION/scripts/main.cake"
 
 CAKE_PROPS_PATH=$TOOLS_DIR/cake.props
 CAKE_ARGUMENTS=()
@@ -32,7 +32,7 @@ done
 
 CAKE_ARGUMENTS+=("--rootDir=\"$SCRIPT_DIR\"");
 CAKE_ARGUMENTS+=("--devOpsVersion=$DEVOPS_VERSION");
-CAKE_ARGUMENTS+=("--devOpsRoot=\"$TOOLS_DIR/microelements.devops/$DEVOPS_VERSION\"");
+CAKE_ARGUMENTS+=("--devOpsRoot=\"$TOOLS_DIR/MicroElements.DevOps/$DEVOPS_VERSION\"");
 
 echo "===========VARIABLES============"
 echo "SCRIPT_DIR: $SCRIPT_DIR"
@@ -78,4 +78,4 @@ dotnet tool restore
 echo "Running build script..."
 echo "SCRIPT: $SCRIPT"
 echo "CAKE_ARGUMENTS: $CAKE_ARGUMENTS"
-exec dotnet dotnet-cake "$SCRIPT" "${CAKE_ARGUMENTS[@]}"
+exec dotnet cake "$SCRIPT" "${CAKE_ARGUMENTS[@]}"
