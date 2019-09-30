@@ -78,4 +78,4 @@ dotnet restore $CAKE_PROPS_PATH --packages $TOOLS_DIR --source "$NUGET_URL" --so
 # Start Cake
 echo "Running build script..."
 echo "CakeArguments: $CAKE_ARGUMENTS"
-exec dotnet-cake $SCRIPT "${CAKE_ARGUMENTS[@]}"
+exec dotnet cake $SCRIPT "${CAKE_ARGUMENTS[@]}"
