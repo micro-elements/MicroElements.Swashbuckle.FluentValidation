@@ -30,9 +30,9 @@ for i in "$@"; do
     shift
 done
 
-CAKE_ARGUMENTS+=("--rootDir=\"$SCRIPT_DIR\"");
-CAKE_ARGUMENTS+=("--devOpsVersion=$DEVOPS_VERSION");
-CAKE_ARGUMENTS+=("--devOpsRoot=\"$TOOLS_DIR/MicroElements.DevOps/$DEVOPS_VERSION\"");
+CAKE_ARGUMENTS+=("--rootDir \"$SCRIPT_DIR\"");
+CAKE_ARGUMENTS+=("--devOpsVersion $DEVOPS_VERSION");
+CAKE_ARGUMENTS+=("--devOpsRoot \"$TOOLS_DIR/MicroElements.DevOps/$DEVOPS_VERSION\"");
 
 echo "===========VARIABLES============"
 echo "SCRIPT_DIR: $SCRIPT_DIR"
