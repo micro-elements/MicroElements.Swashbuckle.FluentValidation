@@ -77,6 +77,6 @@ dotnet tool restore
 # Start Cake
 echo "Running build script..."
 CMD="dotnet cake $SCRIPT ${CAKE_ARGUMENTS[@]}"
-CMD="dotnet cake $TOOLS_DIR/microelements.devops/$DEVOPS_VERSION/scripts/main.cake --target=Travis"
+CMD="dotnet cake $TOOLS_DIR/microelements.devops/$DEVOPS_VERSION/scripts/main.cake ${CAKE_ARGUMENTS[@]}"
 echo $CMD
 exec $CMD
