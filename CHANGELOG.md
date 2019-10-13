@@ -1,3 +1,7 @@
+# Changes in 3.0.0-rc.2:
+* Swashbuckle.AspNetCore updated to version >= 5.0.0-rc4
+* Fixed: #37 (FluentValidationOperationFilter now uses swachbuckle interface to determine json settings)
+
 # Changes in 3.0.0-rc.1:
 * Swashbuckle.AspNetCore updated to version >= 5.0.0-rc3 (PR#35 by @vova-lantsov-dev)
 * Reintegrated features from 2.2.0

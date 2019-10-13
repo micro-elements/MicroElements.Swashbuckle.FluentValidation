@@ -17,31 +17,24 @@ namespace MicroElements.Swashbuckle.FluentValidation
     /// </summary>
     public class FluentValidationOperationFilter : IOperationFilter
     {
+        private readonly ILogger _logger;
         private readonly SwaggerGenOptions _swaggerGenOptions;
         private readonly IValidatorFactory _validatorFactory;
-        private readonly ILogger _logger;
+        private readonly IApiModelResolver _apiModelResolver;
         private readonly IReadOnlyList<FluentValidationRule> _rules;
 
         public FluentValidationOperationFilter(
             IOptions<SwaggerGenOptions> swaggerGenOptions,
             [CanBeNull] IValidatorFactory validatorFactory = null,
             [CanBeNull] IEnumerable<FluentValidationRule> rules = null,
-            [CanBeNull] ILoggerFactory loggerFactory = null)
+            [CanBeNull] ILoggerFactory loggerFactory = null,
+            [CanBeNull] IApiModelResolver apiModelResolver = null)
         {
             _swaggerGenOptions = swaggerGenOptions.Value;
             _validatorFactory = validatorFactory;
+            _apiModelResolver = apiModelResolver;
             _logger = loggerFactory?.CreateLogger(typeof(FluentValidationRules)) ?? NullLogger.Instance;
-            _rules = FluentValidationRules.CreateDefaultRules();
-            if (rules != null)
-            {
-                var ruleMap = _rules.ToDictionary(rule => rule.Name, rule => rule);
-                foreach (var rule in rules)
-                {
-                    // Add or replace rule
-                    ruleMap[rule.Name] = rule;
-                }
-                _rules = ruleMap.Values.ToList();
-            }
+            _rules = FluentValidationRules.CreateDefaultRules().OverrideRules(rules);
         }
 
         /// <inheritdoc />
@@ -79,8 +72,16 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     if (validator == null)
                         continue;
 
-                    var key = modelMetadata.PropertyName;
-                    var validatorsForMember = validator.GetValidatorsForMemberIgnoreCase(key);
+                    var schemaPropertyName = operationParameter.Name;
+                    if (_apiModelResolver.ResolveApiModelFor(parameterType) is ApiObject apiObject)
+                    {
+                        var apiProperty = apiObject.ApiProperties.FirstOrDefault(property =>
+                            string.Equals(property.ApiName, schemaPropertyName, StringComparison.OrdinalIgnoreCase));
+                        if (apiProperty != null)
+                            schemaPropertyName = apiProperty.ApiName;
+                    }
+
+                    var validatorsForMember = validator.GetValidatorsForMemberIgnoreCase(schemaPropertyName);
 
                     var lazyLog = new LazyLog(_logger,
                         logger => logger.LogDebug($"Applying FluentValidation rules to swagger schema for type '{parameterType}' from operation '{operation.OperationId}'."));
@@ -101,38 +102,41 @@ namespace MicroElements.Swashbuckle.FluentValidation
                                         schema = context.SchemaGenerator.GenerateSchema(parameterType, context.SchemaRepository);
                                     }
 
-                                    if (schema.Properties == null && context.SchemaRepository.Schemas.ContainsKey(schemaId))
+                                    if ((schema.Properties == null || schema.Properties.Count == 0) && context.SchemaRepository.Schemas.ContainsKey(schemaId))
+                                    {
                                         schema = context.SchemaRepository.Schemas[schemaId];
+                                    }
 
                                     if (schema.Properties != null && schema.Properties.Count > 0)
                                     {
                                         lazyLog.LogOnce();
-                                        rule.Apply(new RuleContext(schema, new SchemaFilterContext(new ApiModel(parameterType), context.SchemaRepository, context.SchemaGenerator), key.ToLowerCamelCase(), propertyValidator));
-                                        _logger.LogDebug($"Rule '{rule.Name}' applied for property '{parameterType.Name}.{key}'.");
+                                        var schemaFilterContext = new SchemaFilterContext(new ApiModel(parameterType), context.SchemaRepository, context.SchemaGenerator);
+                                        rule.Apply(new RuleContext(schema, schemaFilterContext, schemaPropertyName, propertyValidator));
+                                        _logger.LogDebug($"Rule '{rule.Name}' applied for property '{parameterType.Name}.{operationParameter.Name}'.");
                                     }
                                     else
                                     {
-                                        _logger.LogDebug($"Rule '{rule.Name}' skipped for property '{parameterType.Name}.{key}'.");
+                                        _logger.LogDebug($"Rule '{rule.Name}' skipped for property '{parameterType.Name}.{operationParameter.Name}'.");
                                     }
                                 }
                                 catch (Exception e)
                                 {
-                                    _logger.LogWarning(0, e, $"Error on apply rule '{rule.Name}' for property '{parameterType.Name}.{key}'.");
+                                    _logger.LogWarning(0, e, $"Error on apply rule '{rule.Name}' for property '{parameterType.Name}.{schemaPropertyName}'.");
                                 }
                             }
                         }
                     }
 
                     if (schema?.Required != null)
-                        operationParameter.Required = schema.Required.Contains(key, StringComparer.InvariantCultureIgnoreCase);
+                        operationParameter.Required = schema.Required.Contains(schemaPropertyName, StringComparer.InvariantCultureIgnoreCase);
 
                     if (schema?.Properties != null)
                     {
                         var parameterSchema = operationParameter.Schema;
                         if (parameterSchema != null)
                         {
-                            if (schema.Properties.TryGetValue(key.ToLowerCamelCase(), out var property)
-                                || schema.Properties.TryGetValue(key, out property))
+                            if (schema.Properties.TryGetValue(schemaPropertyName.ToLowerCamelCase(), out var property)
+                                || schema.Properties.TryGetValue(schemaPropertyName, out property))
                             {
                                 parameterSchema.MinLength = property.MinLength;
                                 parameterSchema.MaxLength = property.MaxLength;

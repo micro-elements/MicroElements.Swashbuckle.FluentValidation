@@ -34,17 +34,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
         {
             _validatorFactory = validatorFactory;
             _logger = loggerFactory?.CreateLogger(typeof(FluentValidationRules)) ?? NullLogger.Instance;
-            _rules = CreateDefaultRules();
-            if (rules != null)
-            {
-                var ruleMap = _rules.ToDictionary(rule => rule.Name, rule => rule);
-                foreach (var rule in rules)
-                {
-                    // Add or replace rule
-                    ruleMap[rule.Name] = rule;
-                }
-                _rules = ruleMap.Values.ToList();
-            }
+            _rules = CreateDefaultRules().OverrideRules(rules);
         }
 
         /// <inheritdoc />
@@ -86,9 +76,9 @@ namespace MicroElements.Swashbuckle.FluentValidation
             var lazyLog = new LazyLog(_logger,
                 logger => logger.LogDebug($"Applying FluentValidation rules to swagger schema for type '{context.ApiModel.Type}'."));
 
-            foreach (var key in schema?.Properties?.Keys ?? Array.Empty<string>())
+            foreach (var schemaPropertyName in schema?.Properties?.Keys ?? Array.Empty<string>())
             {
-                var validators = validator.GetValidatorsForMemberIgnoreCase(key);
+                var validators = validator.GetValidatorsForMemberIgnoreCase(schemaPropertyName);
 
                 foreach (var propertyValidator in validators)
                 {
@@ -99,12 +89,12 @@ namespace MicroElements.Swashbuckle.FluentValidation
                             try
                             {
                                 lazyLog.LogOnce();
-                                rule.Apply(new RuleContext(schema, context, key, propertyValidator));
-                                _logger.LogDebug($"Rule '{rule.Name}' applied for property '{context.ApiModel.Type.Name}.{key}'");
+                                rule.Apply(new RuleContext(schema, context, schemaPropertyName, propertyValidator));
+                                _logger.LogDebug($"Rule '{rule.Name}' applied for property '{context.ApiModel.Type.Name}.{schemaPropertyName}'");
                             }
                             catch (Exception e)
                             {
-                                _logger.LogWarning(0, e, $"Error on apply rule '{rule.Name}' for property '{context.ApiModel.Type.Name}.{key}'.");
+                                _logger.LogWarning(0, e, $"Error on apply rule '{rule.Name}' for property '{context.ApiModel.Type.Name}.{schemaPropertyName}'.");
                             }
                         }
                     }

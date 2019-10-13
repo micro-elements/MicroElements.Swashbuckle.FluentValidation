@@ -1,6 +1,8 @@
 ﻿using System.Linq;
+using System.Text.Json;
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using FluentValidation.Validators;
 using MicroElements.Swashbuckle.FluentValidation;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -10,8 +12,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
+using Newtonsoft.Json.Serialization;
 using SampleWebApi.DbModels;
 using Swashbuckle.AspNetCore.Swagger;
+using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace SampleWebApi
 {
@@ -38,7 +42,10 @@ namespace SampleWebApi
                     c.RegisterValidatorsFromAssemblyContaining<Startup>();
                     // Optionally set validator factory if you have problems with scope resolve inside validators.
                     c.ValidatorFactoryType = typeof(HttpContextServiceProviderValidatorFactory);
-                });
+                })
+                //.AddJsonOptions(options => { })
+                //.AddNewtonsoftJson(options => options.SerializerSettings.ContractResolver = new DefaultContractResolver())
+                ;
 
             // Register all validators as IValidator?
             var serviceDescriptors = services.Where(descriptor => descriptor.ServiceType.GetInterfaces().Contains(typeof(IValidator))).ToList();
@@ -65,6 +72,18 @@ namespace SampleWebApi
                 ServiceLifetime.Scoped);
 
             //services.AddTransient<Func<BloggingDbContext>>(provider => provider.GetService<BloggingDbContext>);
+
+            // Example: override or add ValidationRules
+            //services.AddSingleton(new FluentValidationRule("Pattern")
+            //{
+            //    Matches = propertyValidator => propertyValidator is IRegularExpressionValidator,
+            //    Apply = context =>
+            //    {
+            //        // your own implementation here!
+            //        var regularExpressionValidator = (IRegularExpressionValidator)context.PropertyValidator;
+            //        context.Schema.Properties[context.PropertyKey].Pattern = regularExpressionValidator.Expression;
+            //    }
+            //});
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
