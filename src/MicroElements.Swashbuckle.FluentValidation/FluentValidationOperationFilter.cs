@@ -6,6 +6,7 @@ using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json.Serialization;
 using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
@@ -105,7 +106,14 @@ namespace MicroElements.Swashbuckle.FluentValidation
                                     if (schema.Properties != null && schema.Properties.Count > 0)
                                     {
                                         lazyLog.LogOnce();
-                                        rule.Apply(new RuleContext(schema, new SchemaFilterContext(parameterType, null, context.SchemaRegistry), key.ToLowerCamelCase(), propertyValidator));
+                                        var schemaFilterContext = new SchemaFilterContext(parameterType, null, context.SchemaRegistry);
+
+                                        // try to fix property casing (between property name and schema property name)
+                                        var schemaProperty = schema.Properties.Keys.FirstOrDefault(k => string.Equals(k, key, StringComparison.OrdinalIgnoreCase));
+                                        if (schemaProperty != null)
+                                            key = schemaProperty;
+
+                                        rule.Apply(new RuleContext(schema, schemaFilterContext, key, propertyValidator));
                                         _logger.LogDebug($"Rule '{rule.Name}' applied for property '{parameterType.Name}.{key}'.");
                                     }
                                     else

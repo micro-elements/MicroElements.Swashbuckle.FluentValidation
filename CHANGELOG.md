@@ -1,3 +1,6 @@
+# Changes in 2.2.1:
+* Fixed #37: (property casing between property name and schema property name in operation filter)
+
 # Changes in 2.2.0:
 * Added HttpContextServiceProviderValidatorFactory to resolve scoped Dependency Injection (PR#34) by @WarpSpideR
 
