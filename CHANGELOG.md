@@ -1,3 +1,11 @@
+# Changes in 2.3.0:
+* PR#40 by @royvandertuuk (FluentValidation.AspNetCore updated to 8.3.0, fixed #38)
+  
+  The inner workings of conditionals has been changed in FluentValidation 8.3.
+Before the 8.3 version the FluentValidation validators that contained a conditional would be of type DelegatingValidator, and because the type DelegatingValidator was not checked anywhere in the FluentValidationRules class in the MicroElements.Swashbuckle.FluentValidation package, no documentation for these conditionals were added.
+
+  FluentValidation 8.3 deprecated the DelegatingValidator and used a different mechanism of storing the conditions. The validators that contains a condition will be the normal type (e.g. NotNullValidator) and now contains the properties Condition and AsyncCondition.
+
 # Changes in 2.2.1:
 * Fixed #37: (property casing between property name and schema property name in operation filter)
 
