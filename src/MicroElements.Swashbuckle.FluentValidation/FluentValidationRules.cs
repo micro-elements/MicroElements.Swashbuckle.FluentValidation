@@ -7,6 +7,7 @@ using FluentValidation.Validators;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Newtonsoft.Json.Serialization;
 using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
@@ -17,6 +18,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
     /// </summary>
     public class FluentValidationRules : ISchemaFilter
     {
+        private readonly IContractResolver _contractResolver;
         private readonly IValidatorFactory _validatorFactory;
         private readonly ILogger _logger;
         private readonly IReadOnlyList<FluentValidationRule> _rules;
@@ -24,14 +26,17 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <summary>
         /// Creates new instance of <see cref="FluentValidationRules"/>
         /// </summary>
+        /// <param name="contractResolver">Contract resolver</param>
         /// <param name="validatorFactory">Validator factory.</param>
         /// <param name="rules">External FluentValidation rules. Rule with the same name replaces default rule.</param>
         /// <param name="loggerFactory"><see cref="ILoggerFactory"/> for logging. Can be null.</param>
         public FluentValidationRules(
+            [CanBeNull] IContractResolver contractResolver = null,
             [CanBeNull] IValidatorFactory validatorFactory = null,
             [CanBeNull] IEnumerable<FluentValidationRule> rules = null,
             [CanBeNull] ILoggerFactory loggerFactory = null)
         {
+            _contractResolver = contractResolver;
             _validatorFactory = validatorFactory;
             _logger = loggerFactory?.CreateLogger(typeof(FluentValidationRules)) ?? NullLogger.Instance;
             _rules = CreateDefaultRules();
@@ -54,6 +59,11 @@ namespace MicroElements.Swashbuckle.FluentValidation
             {
                 _logger.LogWarning(0, "ValidatorFactory is not provided. Please register FluentValidation.");
                 return;
+            }
+
+            if (_contractResolver == null)
+            {
+                _logger.LogInformation(0, "ContractResolver is not provided. Using simple property names.");
             }
 
             IValidator validator = null;
@@ -86,9 +96,13 @@ namespace MicroElements.Swashbuckle.FluentValidation
             var lazyLog = new LazyLog(_logger,
                 logger => logger.LogDebug($"Applying FluentValidation rules to swagger schema for type '{context.SystemType}'."));
 
+            JsonObjectContract contract = _contractResolver?.ResolveContract(context.SystemType) as JsonObjectContract;
+
             foreach (var key in schema?.Properties?.Keys ?? Array.Empty<string>())
             {
-                var validators = validator.GetValidatorsForMemberIgnoreCase(key);
+                var memberName = GetMemberName(contract, key);
+
+                var validators = validator.GetValidatorsForMemberIgnoreCase(memberName);
 
                 foreach (var propertyValidator in validators)
                 {
@@ -110,6 +124,11 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     }
                 }
             }
+        }
+
+        private string GetMemberName(JsonObjectContract contract, string key)
+        {
+            return contract?.Properties?.FirstOrDefault(p => p.PropertyName == key)?.UnderlyingName ?? key;
         }
 
         private void AddRulesFromIncludedValidators(Schema schema, SchemaFilterContext context, IValidator validator)
