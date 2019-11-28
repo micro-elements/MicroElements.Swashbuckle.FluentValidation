@@ -131,7 +131,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             {
                 new FluentValidationRule("Required")
                 {
-                    Matches = propertyValidator => propertyValidator is INotNullValidator || propertyValidator is INotEmptyValidator,
+                    Matches = propertyValidator => (propertyValidator is INotNullValidator || propertyValidator is INotEmptyValidator) && propertyValidator.HasNoCondition(),
                     Apply = context =>
                     {
                         if (context.Schema.Required == null)
@@ -142,7 +142,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 },
                 new FluentValidationRule("NotEmpty")
                 {
-                    Matches = propertyValidator => propertyValidator is INotEmptyValidator,
+                    Matches = propertyValidator => propertyValidator is INotEmptyValidator && propertyValidator.HasNoCondition(),
                     Apply = context =>
                     {
                         context.Schema.Properties[context.PropertyKey].MinLength = 1;
@@ -150,7 +150,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 },
                 new FluentValidationRule("Length")
                 {
-                    Matches = propertyValidator => propertyValidator is ILengthValidator,
+                    Matches = propertyValidator => propertyValidator is ILengthValidator && propertyValidator.HasNoCondition(),
                     Apply = context =>
                     {
                         var lengthValidator = (ILengthValidator)context.PropertyValidator;
@@ -166,7 +166,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 },
                 new FluentValidationRule("Pattern")
                 {
-                    Matches = propertyValidator => propertyValidator is IRegularExpressionValidator,
+                    Matches = propertyValidator => propertyValidator is IRegularExpressionValidator && propertyValidator.HasNoCondition(),
                     Apply = context =>
                     {
                         var regularExpressionValidator = (IRegularExpressionValidator)context.PropertyValidator;
@@ -175,7 +175,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 },
                 new FluentValidationRule("Comparison")
                 {
-                    Matches = propertyValidator => propertyValidator is IComparisonValidator,
+                    Matches = propertyValidator => propertyValidator is IComparisonValidator && propertyValidator.HasNoCondition(),
                     Apply = context =>
                     {
                         var comparisonValidator = (IComparisonValidator)context.PropertyValidator;
@@ -207,7 +207,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 },
                 new FluentValidationRule("Between")
                 {
-                    Matches = propertyValidator => propertyValidator is IBetweenValidator,
+                    Matches = propertyValidator => propertyValidator is IBetweenValidator && propertyValidator.HasNoCondition(),
                     Apply = context =>
                     {
                         var betweenValidator = (IBetweenValidator)context.PropertyValidator;

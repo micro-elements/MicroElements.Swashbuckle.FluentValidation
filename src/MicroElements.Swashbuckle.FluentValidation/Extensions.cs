@@ -84,5 +84,15 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
             return source;
         }
+
+        /// <summary>
+        /// Returns a <see cref="bool"/> indicating if the <paramref name="propertyValidator"/> is conditional.
+        /// </summary>
+        /// <param name="propertyValidator"></param>
+        /// <returns></returns>
+        internal static bool HasNoCondition(this IPropertyValidator propertyValidator)
+        {
+            return propertyValidator?.Options?.Condition == null && propertyValidator?.Options?.AsyncCondition == null;
+        }
     }
 }
