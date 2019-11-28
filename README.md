@@ -21,8 +21,8 @@ Note: For WebApi see: https://github.com/micro-elements/MicroElements.Swashbuckl
 ### 1. Reference packages in your web project:
 
 ```xml
-<PackageReference Include="FluentValidation.AspNetCore" Version="8.1.3" />
-<PackageReference Include="MicroElements.Swashbuckle.FluentValidation" Version="2.2.0" />
+<PackageReference Include="FluentValidation.AspNetCore" Version="8.3.0" />
+<PackageReference Include="MicroElements.Swashbuckle.FluentValidation" Version="3.0.0-rc.3" />
 <PackageReference Include="Swashbuckle.AspNetCore" Version="4.0.1" />
 ```
 
@@ -70,7 +70,7 @@ MicroElements.Swashbuckle.FluentValidation | Swashbuckle.AspNetCore | FluentVali
 ---------|----------|---------
 [1.1.0, 2.0.0) | [3.0.0, 4.0.0) | >=7.2.0
 [2.0.0, 3.0.0) | [4.0.0, 5.0.0) | >=8.1.3
-[3.0.0, 4.0.0) | [5.0.0-rc3, 6.0.0) | >=8.1.3
+[3.0.0, 4.0.0) | [5.0.0-rc4, 6.0.0) | >=8.3.0
 
 ## Sample application
 

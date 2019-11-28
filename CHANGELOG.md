@@ -1,3 +1,7 @@
+# Changes in 3.0.0-rc.3:
+* Updated FluentValidation to version >= 8.3
+* Fixed invalid documentation on validation rules containing a condition #38
+
 # Changes in 3.0.0-rc.2:
 * Swashbuckle.AspNetCore updated to version >= 5.0.0-rc4
 * Fixed: #37 (FluentValidationOperationFilter now uses swachbuckle interface to determine json settings)
