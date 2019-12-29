@@ -1,25 +1,21 @@
 ﻿using System.Linq;
-using System.Text.Json;
 using FluentValidation;
 using FluentValidation.AspNetCore;
-using FluentValidation.Validators;
 using MicroElements.Swashbuckle.FluentValidation;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json.Serialization;
+using Newtonsoft.Json.Utilities;
 using SampleWebApi.DbModels;
 using Swashbuckle.AspNetCore.Swagger;
-using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace SampleWebApi
 {
-    public class Startup
+    public partial class Startup
     {
         public Startup(IConfiguration configuration)
         {
@@ -43,8 +39,17 @@ namespace SampleWebApi
                     // Optionally set validator factory if you have problems with scope resolve inside validators.
                     c.ValidatorFactoryType = typeof(HttpContextServiceProviderValidatorFactory);
                 })
-                //.AddJsonOptions(options => { })
-                //.AddNewtonsoftJson(options => options.SerializerSettings.ContractResolver = new DefaultContractResolver())
+                .AddJsonOptions(options =>
+                {
+                    // Workaround for snake_case
+                    // options.JsonSerializerOptions.PropertyNamingPolicy = new NewtonsoftJsonNamingPolicy(new SnakeCaseNamingStrategy());
+                    //options.JsonSerializerOptions.DictionaryKeyPolicy = new NewtonsoftJsonNamingPolicy(new SnakeCaseNamingStrategy());
+                })
+                //.AddNewtonsoftJson(options =>
+                //    options.SerializerSettings.ContractResolver = new DefaultContractResolver()
+                //    {
+                //        NamingStrategy = new SnakeCaseNamingStrategy()
+                //    })
                 ;
 
             // Register all validators as IValidator?
@@ -55,7 +60,6 @@ namespace SampleWebApi
             //services = services.Replace(ServiceDescriptor.Scoped<IValidatorFactory, ScopedServiceProviderValidatorFactory>());
 
             //IOptions<SwaggerGeneratorOptions>
-            //services.AddO
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo(){ Title = "My API", Version = "v1" });
@@ -89,14 +93,15 @@ namespace SampleWebApi
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app)
         {
-            app
-                //.UseMvc()
-                // Adds swagger
-                .UseSwagger()
+            app.UseRouting();
 
-                // Use scoped swagger if you have problems with scoped services in validators
-                //.UseScopedSwagger();
-            ;
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllers();
+            });
+
+            // Adds swagger
+            app.UseSwagger();
 
             // Adds swagger UI
             app.UseSwaggerUI(c =>

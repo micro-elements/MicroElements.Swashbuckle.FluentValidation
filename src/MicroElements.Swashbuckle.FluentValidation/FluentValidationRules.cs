@@ -49,11 +49,11 @@ namespace MicroElements.Swashbuckle.FluentValidation
             IValidator validator = null;
             try
             {       
-                validator = _validatorFactory.GetValidator(context.ApiModel.Type);
+                validator = _validatorFactory.GetValidator(context.Type);
             }
             catch (Exception e)
             {
-                _logger.LogWarning(0, e, $"GetValidator for type '{context.ApiModel.Type}' fails.");
+                _logger.LogWarning(0, e, $"GetValidator for type '{context.Type}' fails.");
             }
 
             if (validator == null)
@@ -67,14 +67,14 @@ namespace MicroElements.Swashbuckle.FluentValidation
             }
             catch (Exception e)
             {
-                _logger.LogWarning(0, e, $"Applying IncludeRules for type '{context.ApiModel.Type}' fails.");
+                _logger.LogWarning(0, e, $"Applying IncludeRules for type '{context.Type}' fails.");
             }
         }
 
         private void ApplyRulesToSchema(OpenApiSchema schema, SchemaFilterContext context, IValidator validator)
         {
             var lazyLog = new LazyLog(_logger,
-                logger => logger.LogDebug($"Applying FluentValidation rules to swagger schema for type '{context.ApiModel.Type}'."));
+                logger => logger.LogDebug($"Applying FluentValidation rules to swagger schema for type '{context.Type}'."));
 
             foreach (var schemaPropertyName in schema?.Properties?.Keys ?? Array.Empty<string>())
             {
@@ -90,11 +90,11 @@ namespace MicroElements.Swashbuckle.FluentValidation
                             {
                                 lazyLog.LogOnce();
                                 rule.Apply(new RuleContext(schema, context, schemaPropertyName, propertyValidator));
-                                _logger.LogDebug($"Rule '{rule.Name}' applied for property '{context.ApiModel.Type.Name}.{schemaPropertyName}'");
+                                _logger.LogDebug($"Rule '{rule.Name}' applied for property '{context.Type.Name}.{schemaPropertyName}'");
                             }
                             catch (Exception e)
                             {
-                                _logger.LogWarning(0, e, $"Error on apply rule '{rule.Name}' for property '{context.ApiModel.Type.Name}.{schemaPropertyName}'.");
+                                _logger.LogWarning(0, e, $"Error on apply rule '{rule.Name}' for property '{context.Type.Name}.{schemaPropertyName}'.");
                             }
                         }
                     }
@@ -108,7 +108,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             var childAdapters = (validator as IEnumerable<IValidationRule>)
                 .NotNull()
                 .OfType<IncludeRule>()
-                .Where(includeRule => includeRule.Condition == null && includeRule.AsyncCondition == null)
+                .Where(includeRule => includeRule.HasNoCondition())
                 .SelectMany(includeRule => includeRule.Validators)
                 .OfType<ChildValidatorAdaptor>();
 

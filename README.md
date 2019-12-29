@@ -22,8 +22,8 @@ Note: For WebApi see: https://github.com/micro-elements/MicroElements.Swashbuckl
 
 ```xml
 <PackageReference Include="FluentValidation.AspNetCore" Version="8.3.0" />
-<PackageReference Include="MicroElements.Swashbuckle.FluentValidation" Version="3.0.0-rc.3" />
-<PackageReference Include="Swashbuckle.AspNetCore" Version="4.0.1" />
+<PackageReference Include="MicroElements.Swashbuckle.FluentValidation" Version="3.0.0-rc.4" />
+<PackageReference Include="Swashbuckle.AspNetCore" Version="5.0.0-rc5" />
 ```
 
 ### 2. Change Startup.cs
@@ -32,10 +32,18 @@ Note: For WebApi see: https://github.com/micro-elements/MicroElements.Swashbuckl
 // This method gets called by the runtime. Use this method to add services to the container.
 public void ConfigureServices(IServiceCollection services)
 {
+    // HttpContextServiceProviderValidatorFactory requires access to HttpContext
+    services.AddHttpContextAccessor();
+
     services
-        .AddMvc()
+        .AddControllers()
         // Adds fluent validators to Asp.net
-        .AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<CustomerValidator>());
+        .AddFluentValidation(c =>
+        {
+            c.RegisterValidatorsFromAssemblyContaining<Startup>();
+            // Optionally set validator factory if you have problems with scope resolve inside validators.
+            c.ValidatorFactoryType = typeof(HttpContextServiceProviderValidatorFactory);
+        })
 
     services.AddSwaggerGen(c =>
     {
@@ -51,10 +59,15 @@ public void ConfigureServices(IServiceCollection services)
 // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
 public void Configure(IApplicationBuilder app, IHostingEnvironment env)
 {
-    app
-        .UseMvc()
-        // Adds swagger
-        .UseSwagger();
+    app.UseRouting();
+
+    app.UseEndpoints(endpoints =>
+    {
+        endpoints.MapControllers();
+    });
+
+    // Adds swagger
+    app.UseSwagger();
 
     // Adds swagger UI
     app.UseSwaggerUI(c =>
@@ -70,7 +83,7 @@ MicroElements.Swashbuckle.FluentValidation | Swashbuckle.AspNetCore | FluentVali
 ---------|----------|---------
 [1.1.0, 2.0.0) | [3.0.0, 4.0.0) | >=7.2.0
 [2.0.0, 3.0.0) | [4.0.0, 5.0.0) | >=8.1.3
-[3.0.0, 4.0.0) | [5.0.0-rc4, 6.0.0) | >=8.3.0
+[3.0.0-rc.4, 4.0.0) | [5.0.0-rc5, 6.0.0) | >=8.3.0
 
 ## Sample application
 
@@ -196,31 +209,7 @@ See BlogValidator in sample.
 
 Workarounds in order or preference:
 
-#### Workaround 1 (Use ScopedSwaggerMiddleware)
-
-Replace `UseSwagger` for `UseScopedSwagger`:
-
-```csharp
-public void Configure(IApplicationBuilder app, IHostingEnvironment env)
-{
-    app
-        .UseMvc()
-        // Use scoped swagger if you have problems with scoped services in validators
-        .UseScopedSwagger();
-```
-
-#### Workaround 2 (Set ValidateScopes to false)
-
-```csharp
-public static IWebHost BuildWebHost(string[] args) =>
-    WebHost.CreateDefaultBuilder(args)
-        // Needed for using scoped services (for example DbContext) in validators
-        .UseDefaultServiceProvider(options => options.ValidateScopes = false)
-        .UseStartup<Startup>()
-        .Build();
-```
-
-#### Workaround 3 (Use HttpContextServiceProviderValidatorFactory) by @WarpSpideR
+#### Workaround 1 (Use HttpContextServiceProviderValidatorFactory) by @WarpSpideR
 
 ```csharp
 public void ConfigureServices(IServiceCollection services)
@@ -239,11 +228,73 @@ public void ConfigureServices(IServiceCollection services)
         });
 ```
 
+#### Workaround 2 (Use ScopedSwaggerMiddleware)
+
+Replace `UseSwagger` for `UseScopedSwagger`:
+
+```csharp
+public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+{
+    app
+        .UseMvc()
+        // Use scoped swagger if you have problems with scoped services in validators
+        .UseScopedSwagger();
+```
+
+#### Workaround 3 (Set ValidateScopes to false)
+
+```csharp
+public static IWebHost BuildWebHost(string[] args) =>
+    WebHost.CreateDefaultBuilder(args)
+        // Needed for using scoped services (for example DbContext) in validators
+        .UseDefaultServiceProvider(options => options.ValidateScopes = false)
+        .UseStartup<Startup>()
+        .Build();
+```
+
 ## Problem: I cant use several validators of one type
 
 Example: You split validator into several small validators but AspNetCore uses only one of them.
 
 Workaround: Hide dependent validators with `internal` and use `Include` to include other validation rules to one "Main" validator.
+
+
+## Problem: Newtonsoft.Json DefaultNamingStrategy, SnakeCaseNamingStrategy does not work
+
+```csharp
+
+Startup.cs:
+
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = new NewtonsoftJsonNamingPolicy(new SnakeCaseNamingStrategy());
+        //options.JsonSerializerOptions.DictionaryKeyPolicy = new NewtonsoftJsonNamingPolicy(new SnakeCaseNamingStrategy());
+    })
+
+
+    /// <summary>
+    /// Allows use Newtonsoft <see cref="NamingStrategy"/> as System.Text <see cref="JsonNamingPolicy"/>.
+    /// </summary>
+    public class NewtonsoftJsonNamingPolicy : JsonNamingPolicy
+    {
+        private readonly NamingStrategy _namingStrategy;
+
+        /// <summary>
+        /// Creates new instance of <see cref="NewtonsoftJsonNamingPolicy"/>.
+        /// </summary>
+        /// <param name="namingStrategy">Newtonsoft naming strategy.</param>
+        public NewtonsoftJsonNamingPolicy(NamingStrategy namingStrategy)
+        {
+            _namingStrategy = namingStrategy;
+        }
+
+        /// <inheritdoc />
+        public override string ConvertName(string name)
+        {
+            return _namingStrategy.GetPropertyName(name, false);
+        }
+    }
+```
 
 ## Credits
 

@@ -1,3 +1,8 @@
+# Changes in 3.0.0-rc.4:
+* Swashbuckle.AspNetCore updated to version >= 5.0.0-rc4 (breaking changes: IApiModelResolver was removed from API)
+* New IgnoreAllStringComparer was invented to solve problem with different property name formatting: camelCase, PascalCase, snake_case, kebab-case
+* Added NewtonsoftJsonNamingPolicy example to override property name formatting in new System.Text.Json according Newtonsoft.Json.Serialization.NamingStrategy (see: SampleWebApi)
+
 # Changes in 3.0.0-rc.3:
 * Updated FluentValidation to version >= 8.3
 * Fixed invalid documentation on validation rules containing a condition #38

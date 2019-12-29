@@ -20,19 +20,23 @@ namespace MicroElements.Swashbuckle.FluentValidation
         private readonly ILogger _logger;
         private readonly SwaggerGenOptions _swaggerGenOptions;
         private readonly IValidatorFactory _validatorFactory;
-        private readonly IApiModelResolver _apiModelResolver;
         private readonly IReadOnlyList<FluentValidationRule> _rules;
 
+        /// <summary>
+        /// Creates instance of <see cref="FluentValidationOperationFilter"/>.
+        /// </summary>
+        /// <param name="swaggerGenOptions">Swagger generation options.</param>
+        /// <param name="validatorFactory">FluentValidation factory.</param>
+        /// <param name="rules">Custom rules. Is not set <see cref="FluentValidationRules.CreateDefaultRules"/> will be used.</param>
+        /// <param name="loggerFactory">Logger factory.</param>
         public FluentValidationOperationFilter(
             IOptions<SwaggerGenOptions> swaggerGenOptions,
             [CanBeNull] IValidatorFactory validatorFactory = null,
             [CanBeNull] IEnumerable<FluentValidationRule> rules = null,
-            [CanBeNull] ILoggerFactory loggerFactory = null,
-            [CanBeNull] IApiModelResolver apiModelResolver = null)
+            [CanBeNull] ILoggerFactory loggerFactory = null)
         {
             _swaggerGenOptions = swaggerGenOptions.Value;
             _validatorFactory = validatorFactory;
-            _apiModelResolver = apiModelResolver;
             _logger = loggerFactory?.CreateLogger(typeof(FluentValidationRules)) ?? NullLogger.Instance;
             _rules = FluentValidationRules.CreateDefaultRules().OverrideRules(rules);
         }
@@ -73,14 +77,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                         continue;
 
                     var schemaPropertyName = operationParameter.Name;
-                    if (_apiModelResolver.ResolveApiModelFor(parameterType) is ApiObject apiObject)
-                    {
-                        var apiProperty = apiObject.ApiProperties.FirstOrDefault(property =>
-                            string.Equals(property.ApiName, schemaPropertyName, StringComparison.OrdinalIgnoreCase));
-                        if (apiProperty != null)
-                            schemaPropertyName = apiProperty.ApiName;
-                    }
-
+                    
                     var validatorsForMember = validator.GetValidatorsForMemberIgnoreCase(schemaPropertyName);
 
                     var lazyLog = new LazyLog(_logger,
@@ -110,7 +107,12 @@ namespace MicroElements.Swashbuckle.FluentValidation
                                     if (schema.Properties != null && schema.Properties.Count > 0)
                                     {
                                         lazyLog.LogOnce();
-                                        var schemaFilterContext = new SchemaFilterContext(new ApiModel(parameterType), context.SchemaRepository, context.SchemaGenerator);
+
+                                        var apiProperty = schema.Properties.FirstOrDefault(property => property.Key.EqualsIgnoreAll(schemaPropertyName));
+                                        if (apiProperty.Key != null)
+                                            schemaPropertyName = apiProperty.Key;
+
+                                        var schemaFilterContext = new SchemaFilterContext(parameterType, context.SchemaRepository, context.SchemaGenerator);
                                         rule.Apply(new RuleContext(schema, schemaFilterContext, schemaPropertyName, propertyValidator));
                                         _logger.LogDebug($"Rule '{rule.Name}' applied for property '{parameterType.Name}.{operationParameter.Name}'.");
                                     }
@@ -128,7 +130,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     }
 
                     if (schema?.Required != null)
-                        operationParameter.Required = schema.Required.Contains(schemaPropertyName, StringComparer.InvariantCultureIgnoreCase);
+                        operationParameter.Required = schema.Required.Contains(schemaPropertyName, IgnoreAllStringComparer.Instance);
 
                     if (schema?.Properties != null)
                     {

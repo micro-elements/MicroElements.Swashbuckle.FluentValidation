@@ -24,7 +24,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             return (validator as IEnumerable<IValidationRule>)
                 .NotNull()
                 .OfType<PropertyRule>()
-                .Where(propertyRule => propertyRule.Condition == null && propertyRule.AsyncCondition == null && propertyRule.PropertyName?.Equals(name, StringComparison.InvariantCultureIgnoreCase) == true)
+                .Where(propertyRule => propertyRule.HasNoCondition() && propertyRule.PropertyName.EqualsIgnoreAll(name))
                 .SelectMany(propertyRule => propertyRule.Validators);
         }
 
@@ -88,11 +88,29 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <summary>
         /// Returns a <see cref="bool"/> indicating if the <paramref name="propertyValidator"/> is conditional.
         /// </summary>
-        /// <param name="propertyValidator"></param>
-        /// <returns></returns>
         internal static bool HasNoCondition(this IPropertyValidator propertyValidator)
         {
             return propertyValidator?.Options?.Condition == null && propertyValidator?.Options?.AsyncCondition == null;
+        }
+
+        /// <summary>
+        /// Returns a <see cref="bool"/> indicating if the <paramref name="propertyRule"/> is conditional.
+        /// </summary>
+        internal static bool HasNoCondition(this PropertyRule propertyRule)
+        {
+            return propertyRule?.Condition == null && propertyRule?.AsyncCondition == null;
+        }
+
+        /// <summary>
+        /// Returns string equality only by symbols ignore case.
+        /// It can be used for comparing camelCase, PascalCase, snake_case, kebab-case identifiers.
+        /// </summary>
+        /// <param name="left">Left string to compare.</param>
+        /// <param name="right">Right string to compare.</param>
+        /// <returns><c>true</c> if input strings are equals in terms of identifier formatting.</returns>
+        public static bool EqualsIgnoreAll(this string left, string right)
+        {
+            return IgnoreAllStringComparer.Instance.Equals(left, right);
         }
     }
 }
