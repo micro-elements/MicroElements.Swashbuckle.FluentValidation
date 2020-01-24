@@ -23,9 +23,25 @@ namespace MicroElements.Swashbuckle.FluentValidation
         {
             return (validator as IEnumerable<IValidationRule>)
                 .NotNull()
-                .OfType<PropertyRule>()
+                .GetPropertyRules()
                 .Where(propertyRule => propertyRule.HasNoCondition() && propertyRule.PropertyName.EqualsIgnoreAll(name))
                 .SelectMany(propertyRule => propertyRule.Validators);
+        }
+
+        /// <summary>
+        /// Removes all IValidationRules that are not a PropertyRule.
+        /// A CollectionPropertyRule should not be exposed in the OpenAPI specification #49.
+        /// </summary>
+        internal static IEnumerable<PropertyRule> GetPropertyRules(
+            this IEnumerable<IValidationRule> validationRules)
+        {
+            foreach (var validationRule in validationRules)
+            {
+                if (validationRule.GetType() == typeof(PropertyRule))
+                {
+                    yield return (PropertyRule)validationRule;
+                }
+            }
         }
 
         /// <summary>

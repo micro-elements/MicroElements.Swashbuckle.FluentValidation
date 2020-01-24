@@ -1,3 +1,6 @@
+# Changes in 3.0.0-rc.5:
+* FluentValidation property rules of type CollectionValidationRules (RuleForEach()) are no longer exposed #49. 
+
 # Changes in 3.0.0-rc.4:
 * Swashbuckle.AspNetCore updated to version >= 5.0.0-rc4 (breaking changes: IApiModelResolver was removed from API)
 * New IgnoreAllStringComparer was invented to solve problem with different property name formatting: camelCase, PascalCase, snake_case, kebab-case
