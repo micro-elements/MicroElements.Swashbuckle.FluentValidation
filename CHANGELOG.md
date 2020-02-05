@@ -1,3 +1,6 @@
+# Changes in 3.0.0-rc.6:
+* Swashbuckle.AspNetCore updated to version >= 5.0.0
+
 # Changes in 3.0.0-rc.5:
 * FluentValidation property rules of type CollectionValidationRules (RuleForEach()) are no longer exposed #49. 
 
