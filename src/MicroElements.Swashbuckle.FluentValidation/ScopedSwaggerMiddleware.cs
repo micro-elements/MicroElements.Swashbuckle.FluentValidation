@@ -2,8 +2,6 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 using Swashbuckle.AspNetCore.Swagger;
 
 namespace MicroElements.Swashbuckle.FluentValidation
@@ -15,25 +13,22 @@ namespace MicroElements.Swashbuckle.FluentValidation
     public class ScopedSwaggerMiddleware
     {
         private readonly RequestDelegate _next;
-        private readonly IOptions<MvcJsonOptions> _mvcJsonOptions;
         private readonly SwaggerOptions _options;
 
         /// <summary>
         /// ctor.
         /// </summary>
         /// <param name="next"></param>
-        /// <param name="mvcJsonOptions"></param>
         /// <param name="options"></param>
-        public ScopedSwaggerMiddleware(RequestDelegate next, IOptions<MvcJsonOptions> mvcJsonOptions, SwaggerOptions options)
+        public ScopedSwaggerMiddleware(RequestDelegate next, SwaggerOptions options)
         {
             _next = next;
-            _mvcJsonOptions = mvcJsonOptions;
             _options = options;
         }
 
         public async Task Invoke(HttpContext httpContext, ISwaggerProvider swaggerProvider)
         {
-            await new SwaggerMiddleware(_next, _mvcJsonOptions, _options).Invoke(httpContext, swaggerProvider);
+            await new SwaggerMiddleware(_next, _options).Invoke(httpContext, swaggerProvider);
         }
     }
 

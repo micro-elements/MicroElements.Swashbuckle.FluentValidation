@@ -1,13 +1,42 @@
-# Changes in 2.3.0:
-* PR#40 by @royvandertuuk (FluentValidation.AspNetCore updated to 8.3.0, fixed #38)
-  
-  The inner workings of conditionals has been changed in FluentValidation 8.3.
-Before the 8.3 version the FluentValidation validators that contained a conditional would be of type DelegatingValidator, and because the type DelegatingValidator was not checked anywhere in the FluentValidationRules class in the MicroElements.Swashbuckle.FluentValidation package, no documentation for these conditionals were added.
+# Changes in 3.0.0:
+* Supports Swashbuckle 5, net core 3 and brand new System.Text.Json
+* Swashbuckle.AspNetCore updated to version >= 5.0.0 (new Microsoft.OpenApi)
+* FluentValidation updated to version >= 8.3
 
-  FluentValidation 8.3 deprecated the DelegatingValidator and used a different mechanism of storing the conditions. The validators that contains a condition will be the normal type (e.g. NotNullValidator) and now contains the properties Condition and AsyncCondition.
+* FluentValidation property rules of type CollectionValidationRules (RuleForEach()) are no longer exposed #49. 
+* New IgnoreAllStringComparer was invented to solve problem with different property name formatting: camelCase, PascalCase, snake_case, kebab-case
+* Added NewtonsoftJsonNamingPolicy example to override property name formatting in new System.Text.Json according Newtonsoft.Json.Serialization.NamingStrategy (see: SampleWebApi)
+* Fixed invalid documentation on validation rules containing a condition #38
+* Fixed: #37 (FluentValidationOperationFilter now uses swachbuckle interface to determine json settings)
 
-# Changes in 2.2.1:
-* Fixed #37: (property casing between property name and schema property name in operation filter)
+# Changes in 3.0.0-rc.6:
+* Swashbuckle.AspNetCore updated to version >= 5.0.0
+
+# Changes in 3.0.0-rc.5:
+* FluentValidation property rules of type CollectionValidationRules (RuleForEach()) are no longer exposed #49. 
+
+# Changes in 3.0.0-rc.4:
+* Swashbuckle.AspNetCore updated to version >= 5.0.0-rc4 (breaking changes: IApiModelResolver was removed from API)
+* New IgnoreAllStringComparer was invented to solve problem with different property name formatting: camelCase, PascalCase, snake_case, kebab-case
+* Added NewtonsoftJsonNamingPolicy example to override property name formatting in new System.Text.Json according Newtonsoft.Json.Serialization.NamingStrategy (see: SampleWebApi)
+
+# Changes in 3.0.0-rc.3:
+* Updated FluentValidation to version >= 8.3
+* Fixed invalid documentation on validation rules containing a condition #38
+
+# Changes in 3.0.0-rc.2:
+* Swashbuckle.AspNetCore updated to version >= 5.0.0-rc4
+* Fixed: #37 (FluentValidationOperationFilter now uses swachbuckle interface to determine json settings)
+
+# Changes in 3.0.0-rc.1:
+* Swashbuckle.AspNetCore updated to version >= 5.0.0-rc3 (PR#35 by @vova-lantsov-dev)
+* Reintegrated features from 2.2.0
+
+# Changes in 3.0.0-beta.1:
+* Swashbuckle.AspNetCore updated to version >= 5.0.0-rc2 (many breaking changes)
+
+# Changes in 3.0.0-alpha.1:
+* Swashbuckle.AspNetCore updated to version >= 5.0.0-beta
 
 # Changes in 2.2.0:
 * Added HttpContextServiceProviderValidatorFactory to resolve scoped Dependency Injection (PR#34) by @WarpSpideR

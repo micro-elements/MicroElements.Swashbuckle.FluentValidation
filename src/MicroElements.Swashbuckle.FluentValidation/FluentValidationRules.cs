@@ -6,8 +6,8 @@ using FluentValidation.Internal;
 using FluentValidation.Validators;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi.Models;
 using Microsoft.Extensions.Logging.Abstractions;
-using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace MicroElements.Swashbuckle.FluentValidation
@@ -34,21 +34,11 @@ namespace MicroElements.Swashbuckle.FluentValidation
         {
             _validatorFactory = validatorFactory;
             _logger = loggerFactory?.CreateLogger(typeof(FluentValidationRules)) ?? NullLogger.Instance;
-            _rules = CreateDefaultRules();
-            if (rules != null)
-            {
-                var ruleMap = _rules.ToDictionary(rule => rule.Name, rule => rule);
-                foreach (var rule in rules)
-                {
-                    // Add or replace rule
-                    ruleMap[rule.Name] = rule;
-                }
-                _rules = ruleMap.Values.ToList();
-            }
+            _rules = CreateDefaultRules().OverrideRules(rules);
         }
 
         /// <inheritdoc />
-        public void Apply(Schema schema, SchemaFilterContext context)
+        public void Apply(OpenApiSchema schema, SchemaFilterContext context)
         {
             if (_validatorFactory == null)
             {
@@ -58,12 +48,12 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
             IValidator validator = null;
             try
-            {
-                validator = _validatorFactory.GetValidator(context.SystemType);
+            {       
+                validator = _validatorFactory.GetValidator(context.Type);
             }
             catch (Exception e)
             {
-                _logger.LogWarning(0, e, $"GetValidator for type '{context.SystemType}' fails.");
+                _logger.LogWarning(0, e, $"GetValidator for type '{context.Type}' fails.");
             }
 
             if (validator == null)
@@ -77,18 +67,18 @@ namespace MicroElements.Swashbuckle.FluentValidation
             }
             catch (Exception e)
             {
-                _logger.LogWarning(0, e, $"Applying IncludeRules for type '{context.SystemType}' fails.");
+                _logger.LogWarning(0, e, $"Applying IncludeRules for type '{context.Type}' fails.");
             }
         }
 
-        private void ApplyRulesToSchema(Schema schema, SchemaFilterContext context, IValidator validator)
+        private void ApplyRulesToSchema(OpenApiSchema schema, SchemaFilterContext context, IValidator validator)
         {
             var lazyLog = new LazyLog(_logger,
-                logger => logger.LogDebug($"Applying FluentValidation rules to swagger schema for type '{context.SystemType}'."));
+                logger => logger.LogDebug($"Applying FluentValidation rules to swagger schema for type '{context.Type}'."));
 
-            foreach (var key in schema?.Properties?.Keys ?? Array.Empty<string>())
+            foreach (var schemaPropertyName in schema?.Properties?.Keys ?? Array.Empty<string>())
             {
-                var validators = validator.GetValidatorsForMemberIgnoreCase(key);
+                var validators = validator.GetValidatorsForMemberIgnoreCase(schemaPropertyName);
 
                 foreach (var propertyValidator in validators)
                 {
@@ -99,12 +89,12 @@ namespace MicroElements.Swashbuckle.FluentValidation
                             try
                             {
                                 lazyLog.LogOnce();
-                                rule.Apply(new RuleContext(schema, context, key, propertyValidator));
-                                _logger.LogDebug($"Rule '{rule.Name}' applied for property '{context.SystemType.Name}.{key}'");
+                                rule.Apply(new RuleContext(schema, context, schemaPropertyName, propertyValidator));
+                                _logger.LogDebug($"Rule '{rule.Name}' applied for property '{context.Type.Name}.{schemaPropertyName}'");
                             }
                             catch (Exception e)
                             {
-                                _logger.LogWarning(0, e, $"Error on apply rule '{rule.Name}' for property '{context.SystemType.Name}.{key}'.");
+                                _logger.LogWarning(0, e, $"Error on apply rule '{rule.Name}' for property '{context.Type.Name}.{schemaPropertyName}'.");
                             }
                         }
                     }
@@ -112,13 +102,13 @@ namespace MicroElements.Swashbuckle.FluentValidation
             }
         }
 
-        private void AddRulesFromIncludedValidators(Schema schema, SchemaFilterContext context, IValidator validator)
+        private void AddRulesFromIncludedValidators(OpenApiSchema schema, SchemaFilterContext context, IValidator validator)
         {
             // Note: IValidatorDescriptor doesn't return IncludeRules so we need to get validators manually.
             var childAdapters = (validator as IEnumerable<IValidationRule>)
                 .NotNull()
                 .OfType<IncludeRule>()
-                .Where(includeRule => includeRule.Condition == null && includeRule.AsyncCondition == null)
+                .Where(includeRule => includeRule.HasNoCondition())
                 .SelectMany(includeRule => includeRule.Validators)
                 .OfType<ChildValidatorAdaptor>();
 
@@ -145,7 +135,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     Apply = context =>
                     {
                         if (context.Schema.Required == null)
-                            context.Schema.Required = new List<string>();
+                            context.Schema.Required = new SortedSet<string>();
                         if(!context.Schema.Required.Contains(context.PropertyKey))
                             context.Schema.Required.Add(context.PropertyKey);
                     }
@@ -196,20 +186,20 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
                             if (comparisonValidator.Comparison == Comparison.GreaterThanOrEqual)
                             {
-                                schemaProperty.Minimum = valueToCompare;
+                                schemaProperty.Minimum = (decimal?) valueToCompare;
                             }
                             else if (comparisonValidator.Comparison == Comparison.GreaterThan)
                             {
-                                schemaProperty.Minimum = valueToCompare;
+                                schemaProperty.Minimum = (decimal?) valueToCompare;
                                 schemaProperty.ExclusiveMinimum = true;
                             }
                             else if (comparisonValidator.Comparison == Comparison.LessThanOrEqual)
                             {
-                                schemaProperty.Maximum = valueToCompare;
+                                schemaProperty.Maximum = (decimal?) valueToCompare;
                             }
                             else if (comparisonValidator.Comparison == Comparison.LessThan)
                             {
-                                schemaProperty.Maximum = valueToCompare;
+                                schemaProperty.Maximum = (decimal?) valueToCompare;
                                 schemaProperty.ExclusiveMaximum = true;
                             }
                         }
@@ -225,7 +215,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
                         if (betweenValidator.From.IsNumeric())
                         {
-                            schemaProperty.Minimum = betweenValidator.From.NumericToDouble();
+                            schemaProperty.Minimum = (decimal?) betweenValidator.From.NumericToDouble();
 
                             if (betweenValidator is ExclusiveBetweenValidator)
                             {
@@ -235,7 +225,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
                         if (betweenValidator.To.IsNumeric())
                         {
-                            schemaProperty.Maximum = betweenValidator.To.NumericToDouble();
+                            schemaProperty.Maximum = (decimal?) betweenValidator.To.NumericToDouble();
 
                             if (betweenValidator is ExclusiveBetweenValidator)
                             {

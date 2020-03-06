@@ -34,9 +34,7 @@ Task("CopyPackagesToArtifacts")
     .Does(() => CopyPackagesToArtifacts(args));
 
 Task("UploadPackages")
-    .WithCriteria(()=>args.UploadPackages)
-    .WithCriteria(()=>args.Version.IsRelease)
-    .Does(() => UploadPackages(args));
+    .Does(() => UploadPackagesIfNeeded(args));
 
 Task("DoVersioning")
     .Does(() => DoVersioning(args));

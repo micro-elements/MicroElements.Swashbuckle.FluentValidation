@@ -3,21 +3,19 @@ using FluentValidation;
 using FluentValidation.AspNetCore;
 using MicroElements.Swashbuckle.FluentValidation;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+using Microsoft.OpenApi.Models;
+using Newtonsoft.Json.Serialization;
+using Newtonsoft.Json.Utilities;
 using SampleWebApi.DbModels;
-using SampleWebApi.ValidatorFactories;
 using Swashbuckle.AspNetCore.Swagger;
-using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace SampleWebApi
 {
-    public class Startup
+    public partial class Startup
     {
         public Startup(IConfiguration configuration)
         {
@@ -33,14 +31,26 @@ namespace SampleWebApi
             services.AddHttpContextAccessor();
 
             services
-                .AddMvc()
+                .AddControllers()
                 // Adds fluent validators to Asp.net
                 .AddFluentValidation(c =>
                 {
                     c.RegisterValidatorsFromAssemblyContaining<Startup>();
                     // Optionally set validator factory if you have problems with scope resolve inside validators.
                     c.ValidatorFactoryType = typeof(HttpContextServiceProviderValidatorFactory);
-                });
+                })
+                .AddJsonOptions(options =>
+                {
+                    // Workaround for snake_case
+                    // options.JsonSerializerOptions.PropertyNamingPolicy = new NewtonsoftJsonNamingPolicy(new SnakeCaseNamingStrategy());
+                    //options.JsonSerializerOptions.DictionaryKeyPolicy = new NewtonsoftJsonNamingPolicy(new SnakeCaseNamingStrategy());
+                })
+                //.AddNewtonsoftJson(options =>
+                //    options.SerializerSettings.ContractResolver = new DefaultContractResolver()
+                //    {
+                //        NamingStrategy = new SnakeCaseNamingStrategy()
+                //    })
+                ;
 
             // Register all validators as IValidator?
             var serviceDescriptors = services.Where(descriptor => descriptor.ServiceType.GetInterfaces().Contains(typeof(IValidator))).ToList();
@@ -50,10 +60,9 @@ namespace SampleWebApi
             //services = services.Replace(ServiceDescriptor.Scoped<IValidatorFactory, ScopedServiceProviderValidatorFactory>());
 
             //IOptions<SwaggerGeneratorOptions>
-            //services.AddO
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new Info { Title = "My API", Version = "v1" });
+                c.SwaggerDoc("v1", new OpenApiInfo(){ Title = "My API", Version = "v1" });
                 // Adds fluent validation rules to swagger
                 c.AddFluentValidationRules();
             });
@@ -67,19 +76,32 @@ namespace SampleWebApi
                 ServiceLifetime.Scoped);
 
             //services.AddTransient<Func<BloggingDbContext>>(provider => provider.GetService<BloggingDbContext>);
+
+            // Example: override or add ValidationRules
+            //services.AddSingleton(new FluentValidationRule("Pattern")
+            //{
+            //    Matches = propertyValidator => propertyValidator is IRegularExpressionValidator,
+            //    Apply = context =>
+            //    {
+            //        // your own implementation here!
+            //        var regularExpressionValidator = (IRegularExpressionValidator)context.PropertyValidator;
+            //        context.Schema.Properties[context.PropertyKey].Pattern = regularExpressionValidator.Expression;
+            //    }
+            //});
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app)
         {
-            app
-                .UseMvc()
-                // Adds swagger
-                .UseSwagger()
+            app.UseRouting();
 
-                // Use scoped swagger if you have problems with scoped services in validators
-                //.UseScopedSwagger();
-            ;
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllers();
+            });
+
+            // Adds swagger
+            app.UseSwagger();
 
             // Adds swagger UI
             app.UseSwaggerUI(c =>
@@ -94,7 +116,7 @@ namespace SampleWebApi
         private static void TestDatabaseSeed(IApplicationBuilder app)
         {
             var bloggingContext = app.ApplicationServices.CreateScope().ServiceProvider.GetService<BloggingDbContext>();
-            if (!EnumerableExtensions.Any(bloggingContext.Metadata))
+            if (!bloggingContext.Metadata.Any())
             {
                 // Example of defining rules dynamically from database.
                 bloggingContext.Metadata.Add(new ValidationMetadata
