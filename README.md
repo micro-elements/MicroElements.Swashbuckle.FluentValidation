@@ -22,8 +22,8 @@ Note: For WebApi see: https://github.com/micro-elements/MicroElements.Swashbuckl
 
 ```xml
 <PackageReference Include="FluentValidation.AspNetCore" Version="8.5.0" />
-<PackageReference Include="MicroElements.Swashbuckle.FluentValidation" Version="3.0.0" />
-<PackageReference Include="Swashbuckle.AspNetCore" Version="5.0.0" />
+<PackageReference Include="MicroElements.Swashbuckle.FluentValidation" Version="3.1.0" />
+<PackageReference Include="Swashbuckle.AspNetCore" Version="5.2.0" />
 ```
 
 ### 2. Change Startup.cs
@@ -83,7 +83,8 @@ MicroElements.Swashbuckle.FluentValidation | Swashbuckle.AspNetCore | FluentVali
 ---------|----------|---------
 [1.1.0, 2.0.0) | [3.0.0, 4.0.0) | >=7.2.0
 [2.0.0, 3.0.0) | [4.0.0, 5.0.0) | >=8.1.3
-[3.0.0, 4.0.0) | [5.0.0, 6.0.0) | >=8.3.0
+[3.0.0, 3.1.0) | [5.0.0, 5.2.0) | >=8.3.0
+[3.1.0, 4.0.0) | [5.2.0, 6.0.0) | >=8.3.0
 
 ## Sample application
 

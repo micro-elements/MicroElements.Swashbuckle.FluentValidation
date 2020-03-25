@@ -1,3 +1,7 @@
+# Changes in 3.1.0:
+* Swashbuckle.AspNetCore updated to version >= 5.2.0
+* Fixed: #53 (Missing method exception when using Swashbuckle > 5.0.0)
+
 # Changes in 3.0.0:
 * Supports Swashbuckle 5, net core 3 and brand new System.Text.Json
 * Swashbuckle.AspNetCore updated to version >= 5.0.0 (new Microsoft.OpenApi)
