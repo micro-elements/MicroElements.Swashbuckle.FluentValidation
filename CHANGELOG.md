@@ -1,3 +1,6 @@
+# Changes in 3.1.1:
+* Mark required properties as not nullable (PR#58 by @manne) Fixes: #55, #57
+
 # Changes in 3.1.0:
 * Swashbuckle.AspNetCore updated to version >= 5.2.0
 * Fixed: #53 (Missing method exception when using Swashbuckle > 5.0.0)
