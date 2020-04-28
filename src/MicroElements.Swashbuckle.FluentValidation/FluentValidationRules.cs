@@ -138,6 +138,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                             context.Schema.Required = new SortedSet<string>();
                         if(!context.Schema.Required.Contains(context.PropertyKey))
                             context.Schema.Required.Add(context.PropertyKey);
+                        context.Schema.Properties[context.PropertyKey].Nullable = false;
                     }
                 },
                 new FluentValidationRule("NotEmpty")
