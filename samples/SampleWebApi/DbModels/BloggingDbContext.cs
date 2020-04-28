@@ -41,6 +41,11 @@ namespace SampleWebApi.DbModels
         /// Blog posts list.
         /// </summary>
         public List<Post> Posts { get; set; }
+
+        /// <summary>
+        /// Optional description.
+        /// </summary>
+        public string Description { get; set; }
     }
 
     /// <summary>
