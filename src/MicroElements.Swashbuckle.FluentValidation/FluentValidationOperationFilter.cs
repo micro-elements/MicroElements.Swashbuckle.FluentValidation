@@ -141,6 +141,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                                 || schema.Properties.TryGetValue(schemaPropertyName, out property))
                             {
                                 parameterSchema.MinLength = property.MinLength;
+                                parameterSchema.Nullable = property.Nullable;
                                 parameterSchema.MaxLength = property.MaxLength;
                                 parameterSchema.Pattern = property.Pattern;
                                 parameterSchema.Minimum = property.Minimum;

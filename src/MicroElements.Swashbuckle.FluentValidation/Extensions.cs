@@ -1,10 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using FluentValidation;
 using FluentValidation.Internal;
 using FluentValidation.Validators;
 using JetBrains.Annotations;
+using Microsoft.OpenApi.Models;
+
+[assembly: InternalsVisibleTo("MicroElements.Swashbuckle.FluentValidation.Tests")]
 
 namespace MicroElements.Swashbuckle.FluentValidation
 {
@@ -50,14 +56,9 @@ namespace MicroElements.Swashbuckle.FluentValidation
         internal static bool IsNumeric(this object value) => value is int || value is long || value is float || value is double || value is decimal;
 
         /// <summary>
-        /// Convert numeric to int.
-        /// </summary>
-        internal static int NumericToInt(this object value) => Convert.ToInt32(value);
-
-        /// <summary>
         /// Convert numeric to double.
         /// </summary>
-        internal static double NumericToDouble(this object value) => Convert.ToDouble(value);
+        internal static decimal NumericToDecimal(this object value) => Convert.ToDecimal(value);
 
         /// <summary>
         /// Converts string to lowerCamelCase.
@@ -124,9 +125,78 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <param name="left">Left string to compare.</param>
         /// <param name="right">Right string to compare.</param>
         /// <returns><c>true</c> if input strings are equals in terms of identifier formatting.</returns>
-        public static bool EqualsIgnoreAll(this string left, string right)
+        internal static bool EqualsIgnoreAll(this string left, string right)
         {
             return IgnoreAllStringComparer.Instance.Equals(left, right);
+        }
+
+        /// <summary>
+        /// Sets Nullable to false if MinLength > 0.
+        /// </summary>
+        internal static void SetNotNullableIfMinLengthGreaterThenZero(this OpenApiSchema schemaProperty)
+        {
+            var shouldBeNotEmpty = schemaProperty.MinLength.HasValue && schemaProperty.MinLength > 0;
+            schemaProperty.Nullable = !shouldBeNotEmpty;
+        }
+
+        internal static void SetNewMax(this OpenApiSchema schemaProperty, Expression<Func<OpenApiSchema, int?>> prop, int? newValue)
+        {
+            if (newValue.HasValue)
+            {
+                var current = prop.Compile()(schemaProperty);
+                newValue = NewMaxValue(current, newValue.Value);
+                SetPropertyValue(schemaProperty, prop, newValue);
+            }
+        }
+
+        internal static void SetNewMax(this OpenApiSchema schemaProperty, Expression<Func<OpenApiSchema, decimal?>> prop, decimal? newValue)
+        {
+            if (newValue.HasValue)
+            {
+                var current = prop.Compile()(schemaProperty);
+                newValue = NewMaxValue(current, newValue.Value);
+                SetPropertyValue(schemaProperty, prop, newValue);
+            }
+        }
+
+        internal static void SetNewMin(this OpenApiSchema schemaProperty, Expression<Func<OpenApiSchema, int?>> prop, int? newValue)
+        {
+            if (newValue.HasValue)
+            {
+                var current = prop.Compile()(schemaProperty);
+                newValue = NewMinValue(current, newValue.Value);
+                SetPropertyValue(schemaProperty, prop, newValue);
+            }
+        }
+
+        internal static void SetNewMin(this OpenApiSchema schemaProperty, Expression<Func<OpenApiSchema, decimal?>> prop, decimal? newValue)
+        {
+            if (newValue.HasValue)
+            {
+                var current = prop.Compile()(schemaProperty);
+                newValue = NewMinValue(current, newValue.Value);
+                SetPropertyValue(schemaProperty, prop, newValue);
+            }
+        }
+
+        private static int NewMaxValue(int? current, int newValue) => current.HasValue ? Math.Min(current.Value, newValue) : newValue;
+
+        private static decimal NewMaxValue(decimal? current, decimal newValue) => current.HasValue ? Math.Min(current.Value, newValue) : newValue;
+
+        private static int NewMinValue(int? current, int newValue) => current.HasValue ? Math.Max(current.Value, newValue) : newValue;
+
+        private static decimal NewMinValue(decimal? current, decimal newValue) => current.HasValue ? Math.Max(current.Value, newValue) : newValue;
+
+        private static void SetPropertyValue<T, TValue>(this T target, Expression<Func<T, TValue>> propertyLambda, TValue value)
+        {
+            if (propertyLambda.Body is MemberExpression memberSelectorExpression)
+            {
+                var property = memberSelectorExpression.Member as PropertyInfo;
+                if (property != null)
+                {
+                    property.SetValue(target, value, null);
+                }
+            }
         }
     }
 }

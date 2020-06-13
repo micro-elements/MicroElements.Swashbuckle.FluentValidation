@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
+using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using SampleWebApi.Contracts;
+using SampleWebApi.Validators;
 
 namespace SampleWebApi.Controllers
 {
@@ -71,5 +73,25 @@ namespace SampleWebApi.Controllers
 
             return Ok();
         }
+
+        [HttpGet("[action]")]
+        public IActionResult Get(GetRequest query) => Ok();
+
+        public class GetRequest
+        {
+            [FromQuery]
+            public string Id { get; set; }
+        }
+
+        public class BasicRequestValidator : AbstractValidator<SampleApiController.GetRequest>
+        {
+            public BasicRequestValidator()
+            {
+                RuleFor(x => x.Id).NotEmpty().MaximumLength(3);
+            }
+        }
+
     }
+
+
 }

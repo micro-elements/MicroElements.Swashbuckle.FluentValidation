@@ -1,3 +1,10 @@
+# Changes in 3.2.0:
+* FluentValidation fix version to [8.3.0, 9)
+* Swashbuckle.AspNetCore fix version to [5.2.0, 6)
+* Base type for numeric switched to decimal to match type change in OpenApi. Fixes floating numbers with nines after period.
+* More smart MinLength, MaxLength, Minimum, Maximum that allows to combine rules without override values.
+* More strict limits will be used for min and max values that was set more then once in other rules 
+
 # Changes in 3.1.1:
 * Mark required properties as not nullable (PR#58 by @manne) Fixes: #55, #57
 

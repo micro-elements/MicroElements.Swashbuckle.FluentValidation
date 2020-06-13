@@ -146,7 +146,9 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     Matches = propertyValidator => propertyValidator is INotEmptyValidator && propertyValidator.HasNoCondition(),
                     Apply = context =>
                     {
-                        context.Schema.Properties[context.PropertyKey].MinLength = 1;
+                        var schemaProperty = context.Schema.Properties[context.PropertyKey];
+                        schemaProperty.SetNewMin(p => p.MinLength, 1);
+                        schemaProperty.SetNotNullableIfMinLengthGreaterThenZero();
                     }
                 },
                 new FluentValidationRule("Length")
@@ -155,14 +157,15 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     Apply = context =>
                     {
                         var lengthValidator = (ILengthValidator)context.PropertyValidator;
+                        var schemaProperty = context.Schema.Properties[context.PropertyKey];
 
-                        if(lengthValidator.Max > 0)
-                            context.Schema.Properties[context.PropertyKey].MaxLength = lengthValidator.Max;
+                        if (lengthValidator.Max > 0)
+                            schemaProperty.SetNewMax(p => p.MaxLength, lengthValidator.Max);
 
-                        if (lengthValidator is MinimumLengthValidator
-                            || lengthValidator is ExactLengthValidator
-                            || context.Schema.Properties[context.PropertyKey].MinLength == null)
-                            context.Schema.Properties[context.PropertyKey].MinLength = lengthValidator.Min;
+                        if (lengthValidator.Min > 0)
+                            schemaProperty.SetNewMin(p => p.MinLength, lengthValidator.Min);
+
+                        schemaProperty.SetNotNullableIfMinLengthGreaterThenZero();
                     }
                 },
                 new FluentValidationRule("Pattern")
@@ -182,25 +185,25 @@ namespace MicroElements.Swashbuckle.FluentValidation
                         var comparisonValidator = (IComparisonValidator)context.PropertyValidator;
                         if (comparisonValidator.ValueToCompare.IsNumeric())
                         {
-                            var valueToCompare = comparisonValidator.ValueToCompare.NumericToDouble();
+                            var valueToCompare = comparisonValidator.ValueToCompare.NumericToDecimal();
                             var schemaProperty = context.Schema.Properties[context.PropertyKey];
 
                             if (comparisonValidator.Comparison == Comparison.GreaterThanOrEqual)
                             {
-                                schemaProperty.Minimum = (decimal?) valueToCompare;
+                                schemaProperty.SetNewMin(p => p.Minimum, valueToCompare);
                             }
                             else if (comparisonValidator.Comparison == Comparison.GreaterThan)
                             {
-                                schemaProperty.Minimum = (decimal?) valueToCompare;
+                                schemaProperty.SetNewMin(p => p.Minimum, valueToCompare);
                                 schemaProperty.ExclusiveMinimum = true;
                             }
                             else if (comparisonValidator.Comparison == Comparison.LessThanOrEqual)
                             {
-                                schemaProperty.Maximum = (decimal?) valueToCompare;
+                                schemaProperty.SetNewMax(p => p.Maximum, valueToCompare);
                             }
                             else if (comparisonValidator.Comparison == Comparison.LessThan)
                             {
-                                schemaProperty.Maximum = (decimal?) valueToCompare;
+                                schemaProperty.SetNewMax(p => p.Maximum, valueToCompare);
                                 schemaProperty.ExclusiveMaximum = true;
                             }
                         }
@@ -216,7 +219,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
                         if (betweenValidator.From.IsNumeric())
                         {
-                            schemaProperty.Minimum = (decimal?) betweenValidator.From.NumericToDouble();
+                            schemaProperty.SetNewMin(p => p.Minimum, betweenValidator.From.NumericToDecimal());
 
                             if (betweenValidator is ExclusiveBetweenValidator)
                             {
@@ -226,7 +229,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
                         if (betweenValidator.To.IsNumeric())
                         {
-                            schemaProperty.Maximum = (decimal?) betweenValidator.To.NumericToDouble();
+                            schemaProperty.SetNewMax(p => p.Maximum, betweenValidator.To.NumericToDecimal());
 
                             if (betweenValidator is ExclusiveBetweenValidator)
                             {
