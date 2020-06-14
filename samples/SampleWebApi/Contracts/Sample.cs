@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using FluentValidation;
+using FluentValidation.Validators;
 
 namespace SampleWebApi.Contracts
 {
@@ -9,6 +10,7 @@ namespace SampleWebApi.Contracts
 
         public string NotNull { get; set; }
         public string NotEmpty { get; set; }
+        public string EmailAddressRegex { get; set; }
         public string EmailAddress { get; set; }
         public string RegexField { get; set; }
 
@@ -32,7 +34,8 @@ namespace SampleWebApi.Contracts
         {
             RuleFor(sample => sample.NotNull).NotNull();
             RuleFor(sample => sample.NotEmpty).NotEmpty();
-            RuleFor(sample => sample.EmailAddress).EmailAddress();
+            RuleFor(sample => sample.EmailAddressRegex).EmailAddress(EmailValidationMode.Net4xRegex);
+            RuleFor(sample => sample.EmailAddress).EmailAddress(EmailValidationMode.AspNetCoreCompatible);
             RuleFor(sample => sample.RegexField).Matches(@"(\d{4})-(\d{2})-(\d{2})");
 
             RuleFor(sample => sample.ValueInRange).GreaterThanOrEqualTo(5).LessThanOrEqualTo(10);

@@ -2,7 +2,6 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using SampleWebApi.Contracts;
-using SampleWebApi.Validators;
 
 namespace SampleWebApi.Controllers
 {
@@ -43,6 +42,17 @@ namespace SampleWebApi.Controllers
 
         [HttpPost("[action]")]
         public IActionResult AddSampleWithDataAnnotations([FromBody] SampleWithDataAnnotations sample)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            return Ok();
+        }
+
+        [HttpPost("[action]")]
+        public IActionResult AddSampleFromQuery([FromQuery] Sample sample)
         {
             if (!ModelState.IsValid)
             {
