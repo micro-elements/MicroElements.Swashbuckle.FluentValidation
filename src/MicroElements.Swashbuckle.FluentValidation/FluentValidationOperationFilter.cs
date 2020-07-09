@@ -4,7 +4,9 @@ using System.Linq;
 using FluentValidation;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
-using Swashbuckle.AspNetCore.Swagger;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
+using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace MicroElements.Swashbuckle.FluentValidation
@@ -15,32 +17,32 @@ namespace MicroElements.Swashbuckle.FluentValidation
     /// </summary>
     public class FluentValidationOperationFilter : IOperationFilter
     {
-        private readonly IValidatorFactory _validatorFactory;
         private readonly ILogger _logger;
+        private readonly SwaggerGenOptions _swaggerGenOptions;
+        private readonly IValidatorFactory _validatorFactory;
         private readonly IReadOnlyList<FluentValidationRule> _rules;
 
+        /// <summary>
+        /// Creates instance of <see cref="FluentValidationOperationFilter"/>.
+        /// </summary>
+        /// <param name="swaggerGenOptions">Swagger generation options.</param>
+        /// <param name="validatorFactory">FluentValidation factory.</param>
+        /// <param name="rules">Custom rules. Is not set <see cref="FluentValidationRules.CreateDefaultRules"/> will be used.</param>
+        /// <param name="loggerFactory">Logger factory.</param>
         public FluentValidationOperationFilter(
+            IOptions<SwaggerGenOptions> swaggerGenOptions,
             [CanBeNull] IValidatorFactory validatorFactory = null,
             [CanBeNull] IEnumerable<FluentValidationRule> rules = null,
             [CanBeNull] ILoggerFactory loggerFactory = null)
         {
+            _swaggerGenOptions = swaggerGenOptions.Value;
             _validatorFactory = validatorFactory;
-            _logger = loggerFactory?.CreateLogger(typeof(FluentValidationRules));
-            _rules = FluentValidationRules.CreateDefaultRules();
-            if (rules != null)
-            {
-                var ruleMap = _rules.ToDictionary(rule => rule.Name, rule => rule);
-                foreach (var rule in rules)
-                {
-                    // Add or replace rule
-                    ruleMap[rule.Name] = rule;
-                }
-                _rules = ruleMap.Values.ToList();
-            }
+            _logger = loggerFactory?.CreateLogger(typeof(FluentValidationRules)) ?? NullLogger.Instance;
+            _rules = FluentValidationRules.CreateDefaultRules().OverrideRules(rules);
         }
 
         /// <inheritdoc />
-        public void Apply(Operation operation, OperationFilterContext context)
+        public void Apply(OpenApiOperation operation, OperationFilterContext context)
         {
             try
             {
@@ -48,34 +50,40 @@ namespace MicroElements.Swashbuckle.FluentValidation
             }
             catch (Exception e)
             {
-                _logger?.LogWarning(0, e, $"Error on apply rules for operation '{operation.OperationId}'.");
+                _logger.LogWarning(0, e, $"Error on apply rules for operation '{operation.OperationId}'.");
             }
         }
 
-        void ApplyInternal(Operation operation, OperationFilterContext context)
+        void ApplyInternal(OpenApiOperation operation, OperationFilterContext context)
         {
             if (operation.Parameters == null)
                 return;
+
+            var schemaIdSelector = _swaggerGenOptions.SchemaGeneratorOptions.SchemaIdSelector ?? new SchemaGeneratorOptions().SchemaIdSelector;
 
             foreach (var operationParameter in operation.Parameters)
             {
                 var apiParameterDescription = context.ApiDescription.ParameterDescriptions.FirstOrDefault(description =>
                     description.Name.Equals(operationParameter.Name, StringComparison.InvariantCultureIgnoreCase));
 
-                if (apiParameterDescription != null)
+                var modelMetadata = apiParameterDescription?.ModelMetadata;
+                if (modelMetadata != null)
                 {
-                    var parameterType = apiParameterDescription.ModelMetadata.ContainerType;
-                    if(parameterType==null)
+                    var parameterType = modelMetadata.ContainerType;
+                    if (parameterType == null)
                         continue;
                     var validator = _validatorFactory.GetValidator(parameterType);
                     if (validator == null)
                         continue;
 
-                    var descriptor = validator.CreateDescriptor();
-                    var key = apiParameterDescription.ModelMetadata.PropertyName;
-                    var validatorsForMember = descriptor.GetValidatorsForMemberIgnoreCase(key).NotNull();
+                    var schemaPropertyName = operationParameter.Name;
+                    
+                    var validatorsForMember = validator.GetValidatorsForMemberIgnoreCase(schemaPropertyName);
 
-                    Schema schema = null;
+                    var lazyLog = new LazyLog(_logger,
+                        logger => logger.LogDebug($"Applying FluentValidation rules to swagger schema for type '{parameterType}' from operation '{operation.OperationId}'."));
+
+                    OpenApiSchema schema = null;
                     foreach (var propertyValidator in validatorsForMember)
                     {
                         foreach (var rule in _rules)
@@ -84,35 +92,62 @@ namespace MicroElements.Swashbuckle.FluentValidation
                             {
                                 try
                                 {
-                                    if (!context.SchemaRegistry.Definitions.TryGetValue(parameterType.Name, out schema))
-                                        schema = context.SchemaRegistry.GetOrRegister(parameterType);
+                                    var schemaId = schemaIdSelector(parameterType);
 
-                                    rule.Apply(new RuleContext(schema, new SchemaFilterContext(parameterType, null, context.SchemaRegistry), key.ToLowerCamelCase(), propertyValidator));
+                                    if (!context.SchemaRepository.Schemas.TryGetValue(schemaId, out schema))
+                                    {
+                                        schema = context.SchemaGenerator.GenerateSchema(parameterType, context.SchemaRepository);
+                                    }
+
+                                    if ((schema.Properties == null || schema.Properties.Count == 0) && context.SchemaRepository.Schemas.ContainsKey(schemaId))
+                                    {
+                                        schema = context.SchemaRepository.Schemas[schemaId];
+                                    }
+
+                                    if (schema.Properties != null && schema.Properties.Count > 0)
+                                    {
+                                        lazyLog.LogOnce();
+
+                                        var apiProperty = schema.Properties.FirstOrDefault(property => property.Key.EqualsIgnoreAll(schemaPropertyName));
+                                        if (apiProperty.Key != null)
+                                            schemaPropertyName = apiProperty.Key;
+
+                                        var schemaFilterContext = new SchemaFilterContext(parameterType, context.SchemaGenerator, context.SchemaRepository);
+                                        rule.Apply(new RuleContext(schema, schemaFilterContext, schemaPropertyName, propertyValidator));
+                                        _logger.LogDebug($"Rule '{rule.Name}' applied for property '{parameterType.Name}.{operationParameter.Name}'.");
+                                    }
+                                    else
+                                    {
+                                        _logger.LogDebug($"Rule '{rule.Name}' skipped for property '{parameterType.Name}.{operationParameter.Name}'.");
+                                    }
                                 }
                                 catch (Exception e)
                                 {
-                                    _logger?.LogWarning(0, e, $"Error on apply rule '{rule.Name}' for key '{key}'.");
+                                    _logger.LogWarning(0, e, $"Error on apply rule '{rule.Name}' for property '{parameterType.Name}.{schemaPropertyName}'.");
                                 }
                             }
                         }
                     }
 
                     if (schema?.Required != null)
-                        operationParameter.Required = schema.Required.Contains(key, StringComparer.InvariantCultureIgnoreCase);
-                    if (schema != null && schema.Properties != null)
+                        operationParameter.Required = schema.Required.Contains(schemaPropertyName, IgnoreAllStringComparer.Instance);
+
+                    if (schema?.Properties != null)
                     {
-                        if (operationParameter is PartialSchema partialSchema)
+                        var parameterSchema = operationParameter.Schema;
+                        if (parameterSchema != null)
                         {
-                            if (schema.Properties.TryGetValue(key.ToLowerCamelCase(), out var property) 
-                                || schema.Properties.TryGetValue(key, out property))
+                            if (schema.Properties.TryGetValue(schemaPropertyName.ToLowerCamelCase(), out var property)
+                                || schema.Properties.TryGetValue(schemaPropertyName, out property))
                             {
-                                partialSchema.MinLength = property.MinLength;
-                                partialSchema.MaxLength = property.MaxLength;
-                                partialSchema.Pattern = property.Pattern;
-                                partialSchema.Minimum = property.Minimum;
-                                partialSchema.Maximum = property.Maximum;
-                                partialSchema.ExclusiveMaximum = property.ExclusiveMaximum;
-                                partialSchema.ExclusiveMinimum = property.ExclusiveMinimum;
+                                parameterSchema.MinLength = property.MinLength;
+                                parameterSchema.Nullable = property.Nullable;
+                                parameterSchema.MaxLength = property.MaxLength;
+                                parameterSchema.Pattern = property.Pattern;
+                                parameterSchema.Minimum = property.Minimum;
+                                parameterSchema.Maximum = property.Maximum;
+                                parameterSchema.ExclusiveMaximum = property.ExclusiveMaximum;
+                                parameterSchema.ExclusiveMinimum = property.ExclusiveMinimum;
                             }
                         }
                     }

@@ -36,6 +36,7 @@ namespace SampleWebApi.Contracts
 
         [Required]
         [FromHeader]
+        [MaxLength(10)]
         public string ValueFromHeader { get; set; }
 
         [Required]
@@ -51,6 +52,7 @@ namespace SampleWebApi.Contracts
         public string TransactionId { get; set; }
 
         [RegularExpression(Constants.GuidRegex)]
+        [Required]
         [FromHeader(Name = "RequestId")]
         public string RequestId { get; set; }
     }

@@ -1,5 +1,5 @@
 ﻿using FluentValidation.Validators;
-using Swashbuckle.AspNetCore.Swagger;
+using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace MicroElements.Swashbuckle.FluentValidation
@@ -12,7 +12,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <summary>
         /// Swagger schema.
         /// </summary>
-        public Schema Schema { get; }
+        public OpenApiSchema Schema { get; }
 
         /// <summary>
         /// SchemaFilterContext.
@@ -36,7 +36,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <param name="schemaFilterContext">SchemaFilterContext.</param>
         /// <param name="propertyKey">Property name.</param>
         /// <param name="propertyValidator">Property validator.</param>
-        public RuleContext(Schema schema, SchemaFilterContext schemaFilterContext, string propertyKey, IPropertyValidator propertyValidator)
+        public RuleContext(OpenApiSchema schema, SchemaFilterContext schemaFilterContext, string propertyKey, IPropertyValidator propertyValidator)
         {
             Schema = schema;
             SchemaFilterContext = schemaFilterContext;

@@ -7,9 +7,9 @@ namespace SampleWebApi.Controllers
     [Route("api/[controller]")]
     public class BasicController : Controller
     {
-        [HttpGet("")]
+        [HttpGet("[action]")]
         [ProducesResponseType(typeof(IEnumerable<Customer>), 200)]
-        public IActionResult Get(BasicGetRequest req)
+        public IActionResult GetWithFluentValidation(BasicGetRequest req)
         {
             if (!ModelState.IsValid)
             {
@@ -25,9 +25,9 @@ namespace SampleWebApi.Controllers
             return Ok(customers);
         }
 
-        [HttpGet("get2")]
+        [HttpGet("[action]")]
         [ProducesResponseType(typeof(IEnumerable<Customer>), 200)]
-        public IActionResult Get2(RequestWithAnnotations req)
+        public IActionResult GetWithDataAnnotation(RequestWithAnnotations req)
         {
             if (!ModelState.IsValid)
             {

@@ -1,17 +1,18 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\common.props" />
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <OpenApiGenerateDocuments>false</OpenApiGenerateDocuments>
     <Description>Swagger ISchemaFilter that uses FluentValidation validators instead System.ComponentModel based attributes.</Description>
     <PackageTags>swagger swashbuckle FluentValidation aspnetcore</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FluentValidation" Version="7.2.0" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="1.1.0" />
+    <PackageReference Include="FluentValidation" Version="[8.3.0, 9)" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="[5.2.0, 6)" /> 
   </ItemGroup>
 
 </Project>
