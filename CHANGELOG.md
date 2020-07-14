@@ -1,3 +1,7 @@
+# Changes in 4.0.0-rc.2:
+* FluentValidation updated to [9.0.0]
+* Swashbuckle.AspNetCore updated to [5.5.1]
+
 # Changes in 4.0.0-rc.1:
 * FluentValidation updated to [9.0.0-preview5, 10)
 * Swashbuckle.AspNetCore updated to [5.4.1, 6)
