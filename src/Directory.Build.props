@@ -8,5 +8,13 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Deterministic>true</Deterministic>
+    <LangVersion>8.0</LangVersion>
   </PropertyGroup>
+  
+  <Import Project="stylecop.props"/>
+
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)\GlobalSuppressions.cs" Link="GlobalSuppressions.cs" />
+  </ItemGroup>
+  
 </Project>
