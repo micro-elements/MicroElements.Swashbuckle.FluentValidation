@@ -86,7 +86,9 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <param name="source">Source rules.</param>
         /// <param name="overrides">Overrides list.</param>
         /// <returns>New rule list.</returns>
-        internal static IReadOnlyList<FluentValidationRule> OverrideRules(this IReadOnlyList<FluentValidationRule> source, IEnumerable<FluentValidationRule> overrides)
+        public static IReadOnlyList<FluentValidationRule> OverrideRules(
+            this IEnumerable<FluentValidationRule> source,
+            IEnumerable<FluentValidationRule> overrides)
         {
             if (overrides != null)
             {
@@ -95,11 +97,11 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 {
                     validationRules[validationRule.Name] = validationRule;
                 }
-                
+
                 return validationRules.Values.ToList();
             }
 
-            return source;
+            return source.ToList();
         }
 
         /// <summary>

@@ -12,8 +12,7 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 namespace MicroElements.Swashbuckle.FluentValidation
 {
     /// <summary>
-    /// Swagger <see cref="IOperationFilter"/> that applies FluentValidation rules 
-    /// for GET parameters bounded from validatable models.
+    /// Swagger <see cref="IOperationFilter"/> that applies FluentValidation rules for GET parameters bounded from validatable models.
     /// </summary>
     public class FluentValidationOperationFilter : IOperationFilter
     {
@@ -23,11 +22,11 @@ namespace MicroElements.Swashbuckle.FluentValidation
         private readonly IReadOnlyList<FluentValidationRule> _rules;
 
         /// <summary>
-        /// Creates instance of <see cref="FluentValidationOperationFilter"/>.
+        /// Initializes a new instance of the <see cref="FluentValidationOperationFilter"/> class.
         /// </summary>
         /// <param name="swaggerGenOptions">Swagger generation options.</param>
         /// <param name="validatorFactory">FluentValidation factory.</param>
-        /// <param name="rules">Custom rules. Is not set <see cref="FluentValidationRules.CreateDefaultRules"/> will be used.</param>
+        /// <param name="rules">Custom rules. Is not set <see cref="FluentValidationRulesProvider.Instance"/> will be used.</param>
         /// <param name="loggerFactory">Logger factory.</param>
         public FluentValidationOperationFilter(
             IOptions<SwaggerGenOptions> swaggerGenOptions,
@@ -38,7 +37,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             _swaggerGenOptions = swaggerGenOptions.Value;
             _validatorFactory = validatorFactory;
             _logger = loggerFactory?.CreateLogger(typeof(FluentValidationRules)) ?? NullLogger.Instance;
-            _rules = FluentValidationRules.CreateDefaultRules().OverrideRules(rules);
+            _rules = FluentValidationRulesProvider.Instance.GetRules().OverrideRules(rules);
         }
 
         /// <inheritdoc />
@@ -77,7 +76,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                         continue;
 
                     var schemaPropertyName = operationParameter.Name;
-                    
+
                     var validatorsForMember = validator.GetValidatorsForMemberIgnoreCase(schemaPropertyName);
 
                     var lazyLog = new LazyLog(_logger,
@@ -152,7 +151,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                         }
                     }
                 }
-            }  
+            }
         }
     }
 }

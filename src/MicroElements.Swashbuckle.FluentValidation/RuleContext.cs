@@ -30,7 +30,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
         public IPropertyValidator PropertyValidator { get; }
 
         /// <summary>
-        /// Creates new instance of <see cref="RuleContext"/>.
+        /// Initializes a new instance of the <see cref="RuleContext"/> class.
         /// </summary>
         /// <param name="schema">Swagger schema.</param>
         /// <param name="schemaFilterContext">SchemaFilterContext.</param>
