@@ -1,4 +1,7 @@
-﻿using System.Collections.Generic;
+﻿// Copyright (c) MicroElements. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+using System.Collections.Generic;
 using FluentValidation.Validators;
 
 namespace MicroElements.Swashbuckle.FluentValidation
@@ -11,7 +14,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <summary>
         /// Default rules provider.
         /// </summary>
-        public static readonly FluentValidationRulesProvider Instance = new FluentValidationRulesProvider();
+        public static readonly IFluentValidationRulesProvider Instance = new FluentValidationRulesProvider();
 
         /// <inheritdoc/>
         public IEnumerable<FluentValidationRule> GetRules()
@@ -25,7 +28,16 @@ namespace MicroElements.Swashbuckle.FluentValidation
                         context.Schema.Required = new SortedSet<string>();
                     if (!context.Schema.Required.Contains(context.PropertyKey))
                         context.Schema.Required.Add(context.PropertyKey);
-                    context.Schema.Properties[context.PropertyKey].Nullable = false;
+                },
+            };
+
+            yield return new FluentValidationRule("NotNull")
+            {
+                Matches = propertyValidator => propertyValidator is INotNullValidator && propertyValidator.HasNoCondition(),
+                Apply = context =>
+                {
+                    var schemaProperty = context.Schema.Properties[context.PropertyKey];
+                    schemaProperty.Nullable = false;
                 },
             };
 

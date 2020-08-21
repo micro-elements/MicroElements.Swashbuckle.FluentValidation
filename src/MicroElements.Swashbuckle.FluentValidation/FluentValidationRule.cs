@@ -24,7 +24,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
         public Action<RuleContext> Apply { get; set; }
 
         /// <summary>
-        /// Creates new instance of <see cref="FluentValidationRule"/>.
+        /// Initializes a new instance of the <see cref="FluentValidationRule"/> class.
         /// </summary>
         /// <param name="name">Rule name.</param>
         public FluentValidationRule(string name)

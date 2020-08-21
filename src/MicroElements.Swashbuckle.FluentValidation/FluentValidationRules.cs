@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using FluentValidation;
-using FluentValidation.Internal;
-using FluentValidation.Validators;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -30,11 +27,13 @@ namespace MicroElements.Swashbuckle.FluentValidation
         public FluentValidationRules(
             [CanBeNull] IValidatorFactory validatorFactory = null,
             [CanBeNull] IEnumerable<FluentValidationRule> rules = null,
+            [CanBeNull] IFluentValidationRulesProvider rulesProvider = null,
             [CanBeNull] ILoggerFactory loggerFactory = null)
         {
             _validatorFactory = validatorFactory;
             _logger = loggerFactory?.CreateLogger(typeof(FluentValidationRules)) ?? NullLogger.Instance;
-            _rules = FluentValidationRulesProvider.Instance.GetRules().OverrideRules(rules);
+            rulesProvider ??= FluentValidationRulesProvider.Instance;
+            _rules = rulesProvider.GetRules().OverrideRules(rules);
         }
 
         /// <inheritdoc />
@@ -48,7 +47,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
             IValidator validator = null;
             try
-            {       
+            {
                 validator = _validatorFactory.GetValidator(context.Type);
             }
             catch (Exception e)
@@ -104,48 +103,25 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
         private void AddRulesFromIncludedValidators(OpenApiSchema schema, SchemaFilterContext context, IValidator validator)
         {
-            // Note: IValidatorDescriptor doesn't return IncludeRules so we need to get validators manually.
-            var childAdapters = (validator as IEnumerable<IValidationRule>)
-                .NotNull()
-                .Where(rule => rule is IIncludeRule)
-                .OfType<PropertyRule>()
-                .Where(includeRule => includeRule.HasNoCondition())
-                .SelectMany(includeRule => includeRule.Validators)
-                .OfType<IChildValidatorAdaptor>();
+            var includedValidators = validator.GetIncludedValidators();
 
-            foreach (var childAdapter in childAdapters)
+            foreach (var includedValidator in includedValidators)
             {
-                IValidator includedValidator = GetValidatorFromChildValidatorAdapter(childAdapter);
-                if (includedValidator != null)
-                {
-                    ApplyRulesToSchema(schema, context, includedValidator);
-                    AddRulesFromIncludedValidators(schema, context, includedValidator);
-                }
+                ApplyRulesToSchema(schema, context, includedValidator);
+                AddRulesFromIncludedValidators(schema, context, includedValidator);
             }
         }
+    }
 
-        //TODO: Independent for Swagger and NSwag
-        private IValidator GetValidatorFromChildValidatorAdapter(IChildValidatorAdaptor childValidatorAdapter)
-        {
-            IValidator validator;
-            //if (_validatorFactory is ValidatorFactoryBase instanceCreator)
-            //{
-            //    validator = instanceCreator.CreateInstance(childValidatorAdapter.ValidatorType);
-            //}
+    public interface IOpenApiSchemaContext
+    {
+        OpenApiSchema Schema { get; }
 
-            // Fake context. We have not got real context because no validation yet. 
-            var fakeContext = new PropertyValidatorContext(new ValidationContext<object>(null), null, string.Empty);
+        SchemaFilterContext SchemaFilterContext { get; }
+    }
 
-            // Try to validator with reflection. 
-            var childValidatorAdapterType = childValidatorAdapter.GetType();
-            var getValidatorMethod = childValidatorAdapterType.GetMethod(nameof(ChildValidatorAdaptor<object, object>.GetValidator));
-            if (getValidatorMethod != null)
-            {
-                validator = (IValidator)getValidatorMethod.Invoke(childValidatorAdapter, new[] { fakeContext });
-                return validator;
-            }
+    public class OpenApiSchemaContext
+    {
 
-            return null;
-        }
     }
 }

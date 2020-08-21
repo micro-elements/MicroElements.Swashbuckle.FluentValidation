@@ -1,4 +1,7 @@
-﻿using System.Collections.Generic;
+﻿// Copyright (c) MicroElements. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+using System.Collections.Generic;
 
 namespace MicroElements.Swashbuckle.FluentValidation
 {
@@ -8,7 +11,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
     public interface IFluentValidationRulesProvider
     {
         /// <summary>
-        /// Gets fluent validation  rules.
+        /// Gets fluent validation rules.
         /// Can be overriden by name.
         /// </summary>
         /// <returns><see cref="FluentValidationRule"/> enumeration.</returns>
