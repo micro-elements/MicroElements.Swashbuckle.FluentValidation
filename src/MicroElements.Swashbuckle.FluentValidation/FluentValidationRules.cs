@@ -107,18 +107,38 @@ namespace MicroElements.Swashbuckle.FluentValidation
             // Note: IValidatorDescriptor doesn't return IncludeRules so we need to get validators manually.
             var childAdapters = (validator as IEnumerable<IValidationRule>)
                 .NotNull()
-                .OfType<IncludeRule>()
+                .Where(rule => rule is IIncludeRule)
+                .OfType<PropertyRule>()
                 .Where(includeRule => includeRule.HasNoCondition())
                 .SelectMany(includeRule => includeRule.Validators)
-                .OfType<ChildValidatorAdaptor>();
+                .OfType<IChildValidatorAdaptor>();
 
-            foreach (var adapter in childAdapters)
+            foreach (var childAdapter in childAdapters)
             {
-                var propertyValidatorContext = new PropertyValidatorContext(new ValidationContext(null), null, string.Empty);
-                var includeValidator = adapter.GetValidator(propertyValidatorContext);
-                ApplyRulesToSchema(schema, context, includeValidator);
-                AddRulesFromIncludedValidators(schema, context, includeValidator);
+                IValidator includedValidator = GetValidatorFromChildValidatorAdapter(childAdapter);
+                if (includedValidator != null)
+                {
+                    ApplyRulesToSchema(schema, context, includedValidator);
+                    AddRulesFromIncludedValidators(schema, context, includedValidator);
+                }
             }
+        }
+
+        private IValidator GetValidatorFromChildValidatorAdapter(IChildValidatorAdaptor childValidatorAdapter)
+        {
+            // Fake context. We have not got real context because no validation yet. 
+            var fakeContext = new PropertyValidatorContext(new ValidationContext<object>(null), null, string.Empty);
+
+            // Try to validator with reflection. 
+            var childValidatorAdapterType = childValidatorAdapter.GetType();
+            var getValidatorMethod = childValidatorAdapterType.GetMethod(nameof(ChildValidatorAdaptor<object, object>.GetValidator));
+            if (getValidatorMethod != null)
+            {
+                var validator = (IValidator)getValidatorMethod.Invoke(childValidatorAdapter, new[] { fakeContext });
+                return validator;
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -175,6 +195,14 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     {
                         var regularExpressionValidator = (IRegularExpressionValidator)context.PropertyValidator;
                         context.Schema.Properties[context.PropertyKey].Pattern = regularExpressionValidator.Expression;
+                    }
+                },
+                new FluentValidationRule("EMail")
+                {
+                    Matches = propertyValidator => propertyValidator.GetType().Name.Contains("EmailValidator") && propertyValidator.HasNoCondition(),
+                    Apply = context =>
+                    {
+                        context.Schema.Properties[context.PropertyKey].Format = "email";
                     }
                 },
                 new FluentValidationRule("Comparison")
@@ -238,6 +266,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                         }
                     }
                 },
+
             };
         }
     }

@@ -1,3 +1,9 @@
+# Changes in 4.0.0:
+* FluentValidation updated to [9.0.0]
+* Swashbuckle.AspNetCore updated to [5.5.1]
+* Changed getting included validator (FluentValidation internal API changed)
+* New EmailValidator rule compatible with FluentValidation AspNetCoreCompatibleEmailValidator
+
 # Changes in 3.2.0:
 * FluentValidation fix version to [8.3.0, 9)
 * Swashbuckle.AspNetCore fix version to [5.2.0, 6)

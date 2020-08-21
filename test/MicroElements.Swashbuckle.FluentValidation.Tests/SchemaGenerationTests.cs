@@ -2,6 +2,7 @@ using FluentAssertions;
 using FluentValidation;
 using Microsoft.OpenApi.Models;
 using SampleWebApi.Contracts;
+using SampleWebApi.Validators;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Xunit;
 
@@ -68,14 +69,14 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
         }
 
         [Fact]
-        public void SampleValidator_FromSampleApi_HugeTest()
+        public void SampleValidator_FromSampleApi_Test()
         {
             var schemaRepository = new SchemaRepository();
             var referenceSchema = SchemaGenerator(new SampleValidator()).GenerateSchema(typeof(Sample), schemaRepository);
             var schema = schemaRepository.Schemas[referenceSchema.Reference.Id];
 
             schema.Type.Should().Be("object");
-            schema.Properties.Keys.Count.Should().Be(12);
+            schema.Properties.Keys.Count.Should().Be(13);
 
 
             schema.Properties["NotNull"].Nullable.Should().BeFalse();
@@ -83,7 +84,9 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
 
             schema.Properties["NotEmpty"].MinLength.Should().Be(1);
 
-            schema.Properties["EmailAddress"].Pattern.Should().NotBeNullOrEmpty();
+            schema.Properties["EmailAddressRegex"].Pattern.Should().NotBeNullOrEmpty();
+            schema.Properties["EmailAddressRegex"].Format.Should().Be("email");
+            schema.Properties["EmailAddress"].Format.Should().Be("email");
 
             schema.Properties["RegexField"].Pattern.Should().Be(@"(\d{4})-(\d{2})-(\d{2})");
 
@@ -114,6 +117,32 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
 
             schema.Properties["NotEmptyWithMaxLength"].MinLength.Should().Be(1);
             schema.Properties["NotEmptyWithMaxLength"].MaxLength.Should().Be(50);
+        }
+
+        [Fact]
+        public void CustomerValidator_FromSampleApi_Test()
+        {
+            var schemaRepository = new SchemaRepository();
+            var referenceSchema = SchemaGenerator(new CustomerValidator()).GenerateSchema(typeof(Customer), schemaRepository);
+            var schema = schemaRepository.Schemas[referenceSchema.Reference.Id];
+            schema.Properties["Surname"].MinLength.Should().Be(1);
+            schema.Properties["Forename"].MinLength.Should().Be(1);
+
+            // From included validator
+            schema.Properties["Address"].MinLength.Should().Be(20);
+            schema.Properties["Address"].MaxLength.Should().Be(250);
+
+            schema.Properties["Discount"].Should().BeEquivalentTo(new OpenApiSchema()
+            {
+                Type = "number",
+                Format = "double",
+                Minimum = 4,
+                ExclusiveMinimum = true,
+                Maximum = 5,
+                ExclusiveMaximum = true
+            });
+
+            schema.Properties.Keys.Count.Should().Be(5);
         }
 
         [Theory]

@@ -18,7 +18,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             var serializerOptions = new JsonSerializerOptions();
             configureSerializer?.Invoke(serializerOptions);
 
-            return new SchemaGenerator(generatorOptions, new JsonSerializerMetadataResolver(serializerOptions));
+            return new SchemaGenerator(generatorOptions, new JsonSerializerDataContractResolver(serializerOptions));
         }
 
         public SchemaGenerator SchemaGenerator(params IValidator[] validators)
