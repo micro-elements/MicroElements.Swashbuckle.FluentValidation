@@ -135,8 +135,10 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// </summary>
         internal static void SetNotNullableIfMinLengthGreaterThenZero(this OpenApiSchema schemaProperty)
         {
-            var shouldBeNotEmpty = schemaProperty.MinLength.HasValue && schemaProperty.MinLength > 0;
-            schemaProperty.Nullable = !shouldBeNotEmpty;
+            if (schemaProperty.MinLength.HasValue && schemaProperty.MinLength > 0)
+            {
+                schemaProperty.Nullable = false;
+            }
         }
 
         internal static void SetNewMax(this OpenApiSchema schemaProperty, Expression<Func<OpenApiSchema, int?>> prop, int? newValue)
