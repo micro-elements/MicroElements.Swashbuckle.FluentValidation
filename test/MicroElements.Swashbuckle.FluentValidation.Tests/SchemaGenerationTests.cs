@@ -14,10 +14,12 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
         {
             public string TextProperty1 { get; set; }
             public string TextProperty2 { get; set; }
+            public string TextProperty3 { get; set; }
         }
 
         public string TextProperty1 = nameof(ComplexObject.TextProperty1);
         public string TextProperty2 = nameof(ComplexObject.TextProperty2);
+        public string TextProperty3 = nameof(ComplexObject.TextProperty3);
 
         public class ComplexObjectValidator : AbstractValidator<ComplexObject>
         {
@@ -39,7 +41,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             var schema = schemaRepository.Schemas[referenceSchema.Reference.Id];
 
             Assert.Equal("object", schema.Type);
-            schema.Properties.Keys.Should().BeEquivalentTo(TextProperty1, TextProperty2);
+            schema.Properties.Keys.Should().BeEquivalentTo(TextProperty1, TextProperty2, TextProperty3);
 
             schema.Properties[TextProperty1].MinLength.Should().Be(1);
         }
@@ -50,6 +52,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             {
                 RuleFor(x => x.TextProperty1).NotEmpty().MaximumLength(64);
                 RuleFor(x => x.TextProperty2).MaximumLength(64).NotEmpty();
+                RuleFor(x => x.TextProperty3).NotNull().MaximumLength(64);
             }
         }
 
@@ -63,9 +66,23 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
     
             schema.Properties[TextProperty1].MinLength.Should().Be(1);
             schema.Properties[TextProperty1].MaxLength.Should().Be(64);
+            schema.Properties[TextProperty1].Nullable.Should().BeFalse();
 
             schema.Properties[TextProperty2].MinLength.Should().Be(1);
             schema.Properties[TextProperty2].MaxLength.Should().Be(64);
+            schema.Properties[TextProperty2].Nullable.Should().BeFalse();
+        }
+
+        [Fact]
+        public void MaximumLength_ShouldNot_Override_NotNull()
+        {
+            var schemaRepository = new SchemaRepository();
+            var referenceSchema = SchemaGenerator(new Validator2()).GenerateSchema(typeof(ComplexObject), schemaRepository);
+
+            var schema = schemaRepository.Schemas[referenceSchema.Reference.Id];
+
+            schema.Properties[TextProperty3].MaxLength.Should().Be(64);
+            schema.Properties[TextProperty3].Nullable.Should().BeFalse();
         }
 
         [Fact]
