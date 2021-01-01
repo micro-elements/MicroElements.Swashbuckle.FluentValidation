@@ -163,7 +163,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                         if(!context.Schema.Required.Contains(context.PropertyKey))
                             context.Schema.Required.Add(context.PropertyKey);
                         context.Schema.Properties[context.PropertyKey].Nullable = false;
-                    }
+                    },
                 },
                 new FluentValidationRule("NotEmpty")
                 {
@@ -172,8 +172,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     {
                         var schemaProperty = context.Schema.Properties[context.PropertyKey];
                         schemaProperty.SetNewMin(p => p.MinLength, 1);
-                        schemaProperty.SetNotNullableIfMinLengthGreaterThenZero();
-                    }
+                    },
                 },
                 new FluentValidationRule("Length")
                 {
@@ -188,9 +187,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
                         if (lengthValidator.Min > 0)
                             schemaProperty.SetNewMin(p => p.MinLength, lengthValidator.Min);
-
-                        schemaProperty.SetNotNullableIfMinLengthGreaterThenZero();
-                    }
+                    },
                 },
                 new FluentValidationRule("Pattern")
                 {
@@ -199,7 +196,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     {
                         var regularExpressionValidator = (IRegularExpressionValidator)context.PropertyValidator;
                         context.Schema.Properties[context.PropertyKey].Pattern = regularExpressionValidator.Expression;
-                    }
+                    },
                 },
                 new FluentValidationRule("EMail")
                 {
@@ -207,7 +204,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     Apply = context =>
                     {
                         context.Property.Format = "email";
-                    }
+                    },
                 },
                 new FluentValidationRule("Comparison")
                 {
@@ -239,7 +236,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                                 schemaProperty.ExclusiveMaximum = true;
                             }
                         }
-                    }
+                    },
                 },
                 new FluentValidationRule("Between")
                 {
@@ -268,7 +265,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                                 schemaProperty.ExclusiveMaximum = true;
                             }
                         }
-                    }
+                    },
                 },
 
             };

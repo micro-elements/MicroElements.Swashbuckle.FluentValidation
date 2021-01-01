@@ -213,6 +213,8 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 newValue = NewMinValue(current, newValue.Value);
                 SetPropertyValue(schemaProperty, prop, newValue);
             }
+
+            schemaProperty.SetNotNullableIfMinLengthGreaterThenZero();
         }
 
         internal static void SetNewMin(this OpenApiSchema schemaProperty, Expression<Func<OpenApiSchema, decimal?>> prop, decimal? newValue)
@@ -223,6 +225,8 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 newValue = NewMinValue(current, newValue.Value);
                 SetPropertyValue(schemaProperty, prop, newValue);
             }
+
+            schemaProperty.SetNotNullableIfMinLengthGreaterThenZero();
         }
 
         private static int NewMaxValue(int? current, int newValue) => current.HasValue ? Math.Min(current.Value, newValue) : newValue;

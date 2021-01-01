@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using FluentAssertions;
 using FluentValidation;
+using FluentValidation.Results;
 using Microsoft.OpenApi.Models;
 using SampleWebApi.Contracts;
 using SampleWebApi.Validators;
@@ -226,6 +228,64 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
 
             emailsProp.Items.Type.Should().Be("string");
             emailsProp.Items.Format.Should().Be("email");
+        }
+
+        public class NumberEntity
+        {
+            public int Number { get; set; }
+            public int? NullableNumber { get; set; }
+
+            public class Validator : AbstractValidator<NumberEntity>
+            {
+                public Validator()
+                {
+                    RuleFor(c => c.Number).GreaterThan(0);
+                    RuleFor(c => c.NullableNumber).GreaterThan(0);
+                }
+            }
+        }
+
+        /// <summary>
+        /// https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/issues/70
+        /// </summary>
+        [Fact]
+        public void integer_property_should_not_be_nullable()
+        {
+            // *************************
+            // FluentValidation behavior
+            // *************************
+
+            void ShouldBeSuccess(NumberEntity entity) => new NumberEntity.Validator().ValidateAndThrow(entity);
+            void ShouldBeFailed(NumberEntity entity) => new NumberEntity.Validator().Validate(entity).IsValid.Should().BeFalse();
+
+            ShouldBeSuccess(new NumberEntity() { Number = 1 });
+            ShouldBeFailed(new NumberEntity() { Number = 0 });
+
+            ShouldBeSuccess(new NumberEntity() { Number = 1, NullableNumber = 1 });
+            ShouldBeFailed(new NumberEntity() { Number = 1, NullableNumber = 0 });
+            // null is also valid
+            ShouldBeSuccess(new NumberEntity() { Number = 1, NullableNumber = null });
+
+            // *********************************
+            // FluentValidation swagger behavior
+            // *********************************
+
+            var schemaRepository = new SchemaRepository();
+            var referenceSchema = SchemaGenerator(new NumberEntity.Validator()).GenerateSchema(typeof(NumberEntity), schemaRepository);
+
+            var schema = schemaRepository.Schemas[referenceSchema.Reference.Id];
+
+            var numberProp = schema.Properties[nameof(NumberEntity.Number)];
+            numberProp.Type.Should().Be("integer");
+            numberProp.Nullable.Should().Be(false);
+            numberProp.Minimum.Should().Be(0);
+            numberProp.ExclusiveMinimum.Should().Be(true);
+
+            var nullableNumberProp = schema.Properties[nameof(NumberEntity.NullableNumber)];
+            nullableNumberProp.Type.Should().Be("integer");
+            nullableNumberProp.Nullable.Should().Be(true);
+            nullableNumberProp.Minimum.Should().Be(0);
+            nullableNumberProp.ExclusiveMinimum.Should().Be(true);
         }
     }
 }
