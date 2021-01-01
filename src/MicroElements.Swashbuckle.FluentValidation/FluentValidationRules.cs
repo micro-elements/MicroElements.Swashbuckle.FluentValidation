@@ -78,23 +78,27 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
             foreach (var schemaPropertyName in schema?.Properties?.Keys ?? Array.Empty<string>())
             {
-                var validators = validator.GetValidatorsForMemberIgnoreCase(schemaPropertyName);
+                var validationRules = validator.GetValidationRulesForMemberIgnoreCase(schemaPropertyName).ToArrayDebug();
 
-                foreach (var propertyValidator in validators)
+                foreach (var ruleContext in validationRules)
                 {
-                    foreach (var rule in _rules)
+                    foreach (var propertyValidator in ruleContext.PropertyRule.Validators)
                     {
-                        if (rule.Matches(propertyValidator))
+                        foreach (var rule in _rules)
                         {
-                            try
+                            if (rule.Matches(propertyValidator))
                             {
-                                lazyLog.LogOnce();
-                                rule.Apply(new RuleContext(schema, context, schemaPropertyName, propertyValidator));
-                                _logger.LogDebug($"Rule '{rule.Name}' applied for property '{context.Type.Name}.{schemaPropertyName}'");
-                            }
-                            catch (Exception e)
-                            {
-                                _logger.LogWarning(0, e, $"Error on apply rule '{rule.Name}' for property '{context.Type.Name}.{schemaPropertyName}'.");
+                                try
+                                {
+                                    lazyLog.LogOnce();
+
+                                    rule.Apply(new RuleContext(schema, schemaPropertyName, propertyValidator, context, isCollectionValidator: ruleContext.IsCollectionRule));
+                                    _logger.LogDebug($"Rule '{rule.Name}' applied for property '{context.Type.Name}.{schemaPropertyName}'");
+                                }
+                                catch (Exception e)
+                                {
+                                    _logger.LogWarning(0, e, $"Error on apply rule '{rule.Name}' for property '{context.Type.Name}.{schemaPropertyName}'.");
+                                }
                             }
                         }
                     }
@@ -202,7 +206,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     Matches = propertyValidator => propertyValidator.GetType().Name.Contains("EmailValidator") && propertyValidator.HasNoCondition(),
                     Apply = context =>
                     {
-                        context.Schema.Properties[context.PropertyKey].Format = "email";
+                        context.Property.Format = "email";
                     }
                 },
                 new FluentValidationRule("Comparison")

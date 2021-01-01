@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using FluentAssertions;
 using FluentValidation;
 using Microsoft.OpenApi.Models;
@@ -73,6 +74,9 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             schema.Properties[TextProperty2].Nullable.Should().BeFalse();
         }
 
+        /// <summary>
+        /// https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/pull/67
+        /// </summary>
         [Fact]
         public void MaximumLength_ShouldNot_Override_NotNull()
         {
@@ -190,6 +194,38 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             schemaProperty.SetNewMin(p => p.MinLength, second);
 
             schemaProperty.MinLength.Should().Be(expected);
+        }
+
+        public class Person
+        {
+            public List<string> Emails { get; set; } = new List<string>();
+        }
+
+        public class PersonValidator : AbstractValidator<Person>
+        {
+            public PersonValidator()
+            {
+                RuleForEach(x => x.Emails).EmailAddress();
+            }
+        }
+
+        /// <summary>
+        /// RuleForEach.
+        /// https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/issues/66
+        /// </summary>
+        [Fact]
+        public void CollectionValidation()
+        {
+            var schemaRepository = new SchemaRepository();
+            var referenceSchema = SchemaGenerator(new PersonValidator()).GenerateSchema(typeof(Person), schemaRepository);
+
+            var schema = schemaRepository.Schemas[referenceSchema.Reference.Id];
+            var emailsProp = schema.Properties[nameof(Person.Emails)];
+
+            emailsProp.Format.Should().Be(null);
+
+            emailsProp.Items.Type.Should().Be("string");
+            emailsProp.Items.Format.Should().Be("email");
         }
     }
 }

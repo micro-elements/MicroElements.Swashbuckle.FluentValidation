@@ -20,32 +20,72 @@ namespace MicroElements.Swashbuckle.FluentValidation
     public static class Extensions
     {
         /// <summary>
-        /// Returns validators by property name ignoring name case.
+        /// Contains <see cref="PropertyRule"/> and additional info.
         /// </summary>
-        /// <param name="validator">Validator</param>
-        /// <param name="name">Property name.</param>
-        /// <returns>enumeration or null.</returns>
-        public static IEnumerable<IPropertyValidator> GetValidatorsForMemberIgnoreCase(this IValidator validator, string name)
+        public readonly struct ValidationRuleContext
         {
-            return (validator as IEnumerable<IValidationRule>)
-                .NotNull()
-                .GetPropertyRules()
-                .Where(propertyRule => propertyRule.HasNoCondition() && propertyRule.PropertyName.EqualsIgnoreAll(name))
-                .SelectMany(propertyRule => propertyRule.Validators);
+            /// <summary>
+            /// PropertyRule.
+            /// </summary>
+            public readonly PropertyRule PropertyRule;
+
+            /// <summary>
+            /// Flag indication whether the <see cref="PropertyRule"/> is the CollectionRule.
+            /// </summary>
+            public readonly bool IsCollectionRule;
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="ValidationRuleContext"/> struct.
+            /// </summary>
+            /// <param name="propertyRule">PropertyRule.</param>
+            /// <param name="isCollectionRule">Is a CollectionPropertyRule.</param>
+            public ValidationRuleContext(PropertyRule propertyRule, bool isCollectionRule)
+            {
+                PropertyRule = propertyRule;
+                IsCollectionRule = isCollectionRule;
+            }
         }
 
         /// <summary>
-        /// Removes all IValidationRules that are not a PropertyRule.
-        /// A CollectionPropertyRule should not be exposed in the OpenAPI specification #49.
+        /// Returns validation rules by property name ignoring name case.
         /// </summary>
-        internal static IEnumerable<PropertyRule> GetPropertyRules(
+        /// <param name="validator">Validator</param>
+        /// <param name="name">Property name.</param>
+        /// <returns>enumeration.</returns>
+        public static IEnumerable<ValidationRuleContext> GetValidationRulesForMemberIgnoreCase(this IValidator validator, string name)
+        {
+            return (validator as IEnumerable<IValidationRule>)
+                .NotNull()
+                .GetValidationRules()
+                .Where(propertyRule => propertyRule.PropertyRule.HasNoCondition() && (propertyRule.PropertyRule.PropertyName).EqualsIgnoreAll(name));
+        }
+
+        /// <summary>
+        /// Returns property validators by property name ignoring name case.
+        /// </summary>
+        /// <param name="validator">Validator</param>
+        /// <param name="name">Property name.</param>
+        /// <returns>enumeration.</returns>
+        public static IEnumerable<IPropertyValidator> GetValidatorsForMemberIgnoreCase(this IValidator validator, string name)
+        {
+            return GetValidationRulesForMemberIgnoreCase(validator, name)
+                .SelectMany(propertyRule => propertyRule.PropertyRule.Validators);
+        }
+
+        /// <summary>
+        /// Returns all IValidationRules that are PropertyRule.
+        /// If rule is CollectionPropertyRule then isCollectionRule set to true.
+        /// </summary>
+        internal static IEnumerable<ValidationRuleContext> GetValidationRules(
             this IEnumerable<IValidationRule> validationRules)
         {
             foreach (var validationRule in validationRules)
             {
-                if (validationRule.GetType() == typeof(PropertyRule))
+                if (validationRule is PropertyRule propertyRule)
                 {
-                    yield return (PropertyRule)validationRule;
+                    // CollectionPropertyRule<T, TElement> is also a PropertyRule.
+                    var isCollectionRule = propertyRule.GetType().Name.StartsWith("CollectionPropertyRule");
+                    yield return new ValidationRuleContext(propertyRule, isCollectionRule);
                 }
             }
         }
@@ -79,6 +119,10 @@ namespace MicroElements.Swashbuckle.FluentValidation
         [NotNull]
         internal static IEnumerable<TValue> NotNull<TValue>([CanBeNull] this IEnumerable<TValue> collection) =>
             collection ?? Array.Empty<TValue>();
+
+        internal static IEnumerable<TValue> ToArrayDebug<TValue>([CanBeNull] this IEnumerable<TValue> collection) =>
+            collection?.ToArray() ?? Array.Empty<TValue>();
+
 
         /// <summary>
         /// Overrides source rules with <paramref name="overrides"/> by name.

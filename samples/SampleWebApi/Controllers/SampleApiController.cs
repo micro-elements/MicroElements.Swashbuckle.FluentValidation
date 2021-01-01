@@ -102,6 +102,4 @@ namespace SampleWebApi.Controllers
         }
 
     }
-
-
 }

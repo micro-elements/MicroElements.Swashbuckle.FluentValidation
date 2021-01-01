@@ -113,7 +113,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                                             schemaPropertyName = apiProperty.Key;
 
                                         var schemaFilterContext = new SchemaFilterContext(parameterType, context.SchemaGenerator, context.SchemaRepository);
-                                        rule.Apply(new RuleContext(schema, schemaFilterContext, schemaPropertyName, propertyValidator));
+                                        rule.Apply(new RuleContext(schema, schemaPropertyName, propertyValidator, schemaFilterContext));
                                         _logger.LogDebug($"Rule '{rule.Name}' applied for property '{parameterType.Name}.{operationParameter.Name}'.");
                                     }
                                     else
