@@ -1,3 +1,7 @@
+# Changes in 4.1.0:
+* RuleForEach support #66
+* Fixed: Absence of MinimumLength should not override nullable. (PR#67 by bcronje)
+
 # Changes in 4.0.0:
 * FluentValidation updated to [9.0.0]
 * Swashbuckle.AspNetCore updated to [5.5.1]

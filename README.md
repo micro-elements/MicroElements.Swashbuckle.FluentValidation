@@ -10,7 +10,7 @@ Note: For WebApi see: https://github.com/micro-elements/MicroElements.Swashbuckl
 ![NuGetDownloads](https://img.shields.io/nuget/dt/MicroElements.Swashbuckle.FluentValidation.svg)
 [![MyGetVersion](https://img.shields.io/myget/micro-elements/v/MicroElements.Swashbuckle.FluentValidation.svg)](https://www.myget.org/feed/micro-elements/package/nuget/MicroElements.Swashbuckle.FluentValidation)
 
-[![Travis](https://img.shields.io/travis/micro-elements/MicroElements.Swashbuckle.FluentValidation/master.svg?logo=travis)](https://travis-ci.org/micro-elements/MicroElements.Swashbuckle.FluentValidation)
+![Build and publish](https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/workflows/Build%20and%20publish/badge.svg)
 [![AppVeyor](https://img.shields.io/appveyor/ci/micro-elements/microelements-swashbuckle-fluentvalidation.svg?logo=appveyor)](https://ci.appveyor.com/project/micro-elements/microelements-swashbuckle-fluentvalidation)
 [![Coverage Status](https://img.shields.io/coveralls/micro-elements/MicroElements.Swashbuckle.FluentValidation.svg)](https://coveralls.io/r/micro-elements/MicroElements.Swashbuckle.FluentValidation)
 
