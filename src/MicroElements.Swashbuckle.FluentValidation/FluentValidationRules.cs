@@ -174,6 +174,15 @@ namespace MicroElements.Swashbuckle.FluentValidation
                         schemaProperty.SetNewMin(p => p.MinLength, 1);
                     },
                 },
+                new FluentValidationRule("Empty")
+                {
+                    Matches = propertyValidator => propertyValidator is IEmptyValidator && propertyValidator.HasNoCondition(),
+                    Apply = context =>
+                    {
+                        var schemaProperty = context.Schema.Properties[context.PropertyKey];
+                        schemaProperty.ReadOnly = true;
+                    },
+                },
                 new FluentValidationRule("Length")
                 {
                     Matches = propertyValidator => propertyValidator is ILengthValidator && propertyValidator.HasNoCondition(),
