@@ -19,6 +19,17 @@ namespace SampleWebApi.Controllers
 
             return person;
         }
+
+        [HttpPost("[action]")]
+        public ActionResult<PhoneEntity> AddPhoneEntity([FromQuery]PhoneEntity person)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            return person;
+        }
     }
 
     public class Person
@@ -32,6 +43,23 @@ namespace SampleWebApi.Controllers
         public PersonValidator()
         {
             RuleForEach(x => x.Emails).EmailAddress();
+        }
+    }
+
+    public class PhoneEntity
+    {
+        public string MobilePhoneNumber { get; set; }
+
+        public class Validator : AbstractValidator<PhoneEntity>
+        {
+            public Validator()
+            {
+                RuleFor(c => c.MobilePhoneNumber)
+                    .NotEmpty()
+                    .Length(10)
+                    .Matches(@"^3").WithMessage("'{PropertyName}' should start with '3'.")
+                    .Matches(@"^\d*$").WithMessage("'{PropertyName}' should only contain digits.");
+            }
         }
     }
 }

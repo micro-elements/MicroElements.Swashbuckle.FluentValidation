@@ -4,6 +4,8 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <LangVersion>8.0</LangVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <OpenApiGenerateDocuments>false</OpenApiGenerateDocuments>
     <Description>Swagger ISchemaFilter that uses FluentValidation validators instead System.ComponentModel based attributes.</Description>

@@ -1,8 +1,6 @@
-using System;
 using System.Collections.Generic;
 using FluentAssertions;
 using FluentValidation;
-using FluentValidation.Results;
 using Microsoft.OpenApi.Models;
 using SampleWebApi.Contracts;
 using SampleWebApi.Validators;

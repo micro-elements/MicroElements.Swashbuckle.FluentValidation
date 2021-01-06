@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) MicroElements. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+using System;
 
 namespace MicroElements.Swashbuckle.FluentValidation
 {
@@ -18,8 +21,8 @@ namespace MicroElements.Swashbuckle.FluentValidation
             int compare = 0;
             while (true)
             {
-                left.GetNextSymbol(ref leftIndex, out char leftSymbol, toUpper: true);
-                right.GetNextSymbol(ref rightIndex, out char rightSymbol, toUpper: true);
+                left.GetNextSymbol(ref leftIndex, out char leftSymbol);
+                right.GetNextSymbol(ref rightIndex, out char rightSymbol);
 
                 compare = leftSymbol.CompareTo(rightSymbol);
                 if (compare != 0 || leftIndex < 0 || rightIndex < 0)
@@ -42,8 +45,8 @@ namespace MicroElements.Swashbuckle.FluentValidation
             bool equals;
             while (true)
             {
-                bool hasLeftSymbol = left.GetNextSymbol(ref leftIndex, out char leftSymbol, toUpper: true);
-                bool hasRightSymbol = right.GetNextSymbol(ref rightIndex, out char rightSymbol, toUpper: true);
+                bool hasLeftSymbol = left.GetNextSymbol(ref leftIndex, out char leftSymbol);
+                bool hasRightSymbol = right.GetNextSymbol(ref rightIndex, out char rightSymbol);
 
                 equals = leftSymbol == rightSymbol;
                 if (!equals || !hasLeftSymbol || !hasRightSymbol)
@@ -74,14 +77,14 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
     internal static class StringUtils
     {
-        public static bool GetNextSymbol(this string value, ref int startIndex, out char symbol, bool toUpper = true)
+        internal static bool GetNextSymbol(this string value, ref int startIndex, out char symbol)
         {
             while (startIndex >= 0 && startIndex < value.Length)
             {
                 var current = value[startIndex++];
                 if (char.IsLetterOrDigit(current))
                 {
-                    symbol = toUpper ? char.ToUpperInvariant(current) : current;
+                    symbol = char.ToUpperInvariant(current);
                     return true;
                 }
             }

@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) MicroElements. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -7,7 +10,7 @@ using System.Runtime.CompilerServices;
 using FluentValidation;
 using FluentValidation.Internal;
 using FluentValidation.Validators;
-using JetBrains.Annotations;
+
 using Microsoft.OpenApi.Models;
 
 [assembly: InternalsVisibleTo("MicroElements.Swashbuckle.FluentValidation.Tests")]
@@ -56,8 +59,8 @@ namespace MicroElements.Swashbuckle.FluentValidation
         {
             return (validator as IEnumerable<IValidationRule>)
                 .NotNull()
-                .GetValidationRules()
-                .Where(propertyRule => propertyRule.PropertyRule.HasNoCondition() && (propertyRule.PropertyRule.PropertyName).EqualsIgnoreAll(name));
+                .GetPropertyRules()
+                .Where(propertyRule => propertyRule.PropertyRule.HasNoCondition() && propertyRule.PropertyRule.PropertyName.EqualsIgnoreAll(name));
         }
 
         /// <summary>
@@ -76,7 +79,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// Returns all IValidationRules that are PropertyRule.
         /// If rule is CollectionPropertyRule then isCollectionRule set to true.
         /// </summary>
-        internal static IEnumerable<ValidationRuleContext> GetValidationRules(
+        internal static IEnumerable<ValidationRuleContext> GetPropertyRules(
             this IEnumerable<IValidationRule> validationRules)
         {
             foreach (var validationRule in validationRules)
@@ -116,13 +119,17 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <summary>
         /// Returns not null enumeration.
         /// </summary>
-        [NotNull]
-        internal static IEnumerable<TValue> NotNull<TValue>([CanBeNull] this IEnumerable<TValue> collection) =>
+        internal static IEnumerable<TValue> NotNull<TValue>(this IEnumerable<TValue>? collection) =>
             collection ?? Array.Empty<TValue>();
 
-        internal static IEnumerable<TValue> ToArrayDebug<TValue>([CanBeNull] this IEnumerable<TValue> collection) =>
-            collection?.ToArray() ?? Array.Empty<TValue>();
-
+        internal static IEnumerable<TValue> ToArrayDebug<TValue>(this IEnumerable<TValue>? collection)
+        {
+#if DEBUG
+            return collection?.ToArray() ?? Array.Empty<TValue>();
+#else
+            return collection;
+#endif
+        }
 
         /// <summary>
         /// Overrides source rules with <paramref name="overrides"/> by name.
@@ -130,7 +137,9 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <param name="source">Source rules.</param>
         /// <param name="overrides">Overrides list.</param>
         /// <returns>New rule list.</returns>
-        internal static IReadOnlyList<FluentValidationRule> OverrideRules(this IReadOnlyList<FluentValidationRule> source, IEnumerable<FluentValidationRule> overrides)
+        internal static IReadOnlyList<FluentValidationRule> OverrideRules(
+            this IReadOnlyList<FluentValidationRule> source,
+            IEnumerable<FluentValidationRule>? overrides)
         {
             if (overrides != null)
             {
@@ -139,7 +148,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 {
                     validationRules[validationRule.Name] = validationRule;
                 }
-                
+
                 return validationRules.Values.ToList();
             }
 

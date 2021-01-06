@@ -1,8 +1,10 @@
-﻿using System;
+﻿// Copyright (c) MicroElements. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using FluentValidation;
-using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -19,26 +21,26 @@ namespace MicroElements.Swashbuckle.FluentValidation
     {
         private readonly ILogger _logger;
         private readonly SwaggerGenOptions _swaggerGenOptions;
-        private readonly IValidatorFactory _validatorFactory;
+        private readonly IValidatorFactory? _validatorFactory;
         private readonly IReadOnlyList<FluentValidationRule> _rules;
 
         /// <summary>
-        /// Creates instance of <see cref="FluentValidationOperationFilter"/>.
+        /// Initializes a new instance of the <see cref="FluentValidationOperationFilter"/> class.
         /// </summary>
         /// <param name="swaggerGenOptions">Swagger generation options.</param>
         /// <param name="validatorFactory">FluentValidation factory.</param>
-        /// <param name="rules">Custom rules. Is not set <see cref="FluentValidationRules.CreateDefaultRules"/> will be used.</param>
+        /// <param name="rules">Custom rules. Is not set <see cref="FluentValidationRuleProvider.CreateDefaultRules"/> will be used.</param>
         /// <param name="loggerFactory">Logger factory.</param>
         public FluentValidationOperationFilter(
             IOptions<SwaggerGenOptions> swaggerGenOptions,
-            [CanBeNull] IValidatorFactory validatorFactory = null,
-            [CanBeNull] IEnumerable<FluentValidationRule> rules = null,
-            [CanBeNull] ILoggerFactory loggerFactory = null)
+            IValidatorFactory? validatorFactory = null,
+            IEnumerable<FluentValidationRule>? rules = null,
+            ILoggerFactory? loggerFactory = null)
         {
             _swaggerGenOptions = swaggerGenOptions.Value;
             _validatorFactory = validatorFactory;
             _logger = loggerFactory?.CreateLogger(typeof(FluentValidationRules)) ?? NullLogger.Instance;
-            _rules = FluentValidationRules.CreateDefaultRules().OverrideRules(rules);
+            _rules = FluentValidationRuleProvider.CreateDefaultRules().OverrideRules(rules);
         }
 
         /// <inheritdoc />
@@ -50,14 +52,21 @@ namespace MicroElements.Swashbuckle.FluentValidation
             }
             catch (Exception e)
             {
-                _logger.LogWarning(0, e, $"Error on apply rules for operation '{operation.OperationId}'.");
+                var operationId = operation.OperationId ?? context.ApiDescription.RelativePath;
+                _logger.LogWarning(0, e, $"Error on apply rules for operation '{operationId}'.");
             }
         }
 
-        void ApplyInternal(OpenApiOperation operation, OperationFilterContext context)
+        private void ApplyInternal(OpenApiOperation operation, OperationFilterContext context)
         {
             if (operation.Parameters == null)
                 return;
+
+            if (_validatorFactory == null)
+            {
+                _logger.LogWarning(0, "ValidatorFactory is not provided. Please register FluentValidation.");
+                return;
+            }
 
             var schemaIdSelector = _swaggerGenOptions.SchemaGeneratorOptions.SchemaIdSelector ?? new SchemaGeneratorOptions().SchemaIdSelector;
 
@@ -72,74 +81,39 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     var parameterType = modelMetadata.ContainerType;
                     if (parameterType == null)
                         continue;
+
                     var validator = _validatorFactory.GetValidator(parameterType);
                     if (validator == null)
                         continue;
 
-                    var schemaPropertyName = operationParameter.Name;
-                    
-                    var validatorsForMember = validator.GetValidatorsForMemberIgnoreCase(schemaPropertyName);
+                    OpenApiSchema schema = GetSchemaForType(context, schemaIdSelector, parameterType);
 
-                    var lazyLog = new LazyLog(_logger,
-                        logger => logger.LogDebug($"Applying FluentValidation rules to swagger schema for type '{parameterType}' from operation '{operation.OperationId}'."));
-
-                    OpenApiSchema schema = null;
-                    foreach (var propertyValidator in validatorsForMember)
+                    if (schema.Properties != null && schema.Properties.Count > 0)
                     {
-                        foreach (var rule in _rules)
-                        {
-                            if (rule.Matches(propertyValidator))
-                            {
-                                try
-                                {
-                                    var schemaId = schemaIdSelector(parameterType);
+                        var schemaPropertyName = operationParameter.Name;
+                        var apiProperty = schema.Properties.FirstOrDefault(property => property.Key.EqualsIgnoreAll(schemaPropertyName));
+                        if (apiProperty.Key != null)
+                            schemaPropertyName = apiProperty.Key;
 
-                                    if (!context.SchemaRepository.Schemas.TryGetValue(schemaId, out schema))
-                                    {
-                                        schema = context.SchemaGenerator.GenerateSchema(parameterType, context.SchemaRepository);
-                                    }
+                        FluentValidationSchemaBuilder.ApplyRulesToSchema(
+                            schema: schema,
+                            schemaType: parameterType,
+                            schemaPropertyNames: new[] { schemaPropertyName },
+                            schemaFilterContext: null,
+                            validator: validator,
+                            rules: _rules,
+                            logger: _logger);
 
-                                    if ((schema.Properties == null || schema.Properties.Count == 0) && context.SchemaRepository.Schemas.ContainsKey(schemaId))
-                                    {
-                                        schema = context.SchemaRepository.Schemas[schemaId];
-                                    }
+                        if (schema.Required != null)
+                            operationParameter.Required = schema.Required.Contains(schemaPropertyName, IgnoreAllStringComparer.Instance);
 
-                                    if (schema.Properties != null && schema.Properties.Count > 0)
-                                    {
-                                        lazyLog.LogOnce();
-
-                                        var apiProperty = schema.Properties.FirstOrDefault(property => property.Key.EqualsIgnoreAll(schemaPropertyName));
-                                        if (apiProperty.Key != null)
-                                            schemaPropertyName = apiProperty.Key;
-
-                                        var schemaFilterContext = new SchemaFilterContext(parameterType, context.SchemaGenerator, context.SchemaRepository);
-                                        rule.Apply(new RuleContext(schema, schemaPropertyName, propertyValidator, schemaFilterContext));
-                                        _logger.LogDebug($"Rule '{rule.Name}' applied for property '{parameterType.Name}.{operationParameter.Name}'.");
-                                    }
-                                    else
-                                    {
-                                        _logger.LogDebug($"Rule '{rule.Name}' skipped for property '{parameterType.Name}.{operationParameter.Name}'.");
-                                    }
-                                }
-                                catch (Exception e)
-                                {
-                                    _logger.LogWarning(0, e, $"Error on apply rule '{rule.Name}' for property '{parameterType.Name}.{schemaPropertyName}'.");
-                                }
-                            }
-                        }
-                    }
-
-                    if (schema?.Required != null)
-                        operationParameter.Required = schema.Required.Contains(schemaPropertyName, IgnoreAllStringComparer.Instance);
-
-                    if (schema?.Properties != null)
-                    {
                         var parameterSchema = operationParameter.Schema;
                         if (parameterSchema != null)
                         {
                             if (schema.Properties.TryGetValue(schemaPropertyName.ToLowerCamelCase(), out var property)
                                 || schema.Properties.TryGetValue(schemaPropertyName, out property))
                             {
+                                // Copy from property schema to parameter schema.
                                 parameterSchema.MinLength = property.MinLength;
                                 parameterSchema.Nullable = property.Nullable;
                                 parameterSchema.MaxLength = property.MaxLength;
@@ -148,11 +122,30 @@ namespace MicroElements.Swashbuckle.FluentValidation
                                 parameterSchema.Maximum = property.Maximum;
                                 parameterSchema.ExclusiveMaximum = property.ExclusiveMaximum;
                                 parameterSchema.ExclusiveMinimum = property.ExclusiveMinimum;
+                                parameterSchema.AllOf = property.AllOf;
                             }
                         }
                     }
                 }
-            }  
+            }
+        }
+
+        private static OpenApiSchema GetSchemaForType(OperationFilterContext context, Func<Type, string> schemaIdSelector, Type parameterType)
+        {
+            var schemaId = schemaIdSelector(parameterType);
+
+            if (!context.SchemaRepository.Schemas.TryGetValue(schemaId, out OpenApiSchema schema))
+            {
+                schema = context.SchemaGenerator.GenerateSchema(parameterType, context.SchemaRepository);
+            }
+
+            if ((schema.Properties == null || schema.Properties.Count == 0) &&
+                context.SchemaRepository.Schemas.ContainsKey(schemaId))
+            {
+                schema = context.SchemaRepository.Schemas[schemaId];
+            }
+
+            return schema;
         }
     }
 }

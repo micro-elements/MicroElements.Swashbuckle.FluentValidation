@@ -1,6 +1,10 @@
-# Changes in 4.1.0:
-* RuleForEach support #66
-* Fixed: Absence of MinimumLength should not override nullable. (PR#67 by bcronje)
+# Changes in 4.1.0-rc.1:
+* RuleForEach supported. Issue #66
+* SetValidator supported. Issue #68
+* Multiple match rules supported with allOf. Issue #69
+* Fixed #67: Absence of MinimumLength should not override nullable. (PR#67 by bcronje)
+* Fixed #70: Nullability for numerics if MinLength is greater then zero
+* Nullable annotations added
 
 # Changes in 4.0.0:
 * FluentValidation updated to [9.0.0]

@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) MicroElements. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+using System;
 using FluentValidation.Validators;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
@@ -33,16 +36,16 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <summary>
         /// Gets target property schema.
         /// </summary>
-        public OpenApiSchema Property => !IsCollectionValidator? Schema.Properties[PropertyKey] : Schema.Properties[PropertyKey].Items;
+        public OpenApiSchema Property => !IsCollectionValidator ? Schema.Properties[PropertyKey] : Schema.Properties[PropertyKey].Items;
 
         /// <summary>
         /// SchemaFilterContext.
         /// </summary>
         [Obsolete("Will be removed in next major version")]
-        public SchemaFilterContext SchemaFilterContext { get; }
+        public SchemaFilterContext? SchemaFilterContext { get; }
 
         /// <summary>
-        /// Creates new instance of <see cref="RuleContext"/>.
+        /// Initializes a new instance of the <see cref="RuleContext"/> class.
         /// </summary>
         /// <param name="schema">Swagger schema.</param>
         /// <param name="propertyKey">Property name.</param>
@@ -53,7 +56,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             OpenApiSchema schema,
             string propertyKey,
             IPropertyValidator propertyValidator,
-            SchemaFilterContext schemaFilterContext,
+            SchemaFilterContext? schemaFilterContext,
             bool isCollectionValidator = false)
         {
             Schema = schema;
