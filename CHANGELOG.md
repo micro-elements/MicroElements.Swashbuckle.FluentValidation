@@ -1,4 +1,4 @@
-# Changes in 4.1.0-rc.1:
+# Changes in 4.1.0:
 * RuleForEach supported. Issue #66
 * SetValidator supported. Issue #68
 * Multiple match rules supported with allOf. Issue #69
