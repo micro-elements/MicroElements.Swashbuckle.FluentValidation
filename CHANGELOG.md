@@ -1,3 +1,6 @@
+# Changes in 4.2.0:
+* Swashbuckle.AspNetCore version supports up to 7 (PR#75 by fabich)
+
 # Changes in 4.1.0:
 * RuleForEach supported. Issue #66
 * SetValidator supported. Issue #68
