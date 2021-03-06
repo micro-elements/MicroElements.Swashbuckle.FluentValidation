@@ -130,22 +130,15 @@ namespace MicroElements.Swashbuckle.FluentValidation
             }
         }
 
-        private static OpenApiSchema GetSchemaForType(OperationFilterContext context, Func<Type, string> schemaIdSelector, Type parameterType)
+        private static OpenApiSchema GetSchemaForType(
+            OperationFilterContext context,
+            Func<Type, string> schemaIdSelector,
+            Type parameterType)
         {
-            var schemaId = schemaIdSelector(parameterType);
+            SchemaRepository schemaRepository = context.SchemaRepository;
+            ISchemaGenerator schemaGenerator = context.SchemaGenerator;
 
-            if (!context.SchemaRepository.Schemas.TryGetValue(schemaId, out OpenApiSchema schema))
-            {
-                schema = context.SchemaGenerator.GenerateSchema(parameterType, context.SchemaRepository);
-            }
-
-            if ((schema.Properties == null || schema.Properties.Count == 0) &&
-                context.SchemaRepository.Schemas.ContainsKey(schemaId))
-            {
-                schema = context.SchemaRepository.Schemas[schemaId];
-            }
-
-            return schema;
+            return FluentValidationSchemaBuilder.GetSchemaForType(schemaRepository, schemaGenerator, schemaIdSelector, parameterType);
         }
     }
 }

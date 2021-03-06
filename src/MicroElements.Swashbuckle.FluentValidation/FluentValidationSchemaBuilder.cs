@@ -108,21 +108,30 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 IValidator? includedValidator = childAdapter.GetValidatorFromChildValidatorAdapter();
                 if (includedValidator != null)
                 {
-                    ApplyRulesToSchema(
-                        schema: schema,
-                        schemaType: schemaFilterContext.Type,
-                        schemaPropertyNames: null,
-                        schemaFilterContext: schemaFilterContext,
-                        validator: includedValidator,
-                        rules: rules,
-                        logger: logger);
+                    var canValidateInstancesOfType = includedValidator.CanValidateInstancesOfType(schemaFilterContext.Type);
 
-                    AddRulesFromIncludedValidators(
-                        schema: schema,
-                        schemaFilterContext: schemaFilterContext,
-                        validator: includedValidator,
-                        rules: rules,
-                        logger: logger);
+                    if (canValidateInstancesOfType)
+                    {
+                        ApplyRulesToSchema(
+                            schema: schema,
+                            schemaType: schemaFilterContext.Type,
+                            schemaPropertyNames: null,
+                            schemaFilterContext: schemaFilterContext,
+                            validator: includedValidator,
+                            rules: rules,
+                            logger: logger);
+
+                        AddRulesFromIncludedValidators(
+                            schema: schema,
+                            schemaFilterContext: schemaFilterContext,
+                            validator: includedValidator,
+                            rules: rules,
+                            logger: logger);
+                    }
+                    else
+                    {
+                        // GetSchemaForType, ApplyRulesToSchema
+                    }
                 }
             }
         }
@@ -142,6 +151,28 @@ namespace MicroElements.Swashbuckle.FluentValidation
             }
 
             return null;
+        }
+
+        public static OpenApiSchema GetSchemaForType(
+            SchemaRepository schemaRepository,
+            ISchemaGenerator schemaGenerator,
+            Func<Type, string> schemaIdSelector,
+            Type parameterType)
+        {
+            var schemaId = schemaIdSelector(parameterType);
+
+            if (!schemaRepository.Schemas.TryGetValue(schemaId, out OpenApiSchema schema))
+            {
+                schema = schemaGenerator.GenerateSchema(parameterType, schemaRepository);
+            }
+
+            if ((schema.Properties == null || schema.Properties.Count == 0) &&
+                schemaRepository.Schemas.ContainsKey(schemaId))
+            {
+                schema = schemaRepository.Schemas[schemaId];
+            }
+
+            return schema;
         }
     }
 }
