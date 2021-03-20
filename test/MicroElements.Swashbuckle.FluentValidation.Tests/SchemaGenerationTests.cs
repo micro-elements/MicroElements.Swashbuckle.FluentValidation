@@ -285,5 +285,57 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             nullableNumberProp.Minimum.Should().Be(0);
             nullableNumberProp.ExclusiveMinimum.Should().Be(true);
         }
+
+
+        public class TestEntity
+        {
+            public string TextValue { get; set; }
+
+            public string? NullableTextValue { get; set; }
+        }
+
+        [Fact]
+        public void TextNullability()
+        {
+            new SchemaBuilder<TestEntity>()
+                .AddRule(entity => entity.TextValue,
+                    rule => rule.MaximumLength(5),
+                    schema => schema.Nullable.Should().Be(true));
+
+            new SchemaBuilder<TestEntity>()
+                .AddRule(entity => entity.NullableTextValue,
+                    rule => rule.MaximumLength(5),
+                    schema => schema.Nullable.Should().Be(true));
+
+        }
+
+        [Fact]
+        public void NotNull()
+        {
+            var property = new SchemaBuilder<TestEntity>()
+                .AddRule(entity => entity.TextValue, rule => rule.NotNull().MinimumLength(1));
+
+            property.Nullable.Should().Be(false);
+            property.MinLength.Should().Be(1);
+        }
+
+        [Fact]
+        public void MinimumLength_ShouldNot_Set_Nullable_By_Default()
+        {
+            new SchemaBuilder<TestEntity>()
+                .AddRule(entity => entity.TextValue, rule => rule.MinimumLength(1), schema =>
+                {
+                    schema.Nullable.Should().Be(true);
+                    schema.MinLength.Should().Be(1);
+                });
+
+            new SchemaBuilder<TestEntity>()
+                .ConfigureFVSwaggerGenOptions(options => options.SetNotNullableIfMinLengthGreaterThenZero = true)
+                .AddRule(entity => entity.TextValue, rule => rule.MinimumLength(1), schema =>
+                {
+                    schema.Nullable.Should().Be(false);
+                    schema.MinLength.Should().Be(1);
+                });
+        }
     }
 }

@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) MicroElements. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
@@ -27,7 +30,12 @@ namespace MicroElements.Swashbuckle.FluentValidation
         public void LogOnce() => IgnoreResult(_lazyLog.Value);
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [SuppressMessage("ReSharper", "UnusedParameter.Local")]
-        private void IgnoreResult(object obj) {/* empty body. uses for evaluating input arg. */}
+        [SuppressMessage("ReSharper", "UnusedParameter.Local", Justification = "Ok.")]
+        [SuppressMessage("Style", "IDE0060:Remove unused parameter", Justification = "Ok.")]
+        [SuppressMessage("CodeQuality", "IDE0079:Remove unnecessary suppression", Justification = "Ok.")]
+        private void IgnoreResult(object obj)
+        {
+            /* empty body. uses for evaluating input arg. */
+        }
     }
 }

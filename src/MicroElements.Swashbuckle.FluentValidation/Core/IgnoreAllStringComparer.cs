@@ -21,8 +21,8 @@ namespace MicroElements.Swashbuckle.FluentValidation
             int compare = 0;
             while (true)
             {
-                left.GetNextSymbol(ref leftIndex, out char leftSymbol);
-                right.GetNextSymbol(ref rightIndex, out char rightSymbol);
+                GetNextSymbol(left, ref leftIndex, out char leftSymbol);
+                GetNextSymbol(right, ref rightIndex, out char rightSymbol);
 
                 compare = leftSymbol.CompareTo(rightSymbol);
                 if (compare != 0 || leftIndex < 0 || rightIndex < 0)
@@ -45,8 +45,8 @@ namespace MicroElements.Swashbuckle.FluentValidation
             bool equals;
             while (true)
             {
-                bool hasLeftSymbol = left.GetNextSymbol(ref leftIndex, out char leftSymbol);
-                bool hasRightSymbol = right.GetNextSymbol(ref rightIndex, out char rightSymbol);
+                bool hasLeftSymbol = GetNextSymbol(left, ref leftIndex, out char leftSymbol);
+                bool hasRightSymbol = GetNextSymbol(right, ref rightIndex, out char rightSymbol);
 
                 equals = leftSymbol == rightSymbol;
                 if (!equals || !hasLeftSymbol || !hasRightSymbol)
@@ -65,7 +65,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             {
                 int index = 0;
                 int hash = 0;
-                while (obj.GetNextSymbol(ref index, out char symbol))
+                while (GetNextSymbol(obj, ref index, out char symbol))
                 {
                     hash = 31 * hash + char.ToUpperInvariant(symbol).GetHashCode();
                 }
@@ -73,11 +73,8 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 return hash;
             }
         }
-    }
 
-    internal static class StringUtils
-    {
-        internal static bool GetNextSymbol(this string value, ref int startIndex, out char symbol)
+        internal static bool GetNextSymbol(string value, ref int startIndex, out char symbol)
         {
             while (startIndex >= 0 && startIndex < value.Length)
             {

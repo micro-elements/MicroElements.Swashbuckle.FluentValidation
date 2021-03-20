@@ -29,18 +29,20 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// </summary>
         /// <param name="swaggerGenOptions">Swagger generation options.</param>
         /// <param name="validatorFactory">FluentValidation factory.</param>
-        /// <param name="rules">Custom rules. Is not set <see cref="FluentValidationRuleProvider.CreateDefaultRules"/> will be used.</param>
+        /// <param name="rules">External FluentValidation rules. External rule overrides default rule with the same name.</param>
         /// <param name="loggerFactory">Logger factory.</param>
+        /// <param name="options">Schema generation options.</param>
         public FluentValidationOperationFilter(
             IOptions<SwaggerGenOptions> swaggerGenOptions,
             IValidatorFactory? validatorFactory = null,
             IEnumerable<FluentValidationRule>? rules = null,
-            ILoggerFactory? loggerFactory = null)
+            ILoggerFactory? loggerFactory = null,
+            IOptions<FluentValidationSwaggerGenOptions>? options = null)
         {
             _swaggerGenOptions = swaggerGenOptions.Value;
             _validatorFactory = validatorFactory;
             _logger = loggerFactory?.CreateLogger(typeof(FluentValidationRules)) ?? NullLogger.Instance;
-            _rules = FluentValidationRuleProvider.CreateDefaultRules().OverrideRules(rules);
+            _rules = new DefaultFluentValidationRuleProvider(options).GetRules().ToArray().OverrideRules(rules);
         }
 
         /// <inheritdoc />

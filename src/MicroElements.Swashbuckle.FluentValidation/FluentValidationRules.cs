@@ -3,9 +3,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
@@ -17,6 +19,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
     public class FluentValidationRules : ISchemaFilter
     {
         private readonly IValidatorFactory? _validatorFactory;
+        private readonly FluentValidationSwaggerGenOptions _options;
         private readonly ILogger _logger;
         private readonly IReadOnlyList<FluentValidationRule> _rules;
 
@@ -24,16 +27,19 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// Initializes a new instance of the <see cref="FluentValidationRules"/> class.
         /// </summary>
         /// <param name="validatorFactory">Validator factory.</param>
-        /// <param name="rules">External FluentValidation rules. Rule with the same name replaces default rule.</param>
+        /// <param name="rules">External FluentValidation rules. External rule overrides default rule with the same name.</param>
         /// <param name="loggerFactory"><see cref="ILoggerFactory"/> for logging. Can be null.</param>
+        /// <param name="options">Schema generation options.</param>
         public FluentValidationRules(
             IValidatorFactory? validatorFactory = null,
             IEnumerable<FluentValidationRule>? rules = null,
-            ILoggerFactory? loggerFactory = null)
+            ILoggerFactory? loggerFactory = null,
+            IOptions<FluentValidationSwaggerGenOptions>? options = null)
         {
             _validatorFactory = validatorFactory;
+            _options = options?.Value ?? new FluentValidationSwaggerGenOptions();
             _logger = loggerFactory?.CreateLogger(typeof(FluentValidationRules)) ?? NullLogger.Instance;
-            _rules = FluentValidationRuleProvider.CreateDefaultRules().OverrideRules(rules);
+            _rules = new DefaultFluentValidationRuleProvider(options).GetRules().ToArray().OverrideRules(rules);
         }
 
         /// <inheritdoc />
