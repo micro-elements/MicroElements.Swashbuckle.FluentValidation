@@ -89,46 +89,63 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 .Where(includeRule => includeRule.HasNoCondition())
                 .ToArray();
 
-            var childAdapters = validationRules
-                .Where(rule => rule is IIncludeRule)
-                .SelectMany(includeRule => includeRule.Validators)
-                .OfType<IChildValidatorAdaptor>();
-
-            var childAdapters2 = validationRules
-                .SelectMany(rule => rule.Validators)
-                .OfType<IChildValidatorAdaptor>()
+            var propertiesWithChildAdapters = validationRules
+                .Select(rule => (rule, rule.Validators.OfType<IChildValidatorAdaptor>().ToArray()))
                 .ToArrayDebug();
 
-            childAdapters = childAdapters.Concat(childAdapters2);
-
-            foreach (var childAdapter in childAdapters)
+            foreach ((PropertyRule propertyRule, IChildValidatorAdaptor[] childAdapters) in propertiesWithChildAdapters)
             {
-                IValidator? includedValidator = childAdapter.GetValidatorFromChildValidatorAdapter();
-                if (includedValidator != null)
+                foreach (var childAdapter in childAdapters)
                 {
-                    var canValidateInstancesOfType = includedValidator.CanValidateInstancesOfType(schemaFilterContext.Type);
-
-                    if (canValidateInstancesOfType)
+                    IValidator? childValidator = childAdapter.GetValidatorFromChildValidatorAdapter();
+                    if (childValidator != null)
                     {
-                        ApplyRulesToSchema(
-                            schema: schema,
-                            schemaType: schemaFilterContext.Type,
-                            schemaPropertyNames: null,
-                            schemaFilterContext: schemaFilterContext,
-                            validator: includedValidator,
-                            rules: rules,
-                            logger: logger);
+                        var canValidateInstancesOfType = childValidator.CanValidateInstancesOfType(schemaFilterContext.Type);
 
-                        AddRulesFromIncludedValidators(
-                            schema: schema,
-                            schemaFilterContext: schemaFilterContext,
-                            validator: includedValidator,
-                            rules: rules,
-                            logger: logger);
-                    }
-                    else
-                    {
-                        // GetSchemaForType, ApplyRulesToSchema
+                        if (canValidateInstancesOfType)
+                        {
+                            // It's a validator for current type (Include for example) so apply changes to current schema.
+                            ApplyRulesToSchema(
+                                schema: schema,
+                                schemaType: schemaFilterContext.Type,
+                                schemaPropertyNames: null,
+                                schemaFilterContext: schemaFilterContext,
+                                validator: childValidator,
+                                rules: rules,
+                                logger: logger);
+
+                            AddRulesFromIncludedValidators(
+                                schema: schema,
+                                schemaFilterContext: schemaFilterContext,
+                                validator: childValidator,
+                                rules: rules,
+                                logger: logger);
+                        }
+                        else
+                        {
+                            // It's a validator for sub schema so get schema and apply changes to it.
+                            var schemaForChildValidator = GetSchemaForType(
+                                schemaRepository: schemaFilterContext.SchemaRepository,
+                                schemaGenerator: schemaFilterContext.SchemaGenerator,
+                                schemaIdSelector: type => type.Name,
+                                parameterType: propertyRule.TypeToValidate);
+
+                            ApplyRulesToSchema(
+                                schema: schemaForChildValidator,
+                                schemaType: propertyRule.TypeToValidate,
+                                schemaPropertyNames: null,
+                                schemaFilterContext: schemaFilterContext,
+                                validator: childValidator,
+                                rules: rules,
+                                logger: logger);
+
+                            AddRulesFromIncludedValidators(
+                                schema: schemaForChildValidator,
+                                schemaFilterContext: schemaFilterContext,
+                                validator: childValidator,
+                                rules: rules,
+                                logger: logger);
+                        }
                     }
                 }
             }
