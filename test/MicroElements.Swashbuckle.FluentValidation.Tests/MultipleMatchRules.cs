@@ -57,11 +57,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             // FluentValidation swagger behavior
             // *********************************
 
-            var schemaRepository = new SchemaRepository();
-            var referenceSchema = SchemaGenerator(new PhoneEntity.Validator()).GenerateSchema(typeof(PhoneEntity), schemaRepository);
-
-            var schema = schemaRepository.Schemas[referenceSchema.Reference.Id];
-
+            var schema = new SchemaRepository().GenerateSchemaForValidator(new PhoneEntity.Validator());
             var numberProp = schema.Properties[nameof(PhoneEntity.MobilePhoneNumber)];
             numberProp.Type.Should().Be("string");
         }

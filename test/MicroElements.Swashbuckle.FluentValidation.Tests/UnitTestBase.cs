@@ -39,7 +39,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
 
     public class SchemaBuilder<T>
     {
-        public FluentValidator<T> Validator { get; } = new FluentValidator<T>();
+        public InlineValidator<T> Validator { get; } = new InlineValidator<T>();
 
         public SchemaRepository SchemaRepository { get; } = new SchemaRepository();
 
@@ -72,7 +72,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
 
     public static class TestExtensions
     {
-        public static OpenApiSchema GenerateSchemaForValidator<T>(this SchemaRepository schemaRepository, IValidator<T> validator, FluentValidationSwaggerGenOptions? fluentValidationSwaggerGenOptions)
+        public static OpenApiSchema GenerateSchemaForValidator<T>(this SchemaRepository schemaRepository, IValidator<T> validator, FluentValidationSwaggerGenOptions? fluentValidationSwaggerGenOptions = null)
         {
             OpenApiSchema schema = CreateSchemaGenerator(
                     new []{ validator },
@@ -83,22 +83,6 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
                 schema = schemaRepository.Schemas[schema.Reference.Id];
 
             return schema;
-        }
-
-        public static OpenApiSchema Generate<T, TProperty>(
-            Expression<Func<T, TProperty>> expression,
-            Action<IRuleBuilderInitial<T, TProperty>> action)
-        {
-            var validator = new FluentValidator<T>();
-            IRuleBuilderInitial<T, TProperty> ruleBuilder = validator.RuleFor(expression);
-            action(ruleBuilder);
-
-            var expressionBody = expression.Body as MemberExpression;
-
-            var schema = new SchemaRepository().GenerateSchemaForValidator(validator, new FluentValidationSwaggerGenOptions());
-
-            var property = schema.Properties[expressionBody.Member.Name];
-            return property;
         }
 
         public static SchemaGenerator CreateSchemaGenerator(
@@ -128,13 +112,6 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             configureSerializer?.Invoke(serializerOptions);
 
             return new SchemaGenerator(generatorOptions, new JsonSerializerDataContractResolver(serializerOptions));
-        }
-    }
-
-    public class FluentValidator<T> : AbstractValidator<T>
-    {
-        public FluentValidator()
-        {
         }
     }
 }

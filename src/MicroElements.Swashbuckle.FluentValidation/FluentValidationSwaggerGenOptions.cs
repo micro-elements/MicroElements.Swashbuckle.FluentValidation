@@ -11,7 +11,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <summary>
         /// Gets or sets a value indicating whether property should be set to not nullable if MinLength is greater then zero.
         /// </summary>
-        public bool SetNotNullableIfMinLengthGreaterThenZero { get; set; } = true;
+        public bool SetNotNullableIfMinLengthGreaterThenZero { get; set; } = false;
 
         /// <summary>
         /// Gets or sets a value indicating whether schema supports AllOf.

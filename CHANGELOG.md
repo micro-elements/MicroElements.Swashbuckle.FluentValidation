@@ -1,3 +1,7 @@
+# Changes in 4.3.0:
+* Fixed #79: Adding a simple Length validation to a string field should not make the field non-nullable
+* Fixed #76: SetValidator is applying FluentValidation rules to parent object property with same name
+
 # Changes in 4.2.0:
 * Swashbuckle.AspNetCore version supports up to 7 (PR#75 by fabich)
 

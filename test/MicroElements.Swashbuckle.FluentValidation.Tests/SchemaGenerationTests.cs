@@ -321,6 +321,14 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
         [Fact]
         public void MinimumLength_ShouldNot_Set_Nullable_By_Default()
         {
+            // without options. property is nullable, min length is set.
+            new SchemaBuilder<TestEntity>()
+                .AddRule(entity => entity.TextValue, rule => rule.MinimumLength(1), schema =>
+                {
+                    schema.Nullable.Should().Be(true);
+                    schema.MinLength.Should().Be(1);
+                });
+
             new SchemaBuilder<TestEntity>()
                 .ConfigureFVSwaggerGenOptions(options => options.SetNotNullableIfMinLengthGreaterThenZero = false)
                 .AddRule(entity => entity.TextValue, rule => rule.MinimumLength(1), schema =>
