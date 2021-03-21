@@ -33,167 +33,156 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <inheritdoc />
         public IEnumerable<FluentValidationRule> GetRules()
         {
-            return new[]
-            {
-                new FluentValidationRule("BeforeAll")
+            yield return new FluentValidationRule("BeforeAll")
+                .MatchesValidatorWithNoCondition()
+                .WithApply(context =>
                 {
-                    Matches = propertyValidator => propertyValidator.HasNoCondition(),
-                    Apply = context =>
-                    {
-                        var property = context.Schema.Properties[context.PropertyKey];
-                        property.Nullable = property.Nullable;
-                    },
-                },
-                new FluentValidationRule("Required")
-                {
-                    Matches = propertyValidator => (propertyValidator is INotNullValidator || propertyValidator is INotEmptyValidator) && propertyValidator.HasNoCondition(),
-                    Apply = context =>
-                    {
-                        if (context.Schema.Required == null)
-                            context.Schema.Required = new SortedSet<string>();
-                        if (!context.Schema.Required.Contains(context.PropertyKey))
-                            context.Schema.Required.Add(context.PropertyKey);
-                        context.Schema.Properties[context.PropertyKey].Nullable = false;
-                    },
-                },
-                new FluentValidationRule("NotEmpty")
-                {
-                    Matches = propertyValidator => propertyValidator is INotEmptyValidator && propertyValidator.HasNoCondition(),
-                    Apply = context =>
-                    {
-                        var schemaProperty = context.Schema.Properties[context.PropertyKey];
-                        schemaProperty.SetNewMin(p => p.MinLength, 1, _options.Value.SetNotNullableIfMinLengthGreaterThenZero);
-                    },
-                },
-                new FluentValidationRule("Length")
-                {
-                    Matches = propertyValidator => propertyValidator is ILengthValidator && propertyValidator.HasNoCondition(),
-                    Apply = context =>
-                    {
-                        var lengthValidator = (ILengthValidator)context.PropertyValidator;
-                        var schemaProperty = context.Schema.Properties[context.PropertyKey];
+                    var property = context.Property;
+                    property.Nullable = property.Nullable;
+                });
 
-                        if (lengthValidator.Max > 0)
-                            schemaProperty.SetNewMax(p => p.MaxLength, lengthValidator.Max);
-
-                        if (lengthValidator.Min > 0)
-                            schemaProperty.SetNewMin(p => p.MinLength, lengthValidator.Min, _options.Value.SetNotNullableIfMinLengthGreaterThenZero);
-                    },
-                },
-                new FluentValidationRule("Pattern")
+            yield return new FluentValidationRule("Required")
+                .MatchesValidatorWithNoCondition()
+                .MatchesValidator(validator => validator is INotNullValidator || validator is INotEmptyValidator)
+                .WithApply(context =>
                 {
-                    Matches = propertyValidator => propertyValidator is IRegularExpressionValidator && propertyValidator.HasNoCondition(),
-                    Apply = context =>
+                    if (!context.Schema.Required.Contains(context.PropertyKey))
+                        context.Schema.Required.Add(context.PropertyKey);
+
+                    context.Property.Nullable = false;
+                });
+
+            yield return new FluentValidationRule("NotEmpty")
+                .MatchesValidatorWithNoCondition()
+                .MatchesValidator(validator => validator is INotEmptyValidator)
+                .WithApply(context =>
+                {
+                    context.Property.SetNewMin(p => p.MinLength, 1, _options.Value.SetNotNullableIfMinLengthGreaterThenZero);
+                });
+
+            yield return new FluentValidationRule("Length")
+                .MatchesValidatorWithNoCondition()
+                .MatchesValidator(validator => validator is ILengthValidator)
+                .WithApply(context =>
+                {
+                    var lengthValidator = (ILengthValidator) context.PropertyValidator;
+                    var schemaProperty = context.Property;
+
+                    if (lengthValidator.Max > 0)
+                        schemaProperty.SetNewMax(p => p.MaxLength, lengthValidator.Max);
+
+                    if (lengthValidator.Min > 0)
+                        schemaProperty.SetNewMin(p => p.MinLength, lengthValidator.Min, _options.Value.SetNotNullableIfMinLengthGreaterThenZero);
+                });
+
+            yield return new FluentValidationRule("Pattern")
+                .MatchesValidatorWithNoCondition()
+                .MatchesValidator(validator => validator is IRegularExpressionValidator)
+                .WithApply(context =>
+                {
+                    var regularExpressionValidator = (IRegularExpressionValidator) context.PropertyValidator;
+                    var schemaProperty = context.Property;
+
+                    if (_options.Value.IsAllOffSupported)
                     {
-                        var regularExpressionValidator = (IRegularExpressionValidator)context.PropertyValidator;
-                        var schemaProperty = context.Schema.Properties[context.PropertyKey];
-
-                        bool isSupportsAllOff = true;
-
-                        if (isSupportsAllOff)
+                        if (schemaProperty.Pattern != null ||
+                            schemaProperty.AllOf.Count(schema => schema.Pattern != null) > 0)
                         {
-                            if (schemaProperty.Pattern != null || schemaProperty.AllOf.Count(schema => schema.Pattern != null) > 0)
+                            if (schemaProperty.AllOf.Count(schema => schema.Pattern != null) == 0)
                             {
-                                if (schemaProperty.AllOf.Count(schema => schema.Pattern != null) == 0)
-                                {
-                                    // Add first pattern as AllOf
-                                    schemaProperty.AllOf.Add(new OpenApiSchema()
-                                    {
-                                        Pattern = schemaProperty.Pattern,
-                                    });
-                                }
-
-                                // Add another pattern as AllOf
+                                // Add first pattern as AllOf
                                 schemaProperty.AllOf.Add(new OpenApiSchema()
                                 {
-                                    Pattern = regularExpressionValidator.Expression,
+                                    Pattern = schemaProperty.Pattern,
                                 });
+                            }
 
-                                schemaProperty.Pattern = null;
-                            }
-                            else
+                            // Add another pattern as AllOf
+                            schemaProperty.AllOf.Add(new OpenApiSchema()
                             {
-                                // First and only pattern
-                                schemaProperty.Pattern = regularExpressionValidator.Expression;
-                            }
+                                Pattern = regularExpressionValidator.Expression,
+                            });
+
+                            schemaProperty.Pattern = null;
                         }
                         else
                         {
-                            // Set new pattern
+                            // First and only pattern
                             schemaProperty.Pattern = regularExpressionValidator.Expression;
                         }
-                    },
-                },
-                new FluentValidationRule("EMail")
-                {
-                    Matches = propertyValidator => propertyValidator.GetType().Name.Contains("EmailValidator") && propertyValidator.HasNoCondition(),
-                    Apply = context =>
+                    }
+                    else
                     {
-                        context.Property.Format = "email";
-                    },
-                },
-                new FluentValidationRule("Comparison")
+                        // Set new pattern
+                        schemaProperty.Pattern = regularExpressionValidator.Expression;
+                    }
+                });
+
+            yield return new FluentValidationRule("EMail")
+                .MatchesValidatorWithNoCondition()
+                .MatchesValidator(propertyValidator => propertyValidator.GetType().Name.Contains("EmailValidator"))
+                .WithApply(context => context.Property.Format = "email");
+
+            yield return new FluentValidationRule("Comparison")
+                .MatchesValidatorWithNoCondition()
+                .MatchesValidator(validator => validator is IComparisonValidator)
+                .WithApply(context =>
                 {
-                    Matches = propertyValidator => propertyValidator is IComparisonValidator && propertyValidator.HasNoCondition(),
-                    Apply = context =>
+                    var comparisonValidator = (IComparisonValidator)context.PropertyValidator;
+                    if (comparisonValidator.ValueToCompare.IsNumeric())
                     {
-                        var comparisonValidator = (IComparisonValidator)context.PropertyValidator;
-                        if (comparisonValidator.ValueToCompare.IsNumeric())
-                        {
-                            var valueToCompare = comparisonValidator.ValueToCompare.NumericToDecimal();
-                            var schemaProperty = context.Schema.Properties[context.PropertyKey];
+                        var valueToCompare = comparisonValidator.ValueToCompare.NumericToDecimal();
+                        var schemaProperty = context.Property;
 
-                            if (comparisonValidator.Comparison == Comparison.GreaterThanOrEqual)
-                            {
-                                schemaProperty.SetNewMin(p => p.Minimum, valueToCompare, _options.Value.SetNotNullableIfMinLengthGreaterThenZero);
-                            }
-                            else if (comparisonValidator.Comparison == Comparison.GreaterThan)
-                            {
-                                schemaProperty.SetNewMin(p => p.Minimum, valueToCompare, _options.Value.SetNotNullableIfMinLengthGreaterThenZero);
-                                schemaProperty.ExclusiveMinimum = true;
-                            }
-                            else if (comparisonValidator.Comparison == Comparison.LessThanOrEqual)
-                            {
-                                schemaProperty.SetNewMax(p => p.Maximum, valueToCompare);
-                            }
-                            else if (comparisonValidator.Comparison == Comparison.LessThan)
-                            {
-                                schemaProperty.SetNewMax(p => p.Maximum, valueToCompare);
-                                schemaProperty.ExclusiveMaximum = true;
-                            }
+                        if (comparisonValidator.Comparison == Comparison.GreaterThanOrEqual)
+                        {
+                            schemaProperty.SetNewMin(p => p.Minimum, valueToCompare, _options.Value.SetNotNullableIfMinLengthGreaterThenZero);
                         }
-                    },
-                },
-                new FluentValidationRule("Between")
+                        else if (comparisonValidator.Comparison == Comparison.GreaterThan)
+                        {
+                            schemaProperty.SetNewMin(p => p.Minimum, valueToCompare, _options.Value.SetNotNullableIfMinLengthGreaterThenZero);
+                            schemaProperty.ExclusiveMinimum = true;
+                        }
+                        else if (comparisonValidator.Comparison == Comparison.LessThanOrEqual)
+                        {
+                            schemaProperty.SetNewMax(p => p.Maximum, valueToCompare);
+                        }
+                        else if (comparisonValidator.Comparison == Comparison.LessThan)
+                        {
+                            schemaProperty.SetNewMax(p => p.Maximum, valueToCompare);
+                            schemaProperty.ExclusiveMaximum = true;
+                        }
+                    }
+                });
+
+            yield return new FluentValidationRule("Between")
+                .MatchesValidatorWithNoCondition()
+                .MatchesValidator(validator => validator is IBetweenValidator)
+                .WithApply(context =>
                 {
-                    Matches = propertyValidator => propertyValidator is IBetweenValidator && propertyValidator.HasNoCondition(),
-                    Apply = context =>
+                    var betweenValidator = (IBetweenValidator)context.PropertyValidator;
+                    var schemaProperty = context.Property;
+
+                    if (betweenValidator.From.IsNumeric())
                     {
-                        var betweenValidator = (IBetweenValidator)context.PropertyValidator;
-                        var schemaProperty = context.Schema.Properties[context.PropertyKey];
+                        schemaProperty.SetNewMin(p => p.Minimum, betweenValidator.From.NumericToDecimal(), _options.Value.SetNotNullableIfMinLengthGreaterThenZero);
 
-                        if (betweenValidator.From.IsNumeric())
+                        if (betweenValidator is ExclusiveBetweenValidator)
                         {
-                            schemaProperty.SetNewMin(p => p.Minimum, betweenValidator.From.NumericToDecimal(), _options.Value.SetNotNullableIfMinLengthGreaterThenZero);
-
-                            if (betweenValidator is ExclusiveBetweenValidator)
-                            {
-                                schemaProperty.ExclusiveMinimum = true;
-                            }
+                            schemaProperty.ExclusiveMinimum = true;
                         }
+                    }
 
-                        if (betweenValidator.To.IsNumeric())
+                    if (betweenValidator.To.IsNumeric())
+                    {
+                        schemaProperty.SetNewMax(p => p.Maximum, betweenValidator.To.NumericToDecimal());
+
+                        if (betweenValidator is ExclusiveBetweenValidator)
                         {
-                            schemaProperty.SetNewMax(p => p.Maximum, betweenValidator.To.NumericToDecimal());
-
-                            if (betweenValidator is ExclusiveBetweenValidator)
-                            {
-                                schemaProperty.ExclusiveMaximum = true;
-                            }
+                            schemaProperty.ExclusiveMaximum = true;
                         }
-                    },
-                },
-            };
+                    }
+                });
         }
     }
 }

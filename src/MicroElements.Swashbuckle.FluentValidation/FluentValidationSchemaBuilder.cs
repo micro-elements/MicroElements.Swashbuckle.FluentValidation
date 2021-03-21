@@ -32,14 +32,12 @@ namespace MicroElements.Swashbuckle.FluentValidation
         {
             var schemaTypeName = schemaType.Name;
 
-            var lazyLog = new LazyLog(logger,
-                l => l.LogDebug($"Applying FluentValidation rules to swagger schema '{schemaTypeName}'."));
+            var lazyLog = new LazyLog(logger, l => l.LogDebug($"Applying FluentValidation rules to swagger schema '{schemaTypeName}'."));
 
             schemaPropertyNames ??= schema.Properties?.Keys ?? Array.Empty<string>();
             foreach (var schemaPropertyName in schemaPropertyNames)
             {
                 var validationRules = validator.GetValidationRulesForMemberIgnoreCase(schemaPropertyName).ToArrayDebug();
-
                 foreach (var ruleContext in validationRules)
                 {
                     var propertyValidators = ruleContext.PropertyRule.Validators;
@@ -47,7 +45,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     {
                         foreach (var rule in rules)
                         {
-                            if (rule.Matches(propertyValidator))
+                            if (rule.IsMatches(propertyValidator))
                             {
                                 try
                                 {

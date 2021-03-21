@@ -14,6 +14,11 @@ namespace MicroElements.Swashbuckle.FluentValidation
         public bool SetNotNullableIfMinLengthGreaterThenZero { get; set; } = true;
 
         /// <summary>
+        /// Gets or sets a value indicating whether schema supports AllOf.
+        /// </summary>
+        public bool IsAllOffSupported { get; set; } = true;
+
+        /// <summary>
         /// Sets values that compatible with FluentValidation.
         /// </summary>
         /// <returns>The same options.</returns>
