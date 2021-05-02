@@ -21,7 +21,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <summary>
         /// Gets predicates that checks validator is matches rule.
         /// </summary>
-        public IReadOnlyCollection<Func<IPropertyValidator, bool>> Matches { get; }
+        public IReadOnlyCollection<Func<IPropertyValidator, bool>> Conditions { get; }
 
         /// <summary>
         /// Gets action that modifies swagger schema.
@@ -34,10 +34,13 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <param name="name">Rule name.</param>
         /// <param name="matches">Validator predicates.</param>
         /// <param name="apply">Apply rule to schema action.</param>
-        public FluentValidationRule(string name, IReadOnlyCollection<Func<IPropertyValidator, bool>>? matches = null, Action<RuleContext>? apply = null)
+        public FluentValidationRule(
+            string name,
+            IReadOnlyCollection<Func<IPropertyValidator, bool>>? matches = null,
+            Action<RuleContext>? apply = null)
         {
             Name = name;
-            Matches = matches ?? Array.Empty<Func<IPropertyValidator, bool>>();
+            Conditions = matches ?? Array.Empty<Func<IPropertyValidator, bool>>();
             Apply = apply ?? (context => { });
         }
 
@@ -48,7 +51,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <returns>True if validator matches rule.</returns>
         public bool IsMatches(IPropertyValidator validator)
         {
-            foreach (var match in Matches)
+            foreach (var match in Conditions)
             {
                 if (!match(validator))
                     return false;
@@ -56,37 +59,34 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
             return true;
         }
+    }
 
-        /// <summary>
-        /// Adds condition that validator has no conditions.
-        /// Conditional validators will not change schema because conditions are processes in runtime.
-        /// </summary>
-        /// <returns>New rule instance.</returns>
-        public FluentValidationRule MatchesValidatorWithNoCondition()
-        {
-            var matches = Matches.Prepend(validator => validator.HasNoCondition()).ToArray();
-            return new FluentValidationRule(Name, matches, Apply);
-        }
-
+    /// <summary>
+    /// <see cref="FluentValidationRule"/> extensions.
+    /// </summary>
+    public static class FluentValidationRuleExtensions
+    {
         /// <summary>
         /// Adds match predicate.
         /// </summary>
-        /// <param name="validatorSelector">Validator selector.</param>
+        /// <param name="rule">Source rule.</param>
+        /// <param name="validatorPredicate">Validator selector.</param>
         /// <returns>New rule instance.</returns>
-        public FluentValidationRule MatchesValidator(Func<IPropertyValidator, bool> validatorSelector)
+        public static FluentValidationRule WithCondition(this FluentValidationRule rule, Func<IPropertyValidator, bool> validatorPredicate)
         {
-            var matches = Matches.Append(validatorSelector).ToArray();
-            return new FluentValidationRule(Name, matches, Apply);
+            var matches = rule.Conditions.Append(validatorPredicate).ToArray();
+            return new FluentValidationRule(rule.Name, matches, rule.Apply);
         }
 
         /// <summary>
         /// Sets <see cref="Apply"/> action.
         /// </summary>
+        /// <param name="rule">Source rule.</param>
         /// <param name="applyAction">New apply action.</param>
         /// <returns>New rule instance.</returns>
-        public FluentValidationRule WithApply(Action<RuleContext> applyAction)
+        public static FluentValidationRule WithApply(this FluentValidationRule rule, Action<RuleContext> applyAction)
         {
-            return new FluentValidationRule(Name, Matches, applyAction);
+            return new FluentValidationRule(rule.Name, rule.Conditions, applyAction);
         }
     }
 }

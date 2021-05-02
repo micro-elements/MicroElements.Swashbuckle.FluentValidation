@@ -34,7 +34,6 @@ namespace MicroElements.Swashbuckle.FluentValidation
         public IEnumerable<FluentValidationRule> GetRules()
         {
             yield return new FluentValidationRule("BeforeAll")
-                .MatchesValidatorWithNoCondition()
                 .WithApply(context =>
                 {
                     var property = context.Property;
@@ -42,8 +41,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 });
 
             yield return new FluentValidationRule("Required")
-                .MatchesValidatorWithNoCondition()
-                .MatchesValidator(validator => validator is INotNullValidator || validator is INotEmptyValidator)
+                .WithCondition(validator => validator is INotNullValidator || validator is INotEmptyValidator)
                 .WithApply(context =>
                 {
                     if (!context.Schema.Required.Contains(context.PropertyKey))
@@ -53,16 +51,14 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 });
 
             yield return new FluentValidationRule("NotEmpty")
-                .MatchesValidatorWithNoCondition()
-                .MatchesValidator(validator => validator is INotEmptyValidator)
+                .WithCondition(validator => validator is INotEmptyValidator)
                 .WithApply(context =>
                 {
                     context.Property.SetNewMin(p => p.MinLength, 1, _options.Value.SetNotNullableIfMinLengthGreaterThenZero);
                 });
 
             yield return new FluentValidationRule("Length")
-                .MatchesValidatorWithNoCondition()
-                .MatchesValidator(validator => validator is ILengthValidator)
+                .WithCondition(validator => validator is ILengthValidator)
                 .WithApply(context =>
                 {
                     var lengthValidator = (ILengthValidator) context.PropertyValidator;
@@ -76,8 +72,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 });
 
             yield return new FluentValidationRule("Pattern")
-                .MatchesValidatorWithNoCondition()
-                .MatchesValidator(validator => validator is IRegularExpressionValidator)
+                .WithCondition(validator => validator is IRegularExpressionValidator)
                 .WithApply(context =>
                 {
                     var regularExpressionValidator = (IRegularExpressionValidator) context.PropertyValidator;
@@ -119,13 +114,11 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 });
 
             yield return new FluentValidationRule("EMail")
-                .MatchesValidatorWithNoCondition()
-                .MatchesValidator(propertyValidator => propertyValidator.GetType().Name.Contains("EmailValidator"))
+                .WithCondition(propertyValidator => propertyValidator.GetType().Name.Contains("EmailValidator"))
                 .WithApply(context => context.Property.Format = "email");
 
             yield return new FluentValidationRule("Comparison")
-                .MatchesValidatorWithNoCondition()
-                .MatchesValidator(validator => validator is IComparisonValidator)
+                .WithCondition(validator => validator is IComparisonValidator)
                 .WithApply(context =>
                 {
                     var comparisonValidator = (IComparisonValidator)context.PropertyValidator;
@@ -156,8 +149,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 });
 
             yield return new FluentValidationRule("Between")
-                .MatchesValidatorWithNoCondition()
-                .MatchesValidator(validator => validator is IBetweenValidator)
+                .WithCondition(validator => validator is IBetweenValidator)
                 .WithApply(context =>
                 {
                     var betweenValidator = (IBetweenValidator)context.PropertyValidator;
@@ -167,7 +159,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     {
                         schemaProperty.SetNewMin(p => p.Minimum, betweenValidator.From.NumericToDecimal(), _options.Value.SetNotNullableIfMinLengthGreaterThenZero);
 
-                        if (betweenValidator is ExclusiveBetweenValidator)
+                        if (betweenValidator.Name == "ExclusiveBetweenValidator")
                         {
                             schemaProperty.ExclusiveMinimum = true;
                         }
@@ -177,7 +169,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     {
                         schemaProperty.SetNewMax(p => p.Maximum, betweenValidator.To.NumericToDecimal());
 
-                        if (betweenValidator is ExclusiveBetweenValidator)
+                        if (betweenValidator.Name == "ExclusiveBetweenValidator")
                         {
                             schemaProperty.ExclusiveMaximum = true;
                         }

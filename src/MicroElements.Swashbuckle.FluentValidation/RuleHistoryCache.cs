@@ -132,21 +132,4 @@ namespace MicroElements.Swashbuckle.FluentValidation
             return obj?.GetHashCode() ?? 0;
         }
     }
-
-    internal class PropertyValidatorComparer2 : IEqualityComparer<IPropertyValidator>
-    {
-        public bool Equals(IPropertyValidator x, IPropertyValidator y)
-        {
-            if (ReferenceEquals(x, y)) return true;
-            if (ReferenceEquals(x, null)) return false;
-            if (ReferenceEquals(y, null)) return false;
-            if (x.GetType() != y.GetType()) return false;
-            return Equals(x.Options, y.Options);
-        }
-
-        public int GetHashCode(IPropertyValidator obj)
-        {
-            return obj.Options != null ? obj.Options.GetHashCode() : 0;
-        }
-    }
 }
