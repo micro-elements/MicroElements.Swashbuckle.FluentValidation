@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using FluentValidation;
+using MicroElements.Swashbuckle.FluentValidation.Generation;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -18,10 +19,11 @@ namespace MicroElements.Swashbuckle.FluentValidation
     /// </summary>
     public class FluentValidationRules : ISchemaFilter
     {
-        private readonly IValidatorFactory? _validatorFactory;
-        private readonly FluentValidationSwaggerGenOptions _options;
         private readonly ILogger _logger;
+
+        private readonly IValidatorFactory? _validatorFactory;
         private readonly IReadOnlyList<FluentValidationRule> _rules;
+        private readonly ISchemaGenerationOptions _schemaGenerationOptions;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FluentValidationRules"/> class.
@@ -29,17 +31,17 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <param name="validatorFactory">Validator factory.</param>
         /// <param name="rules">External FluentValidation rules. External rule overrides default rule with the same name.</param>
         /// <param name="loggerFactory"><see cref="ILoggerFactory"/> for logging. Can be null.</param>
-        /// <param name="options">Schema generation options.</param>
+        /// <param name="schemaGenerationOptions">Schema generation options.</param>
         public FluentValidationRules(
             IValidatorFactory? validatorFactory = null,
             IEnumerable<FluentValidationRule>? rules = null,
             ILoggerFactory? loggerFactory = null,
-            IOptions<FluentValidationSwaggerGenOptions>? options = null)
+            IOptions<SchemaGenerationOptions>? schemaGenerationOptions = null)
         {
             _validatorFactory = validatorFactory;
-            _options = options?.Value ?? new FluentValidationSwaggerGenOptions();
+            _schemaGenerationOptions = schemaGenerationOptions?.Value ?? new SchemaGenerationOptions();
             _logger = loggerFactory?.CreateLogger(typeof(FluentValidationRules)) ?? NullLogger.Instance;
-            _rules = new DefaultFluentValidationRuleProvider(options).GetRules().ToArray().OverrideRules(rules);
+            _rules = new DefaultFluentValidationRuleProvider(schemaGenerationOptions).GetRules().ToArray().OverrideRules(rules);
         }
 
         /// <inheritdoc />
@@ -67,11 +69,26 @@ namespace MicroElements.Swashbuckle.FluentValidation
             if (validator == null)
                 return;
 
-            ApplyRulesToSchema(schema, context, validator);
+            var schemaContext = new SchemaGenerationContext
+            {
+                Schema = schema,
+                SchemaType = context.Type,
+                Rules = _rules,
+                SchemaGenerationOptions = _schemaGenerationOptions,
+                ReflectionContext = new ReflectionContext(type: context.Type, propertyInfo: context.MemberInfo, parameterInfo: context.ParameterInfo),
+                SchemaProvider = new SwashbuckleSchemaProvider(context.SchemaRepository, context.SchemaGenerator),
+            };
+
+            if (context.MemberInfo != null || context.ParameterInfo != null)
+            {
+                int i = 0;
+            }
+
+            ApplyRulesToSchema(context, validator, schemaContext);
 
             try
             {
-                AddRulesFromIncludedValidators(schema, context, validator);
+                AddRulesFromIncludedValidators(context, validator, schemaContext);
             }
             catch (Exception e)
             {
@@ -79,26 +96,22 @@ namespace MicroElements.Swashbuckle.FluentValidation
             }
         }
 
-        private void ApplyRulesToSchema(OpenApiSchema schema, SchemaFilterContext context, IValidator validator)
+        private void ApplyRulesToSchema(SchemaFilterContext context, IValidator validator, SchemaGenerationContext schemaGenerationContext)
         {
             FluentValidationSchemaBuilder.ApplyRulesToSchema(
-                schema: schema,
                 schemaType: context.Type,
                 schemaPropertyNames: null,
-                schemaFilterContext: context,
                 validator: validator,
-                rules: _rules,
-                logger: _logger);
+                logger: _logger,
+                schemaGenerationContext: schemaGenerationContext);
         }
 
-        private void AddRulesFromIncludedValidators(OpenApiSchema schema, SchemaFilterContext context, IValidator validator)
+        private void AddRulesFromIncludedValidators(SchemaFilterContext context, IValidator validator, SchemaGenerationContext schemaGenerationContext)
         {
             FluentValidationSchemaBuilder.AddRulesFromIncludedValidators(
-                schema: schema,
-                schemaFilterContext: context,
                 validator: validator,
-                rules: _rules,
-                logger: _logger);
+                logger: _logger,
+                schemaGenerationContext: schemaGenerationContext);
         }
     }
 }

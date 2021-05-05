@@ -1,3 +1,9 @@
+# Changes in 5.0.0:
+* FluentValidation updated to 10.0.0
+* Swashbuckle.AspNetCore updated to 6.0.0
+* FluentValidationSwaggerGenOptions renamed to SchemaGenerationOptions
+* RuleContext: Obsolete SchemaFilterContext replaced with ReflectionContext (removed dependency on Swashbuckle)
+
 # Changes in 4.3.0:
 * Fixed #79: Adding a simple Length validation to a string field should not make the field non-nullable
 * Fixed #76: SetValidator is applying FluentValidation rules to parent object property with same name

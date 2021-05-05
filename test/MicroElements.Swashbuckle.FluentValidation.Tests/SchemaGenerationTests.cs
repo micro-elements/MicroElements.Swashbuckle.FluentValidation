@@ -1,7 +1,9 @@
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using FluentAssertions;
 using FluentValidation;
 using Microsoft.OpenApi.Models;
+using Newtonsoft.Json;
 using SampleWebApi.Contracts;
 using SampleWebApi.Validators;
 using Swashbuckle.AspNetCore.SwaggerGen;
@@ -330,7 +332,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
                 });
 
             new SchemaBuilder<TestEntity>()
-                .ConfigureFVSwaggerGenOptions(options => options.SetNotNullableIfMinLengthGreaterThenZero = false)
+                .ConfigureSchemaGenerationOptions(options => options.SetNotNullableIfMinLengthGreaterThenZero = false)
                 .AddRule(entity => entity.TextValue, rule => rule.MinimumLength(1), schema =>
                 {
                     schema.Nullable.Should().Be(true);
@@ -338,12 +340,30 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
                 });
 
             new SchemaBuilder<TestEntity>()
-                .ConfigureFVSwaggerGenOptions(options => options.SetNotNullableIfMinLengthGreaterThenZero = true)
+                .ConfigureSchemaGenerationOptions(options => options.SetNotNullableIfMinLengthGreaterThenZero = true)
                 .AddRule(entity => entity.TextValue, rule => rule.MinimumLength(1), schema =>
                 {
                     schema.Nullable.Should().Be(false);
                     schema.MinLength.Should().Be(1);
                 });
+        }
+
+        public class BestShot
+        {
+            [JsonPropertyName("photo")]
+            public string Link { get; set; }
+
+            [JsonPropertyName("zone")]
+            public string Area { get; set; }
+        }
+
+        [Fact]
+        public void NameOverrides()
+        {
+            new SchemaBuilder<BestShot>()
+                .AddRule(entity => entity.Link,
+                    rule => rule.MinimumLength(5),
+                    schema => schema.MinLength.Should().Be(5));
         }
     }
 }

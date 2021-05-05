@@ -1,6 +1,8 @@
 using System;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using FluentAssertions;
 using FluentValidation;
 using Microsoft.Extensions.Options;
@@ -43,11 +45,11 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
 
         public SchemaRepository SchemaRepository { get; } = new SchemaRepository();
 
-        private readonly FluentValidationSwaggerGenOptions _fluentValidationSwaggerGenOptions = new FluentValidationSwaggerGenOptions();
+        private readonly SchemaGenerationOptions _schemaGenerationOptions = new SchemaGenerationOptions();
 
-        public SchemaBuilder<T> ConfigureFVSwaggerGenOptions(Action<FluentValidationSwaggerGenOptions> configureFVSwaggerGenOptions)
+        public SchemaBuilder<T> ConfigureSchemaGenerationOptions(Action<SchemaGenerationOptions> configureFVSwaggerGenOptions)
         {
-            configureFVSwaggerGenOptions(_fluentValidationSwaggerGenOptions);
+            configureFVSwaggerGenOptions(_schemaGenerationOptions);
             return this;
         }
 
@@ -60,9 +62,13 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             configureRule?.Invoke(ruleBuilder);
 
             var expressionBody = propertyExpression.Body as MemberExpression;
-            var schema = SchemaRepository.GenerateSchemaForValidator(Validator, _fluentValidationSwaggerGenOptions);
+            var schema = SchemaRepository.GenerateSchemaForValidator(Validator, _schemaGenerationOptions);
 
-            var property = schema.Properties[expressionBody.Member.Name];
+
+            PropertyInfo propertyInfo = expressionBody.Member as PropertyInfo;
+            string propertyName = _schemaGenerationOptions.NameResolver.GetPropertyName(propertyInfo);
+
+            var property = schema.Properties[propertyName];
 
             schemaCheck?.Invoke(property);
 
@@ -72,11 +78,18 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
 
     public static class TestExtensions
     {
-        public static OpenApiSchema GenerateSchemaForValidator<T>(this SchemaRepository schemaRepository, IValidator<T> validator, FluentValidationSwaggerGenOptions? fluentValidationSwaggerGenOptions = null)
+        public static OpenApiSchema GenerateSchemaForValidator<T>(
+            this SchemaRepository schemaRepository,
+            IValidator<T> validator,
+            SchemaGenerationOptions? schemaGenerationOptions = null,
+            Action<JsonSerializerOptions>? configureSerializer = null)
         {
-            OpenApiSchema schema = CreateSchemaGenerator(
-                    new []{ validator },
-                    fluentValidationSwaggerGenOptions: fluentValidationSwaggerGenOptions)
+            SchemaGenerator schemaGenerator = CreateSchemaGenerator(
+                new []{ validator },
+                fluentValidationSwaggerGenOptions: schemaGenerationOptions,
+                configureSerializer: configureSerializer);
+
+            OpenApiSchema schema = schemaGenerator
                 .GenerateSchema(typeof(T), schemaRepository);
 
             if (schema.Reference?.Id != null)
@@ -87,18 +100,21 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
 
         public static SchemaGenerator CreateSchemaGenerator(
             IValidator[] validators,
-            FluentValidationSwaggerGenOptions? fluentValidationSwaggerGenOptions = null)
+            SchemaGenerationOptions? fluentValidationSwaggerGenOptions = null,
+            Action<JsonSerializerOptions>? configureSerializer = null)
         {
-            return CreateSchemaGenerator(options =>
-            {
-                IValidatorFactory validatorFactory = new CustomValidatorFactory(validators);
+            return CreateSchemaGenerator(
+                configureGenerator: options =>
+                {
+                    IValidatorFactory validatorFactory = new CustomValidatorFactory(validators);
 
-                options.SchemaFilters.Add(new FluentValidationRules(
-                    validatorFactory: validatorFactory, 
-                    rules: null, 
-                    loggerFactory: null,
-                    options: fluentValidationSwaggerGenOptions != null ? new OptionsWrapper<FluentValidationSwaggerGenOptions>(fluentValidationSwaggerGenOptions) : null));
-            });
+                    options.SchemaFilters.Add(new FluentValidationRules(
+                        validatorFactory: validatorFactory, 
+                        rules: null, 
+                        loggerFactory: null,
+                        schemaGenerationOptions: fluentValidationSwaggerGenOptions != null ? new OptionsWrapper<SchemaGenerationOptions>(fluentValidationSwaggerGenOptions) : null));
+                },
+                configureSerializer: configureSerializer);
         }
 
         public static SchemaGenerator CreateSchemaGenerator(

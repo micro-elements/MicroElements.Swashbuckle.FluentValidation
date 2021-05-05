@@ -68,7 +68,7 @@ namespace SampleWebApi
             });
 
             // Optional schema generation configuration.
-            services.Configure<FluentValidationSwaggerGenOptions>(options =>
+            services.Configure<SchemaGenerationOptions>(options =>
                 options.SetNotNullableIfMinLengthGreaterThenZero = true);
 
             // Adds logging

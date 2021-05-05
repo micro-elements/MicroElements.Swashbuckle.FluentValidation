@@ -5,7 +5,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <Nullable>enable</Nullable>
-    <LangVersion>8.0</LangVersion>
+    <LangVersion>9.0</LangVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <OpenApiGenerateDocuments>false</OpenApiGenerateDocuments>
     <Description>Swagger ISchemaFilter that uses FluentValidation validators instead System.ComponentModel based attributes.</Description>
@@ -14,7 +14,7 @@
 
   <ItemGroup>
     <PackageReference Include="FluentValidation" Version="[10.0.0, 11)" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="[5.5.1, 7)" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="[6.0.0, 7)" />
   </ItemGroup>
 
 </Project>

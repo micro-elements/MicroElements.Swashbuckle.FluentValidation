@@ -52,6 +52,10 @@ public void ConfigureServices(IServiceCollection services)
         c.AddFluentValidationRules();
     });
 
+    // Optional schema generation configuration.
+    services.Configure<FluentValidationSwaggerGenOptions>(options =>
+        options.SetNotNullableIfMinLengthGreaterThenZero = true);
+
     // Adds logging
     services.AddLogging(builder => builder.AddConsole());
 }
@@ -86,6 +90,7 @@ MicroElements.Swashbuckle.FluentValidation | Swashbuckle.AspNetCore | FluentVali
 [3.0.0, 3.1.0) | [5.0.0, 5.2.0) | >=8.3.0
 [3.1.0, 4.2.1) | [5.2.0, 6.0.0) | >=8.3.0
 [4.2.0, 5.0.0) | [5.5.1, 7.0.0) | [9.0.0, 10)
+[5.0.0, 6.0.0) | [6.0.0, 7.0.0) | [10.0.0, 11)
 
 ## Sample application
 

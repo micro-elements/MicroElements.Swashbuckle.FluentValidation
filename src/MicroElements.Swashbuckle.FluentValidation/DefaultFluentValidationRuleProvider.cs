@@ -19,15 +19,15 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// </summary>
         public static DefaultFluentValidationRuleProvider Instance { get; } = new DefaultFluentValidationRuleProvider();
 
-        private readonly IOptions<FluentValidationSwaggerGenOptions> _options;
+        private readonly IOptions<SchemaGenerationOptions> _options;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DefaultFluentValidationRuleProvider"/> class.
         /// </summary>
         /// <param name="options">Schema generation options.</param>
-        public DefaultFluentValidationRuleProvider(IOptions<FluentValidationSwaggerGenOptions>? options = null)
+        public DefaultFluentValidationRuleProvider(IOptions<SchemaGenerationOptions>? options = null)
         {
-            _options = options ?? new OptionsWrapper<FluentValidationSwaggerGenOptions>(new FluentValidationSwaggerGenOptions());
+            _options = options ?? new OptionsWrapper<SchemaGenerationOptions>(new SchemaGenerationOptions());
         }
 
         /// <inheritdoc />
