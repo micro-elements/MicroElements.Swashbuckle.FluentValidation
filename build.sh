@@ -61,7 +61,7 @@ then
     cat > "$CAKE_PROPS_PATH" <<EOL
 <Project Sdk="Microsoft.NET.Sdk">
 <PropertyGroup>
-  <TargetFramework>netcoreapp3.0</TargetFramework>
+  <TargetFramework>netcoreapp3.1</TargetFramework>
 </PropertyGroup>
 <ItemGroup>
   <PackageReference Include="MicroElements.DevOps" Version="$DEVOPS_VERSION" />
