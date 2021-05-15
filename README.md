@@ -1,4 +1,4 @@
-# MicroElements.Swashbuckle.FluentValidation
+﻿# MicroElements.Swashbuckle.FluentValidation
 Use FluentValidation rules instead of ComponentModel attributes to define swagger schema.
 
 Note: For WebApi see: https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation.WebApi
@@ -15,6 +15,10 @@ Note: For WebApi see: https://github.com/micro-elements/MicroElements.Swashbuckl
 [![Coverage Status](https://img.shields.io/coveralls/micro-elements/MicroElements.Swashbuckle.FluentValidation.svg)](https://coveralls.io/r/micro-elements/MicroElements.Swashbuckle.FluentValidation)
 
 [![Gitter](https://img.shields.io/gitter/room/micro-elements/MicroElements.Swashbuckle.FluentValidation.svg)](https://gitter.im/micro-elements/MicroElements.Swashbuckle.FluentValidation)
+
+### Supporting the project
+MicroElements.Swashbuckle.FluentValidation is developed and supported by [@petriashev](https://github.com/petriashev) for free in his spare time.
+If you find MicroElements.Swashbuckle.FluentValidation useful, please consider financially supporting the project via [OpenCollective](https://opencollective.com/micro-elements) which will help keep the project going 🙏.
 
 ## Usage
 

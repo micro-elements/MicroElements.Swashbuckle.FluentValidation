@@ -9,13 +9,14 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SampleWebApi", "samples\Sam
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{77EF15D5-47D6-4CF0-9BD6-A3120C3854FF}"
 	ProjectSection(SolutionItems) = preProject
-		.travis.yml = .travis.yml
 		build.cake = build.cake
 		build.ps1 = build.ps1
 		build.sh = build.sh
 		CHANGELOG.md = CHANGELOG.md
 		src\common.props = src\common.props
 		src\Directory.Build.props = src\Directory.Build.props
+		.github\FUNDING.yml = .github\FUNDING.yml
+		.github\workflows\github_build_and_publish.yml = .github\workflows\github_build_and_publish.yml
 		README.md = README.md
 		version.props = version.props
 	EndProjectSection
