@@ -4,7 +4,7 @@
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Microsoft.Extensions.Options;
+using MicroElements.Swashbuckle.FluentValidation.AspNetCore;
 
 namespace MicroElements.Swashbuckle.FluentValidation.Generation
 {
@@ -13,15 +13,15 @@ namespace MicroElements.Swashbuckle.FluentValidation.Generation
     /// </summary>
     public class SystemTextJsonNameResolver : INameResolver
     {
-        private readonly IOptions<JsonSerializerOptions>? _serializerOptions;
+        private readonly JsonSerializerOptions? _serializerOptions;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SystemTextJsonNameResolver"/> class.
         /// </summary>
         /// <param name="serializerOptions"><see cref="JsonSerializerOptions"/>.</param>
-        public SystemTextJsonNameResolver(IOptions<JsonSerializerOptions>? serializerOptions = null)
+        public SystemTextJsonNameResolver(AspNetJsonSerializerOptions? serializerOptions = null)
         {
-            _serializerOptions = serializerOptions;
+            _serializerOptions = serializerOptions?.Value ?? new JsonSerializerOptions();
         }
 
         /// <inheritdoc />
@@ -32,7 +32,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.Generation
                 return jsonPropertyName;
             }
 
-            if (_serializerOptions?.Value.PropertyNamingPolicy is { } jsonNamingPolicy)
+            if (_serializerOptions?.PropertyNamingPolicy is { } jsonNamingPolicy)
             {
                 return jsonNamingPolicy.ConvertName(propertyInfo.Name);
             }

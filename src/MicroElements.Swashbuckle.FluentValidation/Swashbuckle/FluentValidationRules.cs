@@ -22,8 +22,10 @@ namespace MicroElements.Swashbuckle.FluentValidation
         private readonly ILogger _logger;
 
         private readonly IValidatorFactory? _validatorFactory;
+
         private readonly IReadOnlyList<FluentValidationRule> _rules;
         private readonly ISchemaGenerationOptions _schemaGenerationOptions;
+        private readonly SchemaGenerationSettings _schemaGenerationSettings;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FluentValidationRules"/> class.
@@ -32,16 +34,41 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <param name="rules">External FluentValidation rules. External rule overrides default rule with the same name.</param>
         /// <param name="loggerFactory"><see cref="ILoggerFactory"/> for logging. Can be null.</param>
         /// <param name="schemaGenerationOptions">Schema generation options.</param>
+        /// <param name="nameResolver">Optional name resolver.</param>
         public FluentValidationRules(
-            IValidatorFactory? validatorFactory = null,
-            IEnumerable<FluentValidationRule>? rules = null,
+            // System services
             ILoggerFactory? loggerFactory = null,
-            IOptions<SchemaGenerationOptions>? schemaGenerationOptions = null)
+
+            // FluentValidation services
+            IValidatorFactory? validatorFactory = null,
+
+            // MicroElements services
+            IEnumerable<FluentValidationRule>? rules = null,
+            IOptions<SchemaGenerationOptions>? schemaGenerationOptions = null,
+            INameResolver? nameResolver = null,
+
+            // Swashbuckle services
+            IOptions<SwaggerGenOptions>? swaggerGenOptions = null)
         {
-            _validatorFactory = validatorFactory;
-            _schemaGenerationOptions = schemaGenerationOptions?.Value ?? new SchemaGenerationOptions();
+            // System services
             _logger = loggerFactory?.CreateLogger(typeof(FluentValidationRules)) ?? NullLogger.Instance;
+
+            // FluentValidation services
+            _validatorFactory = validatorFactory;
+
+            // MicroElements services
             _rules = new DefaultFluentValidationRuleProvider(schemaGenerationOptions).GetRules().ToArray().OverrideRules(rules);
+            _schemaGenerationOptions = schemaGenerationOptions?.Value ?? new SchemaGenerationOptions();
+            _schemaGenerationSettings = new SchemaGenerationSettings
+            {
+                NameResolver = nameResolver,
+            };
+
+            // Swashbuckle services
+            _schemaGenerationSettings = _schemaGenerationSettings with
+            {
+                SchemaIdSelector = swaggerGenOptions?.Value?.SchemaGeneratorOptions.SchemaIdSelector ?? new SchemaGeneratorOptions().SchemaIdSelector,
+            };
         }
 
         /// <inheritdoc />
@@ -69,20 +96,15 @@ namespace MicroElements.Swashbuckle.FluentValidation
             if (validator == null)
                 return;
 
-            var schemaContext = new SchemaGenerationContext
-            {
-                Schema = schema,
-                SchemaType = context.Type,
-                Rules = _rules,
-                SchemaGenerationOptions = _schemaGenerationOptions,
-                ReflectionContext = new ReflectionContext(type: context.Type, propertyInfo: context.MemberInfo, parameterInfo: context.ParameterInfo),
-                SchemaProvider = new SwashbuckleSchemaProvider(context.SchemaRepository, context.SchemaGenerator),
-            };
+            var schemaProvider = new SwashbuckleSchemaProvider(context.SchemaRepository, context.SchemaGenerator, _schemaGenerationSettings.SchemaIdSelector);
 
-            if (context.MemberInfo != null || context.ParameterInfo != null)
-            {
-                int i = 0;
-            }
+            var schemaContext = new SchemaGenerationContext(
+                schema: schema,
+                schemaType: context.Type,
+                rules: _rules,
+                schemaGenerationOptions: _schemaGenerationOptions,
+                schemaGenerationSettings: _schemaGenerationSettings,
+                schemaProvider: schemaProvider);
 
             ApplyRulesToSchema(context, validator, schemaContext);
 

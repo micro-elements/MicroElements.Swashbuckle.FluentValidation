@@ -1,8 +1,11 @@
 # Changes in 5.0.0:
 * FluentValidation updated to 10.0.0
 * Swashbuckle.AspNetCore updated to 6.0.0
-* FluentValidationSwaggerGenOptions renamed to SchemaGenerationOptions
 * RuleContext: Obsolete SchemaFilterContext replaced with ReflectionContext (removed dependency on Swashbuckle)
+* Dependency Swashbuckle.AspNetCore changed to Swashbuckle.AspNetCore.SwaggerGen which is UI independent (PR#82 by buvinghausen)
+* Added INameResolver to resolve names. Issue #80
+* Added AddFluentValidationRulesToSwagger extensions to simplify registration
+* FluentValidationSwaggerGenOptions renamed to SchemaGenerationOptions, IsAllOffSupported renamed to UseAllOffForMultipleRules 
 
 # Changes in 4.3.0:
 * Fixed #79: Adding a simple Length validation to a string field should not make the field non-nullable

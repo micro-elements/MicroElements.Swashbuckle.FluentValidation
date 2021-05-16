@@ -19,7 +19,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// </summary>
         /// <param name="validator">Validator.</param>
         /// <returns>enumeration.</returns>
-        public static IEnumerable<ValidationRuleContext> GetValidationRules(this IValidator validator)
+        public static IEnumerable<ValidationRuleInfo> GetValidationRules(this IValidator validator)
         {
             return (validator as IEnumerable<IValidationRule>)
                 .NotNull()
@@ -32,7 +32,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <param name="validator">Validator</param>
         /// <param name="name">Property name.</param>
         /// <returns>enumeration.</returns>
-        public static IEnumerable<ValidationRuleContext> GetValidationRulesForMemberIgnoreCase(this IValidator validator, string name)
+        public static IEnumerable<ValidationRuleInfo> GetValidationRulesForMemberIgnoreCase(this IValidator validator, string name)
         {
             return validator
                 .GetValidationRules()
@@ -43,7 +43,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// Returns all IValidationRules that are PropertyRule.
         /// If rule is CollectionPropertyRule then isCollectionRule set to true.
         /// </summary>
-        internal static IEnumerable<ValidationRuleContext> GetPropertyRules(
+        internal static IEnumerable<ValidationRuleInfo> GetPropertyRules(
             this IEnumerable<IValidationRule> validationRules)
         {
             return validationRules
@@ -52,8 +52,14 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 {
                     // CollectionPropertyRule<T, TElement> is also a PropertyRule.
                     var isCollectionRule = rule.GetType().Name.StartsWith("CollectionPropertyRule");
-                    var reflectionContext = new ReflectionContext(propertyInfo: rule.Member);
-                    return new ValidationRuleContext(rule, isCollectionRule, reflectionContext);
+
+                    ReflectionContext? reflectionContext = null;
+                    if (rule.Member != null)
+                    {
+                        reflectionContext = ReflectionContext.CreateFromProperty(propertyInfo: rule.Member);
+                    }
+
+                    return new ValidationRuleInfo(rule, isCollectionRule, reflectionContext);
                 });
         }
 

@@ -52,13 +52,20 @@ public void ConfigureServices(IServiceCollection services)
     services.AddSwaggerGen(c =>
     {
         c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
-        // Adds fluent validation rules to swagger
-        c.AddFluentValidationRules();
     });
 
-    // Optional schema generation configuration.
-    services.Configure<FluentValidationSwaggerGenOptions>(options =>
-        options.SetNotNullableIfMinLengthGreaterThenZero = true);
+    // [Optional] Add INameResolver (SystemTextJsonNameResolver will be registered by default)
+    // services.AddSingleton<INameResolver, CustomNameResolver>();
+
+    // Adds FluentValidationRules staff to Swagger. (Minimal configuration)
+    services.AddFluentValidationRulesToSwagger();
+
+    // [Optional] Configure generation options for your needs. Also can be done with services.Configure<SchemaGenerationOptions>
+    // services.AddFluentValidationRulesToSwagger(options =>
+    // {
+    //     options.SetNotNullableIfMinLengthGreaterThenZero = true;
+    //     options.UseAllOffForMultipleRules = true;
+    // });
 
     // Adds logging
     services.AddLogging(builder => builder.AddConsole());

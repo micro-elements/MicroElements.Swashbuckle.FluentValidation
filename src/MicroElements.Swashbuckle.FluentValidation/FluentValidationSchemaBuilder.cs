@@ -32,17 +32,20 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
             var lazyLog = new LazyLog(logger, l => l.LogDebug($"Applying FluentValidation rules to swagger schema '{schemaTypeName}'."));
 
-            var validationRules = validator.GetValidationRules().ToArray();
+            var validationRules = validator
+                .GetValidationRules()
+                .Where(context => context.ReflectionContext != null)
+                .ToArray();
 
             schemaPropertyNames ??= schema.Properties?.Keys ?? Array.Empty<string>();
             foreach (var schemaPropertyName in schemaPropertyNames)
             {
-                var validationRuleContext = validationRules
-                    .FirstOrDefault(propertyRule => IsMatchesRule(propertyRule, schemaPropertyName, schemaGenerationContext.SchemaGenerationOptions));
+                ValidationRuleInfo? validationRuleInfo = validationRules
+                    .FirstOrDefault(propertyRule => IsMatchesRule(propertyRule, schemaPropertyName, schemaGenerationContext.SchemaGenerationSettings));
 
-                if (validationRuleContext != null)
+                if (validationRuleInfo != null)
                 {
-                    var propertyValidators = validationRuleContext.PropertyRule.GetValidators();
+                    var propertyValidators = validationRuleInfo.PropertyRule.GetValidators();
 
                     foreach (var propertyValidator in propertyValidators)
                     {
@@ -58,11 +61,11 @@ namespace MicroElements.Swashbuckle.FluentValidation
                                         lazyLog.LogOnce();
 
                                         var ruleContext = new RuleContext(
-                                            schema,
-                                            schemaPropertyName,
-                                            propertyValidator,
-                                            reflectionContext: schemaGenerationContext.ReflectionContext,
-                                            isCollectionValidator: validationRuleContext.IsCollectionRule);
+                                            schema: schema,
+                                            propertyKey: schemaPropertyName,
+                                            validationRuleInfo: validationRuleInfo,
+                                            propertyValidator: propertyValidator,
+                                            reflectionContext: validationRuleInfo.ReflectionContext);
                                         rule.Apply(ruleContext);
 
                                         logger.LogDebug($"Rule '{rule.Name}' applied for property '{schemaTypeName}.{schemaPropertyName}'.");
@@ -84,16 +87,16 @@ namespace MicroElements.Swashbuckle.FluentValidation
             }
         }
 
-        internal static bool IsMatchesRule(ValidationRuleContext validationRuleContext, string schemaPropertyName, ISchemaGenerationOptions schemaGenerationOptions)
+        internal static bool IsMatchesRule(ValidationRuleInfo validationRuleInfo, string schemaPropertyName, ISchemaGenerationSettings schemaGenerationSettings)
         {
-            if (schemaGenerationOptions.NameResolver != null && validationRuleContext.ReflectionContext.PropertyInfo is PropertyInfo propertyInfo)
+            if (schemaGenerationSettings.NameResolver != null && validationRuleInfo.ReflectionContext?.PropertyInfo is PropertyInfo propertyInfo)
             {
-                var propertyName = schemaGenerationOptions.NameResolver.GetPropertyName(propertyInfo);
+                var propertyName = schemaGenerationSettings.NameResolver.GetPropertyName(propertyInfo);
                 if (propertyName.EqualsIgnoreAll(schemaPropertyName))
                     return true;
             }
 
-            return validationRuleContext.PropertyRule.PropertyName.EqualsIgnoreAll(schemaPropertyName);
+            return validationRuleInfo.PropertyRule.PropertyName.EqualsIgnoreAll(schemaPropertyName);
         }
 
         internal static void AddRulesFromIncludedValidators(

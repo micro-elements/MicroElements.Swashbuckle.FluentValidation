@@ -1,8 +1,6 @@
 ﻿// Copyright (c) MicroElements. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using MicroElements.Swashbuckle.FluentValidation.Generation;
-
 namespace MicroElements.Swashbuckle.FluentValidation
 {
     /// <summary>
@@ -16,14 +14,9 @@ namespace MicroElements.Swashbuckle.FluentValidation
         bool SetNotNullableIfMinLengthGreaterThenZero { get; }
 
         /// <summary>
-        /// Gets a value indicating whether schema supports AllOf.
+        /// Gets a value indicating whether schema generator should use AllOf for multiple rules (for example for multiple patterns).
         /// </summary>
-        bool IsAllOffSupported { get; }
-
-        /// <summary>
-        /// Gets <see cref="INameResolver"/>.
-        /// </summary>
-        INameResolver? NameResolver { get; }
+        bool UseAllOffForMultipleRules { get; }
     }
 
     /// <summary>
@@ -33,18 +26,15 @@ namespace MicroElements.Swashbuckle.FluentValidation
     {
         /// <summary>
         /// Gets or sets a value indicating whether property should be set to not nullable if MinLength is greater then zero.
+        /// Default: false.
         /// </summary>
         public bool SetNotNullableIfMinLengthGreaterThenZero { get; set; } = false;
 
         /// <summary>
-        /// Gets or sets a value indicating whether schema supports AllOf.
+        /// Gets or sets a value indicating whether schema generator should use AllOf for multiple rules (for example for multiple patterns).
+        /// Default: true.
         /// </summary>
-        public bool IsAllOffSupported { get; set; } = true;
-
-        /// <summary>
-        /// Gets or sets <see cref="INameResolver"/>.
-        /// </summary>
-        public INameResolver? NameResolver { get; set; } = new SystemTextJsonNameResolver();
+        public bool UseAllOffForMultipleRules { get; set; } = true;
 
         /// <summary>
         /// Sets values that compatible with FluentValidation.

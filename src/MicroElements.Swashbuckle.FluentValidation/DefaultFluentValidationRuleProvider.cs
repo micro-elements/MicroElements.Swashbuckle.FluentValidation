@@ -78,7 +78,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     var regularExpressionValidator = (IRegularExpressionValidator) context.PropertyValidator;
                     var schemaProperty = context.Property;
 
-                    if (_options.Value.IsAllOffSupported)
+                    if (_options.Value.UseAllOffForMultipleRules)
                     {
                         if (schemaProperty.Pattern != null ||
                             schemaProperty.AllOf.Count(schema => schema.Pattern != null) > 0)

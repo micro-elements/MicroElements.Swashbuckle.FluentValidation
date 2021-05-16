@@ -1,52 +1,21 @@
-﻿using System;
-using Microsoft.OpenApi.Models;
-using Swashbuckle.AspNetCore.SwaggerGen;
+﻿// Copyright (c) MicroElements. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+using System;
 
 namespace MicroElements.Swashbuckle.FluentValidation.Generation
 {
+    /// <summary>
+    /// Schema provider.
+    /// </summary>
+    /// <typeparam name="TSchema">Schema type.</typeparam>
     public interface ISchemaProvider<TSchema>
     {
+        /// <summary>
+        /// Gets or creates schema for type.
+        /// </summary>
+        /// <param name="type">Type.</param>
+        /// <returns>Schema.</returns>
         TSchema GetSchemaForType(Type type);
-    }
-
-    public class SwashbuckleSchemaProvider : ISchemaProvider<OpenApiSchema>
-    {
-        private readonly SchemaRepository _schemaRepository;
-        private readonly ISchemaGenerator _schemaGenerator;
-        private readonly Func<Type, string> _schemaIdSelector;
-
-        public SwashbuckleSchemaProvider(
-            SchemaRepository schemaRepository,
-            ISchemaGenerator schemaGenerator,
-            Func<Type, string>? schemaIdSelector = null)
-        {
-            _schemaRepository = schemaRepository;
-            _schemaGenerator = schemaGenerator;
-            _schemaIdSelector = schemaIdSelector ?? DefaultSchemaIdSelector;
-        }
-
-        private string DefaultSchemaIdSelector(Type type)
-        {
-            return type.Name;
-        }
-
-        /// <inheritdoc />
-        public OpenApiSchema GetSchemaForType(Type type)
-        {
-            var schemaId = _schemaIdSelector(type);
-
-            if (!_schemaRepository.Schemas.TryGetValue(schemaId, out OpenApiSchema schema))
-            {
-                schema = _schemaGenerator.GenerateSchema(type, _schemaRepository);
-            }
-
-            if ((schema.Properties == null || schema.Properties.Count == 0) &&
-                _schemaRepository.Schemas.ContainsKey(schemaId))
-            {
-                schema = _schemaRepository.Schemas[schemaId];
-            }
-
-            return schema;
-        }
     }
 }

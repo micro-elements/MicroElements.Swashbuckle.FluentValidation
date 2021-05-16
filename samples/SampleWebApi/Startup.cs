@@ -1,21 +1,18 @@
 ﻿using System.Linq;
-using FluentValidation;
 using FluentValidation.AspNetCore;
 using MicroElements.Swashbuckle.FluentValidation;
+using MicroElements.Swashbuckle.FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
-using Newtonsoft.Json.Serialization;
-using Newtonsoft.Json.Utilities;
 using SampleWebApi.DbModels;
-using Swashbuckle.AspNetCore.Swagger;
 
 namespace SampleWebApi
 {
-    public partial class Startup
+    public class Startup
     {
         public Startup(IConfiguration configuration)
         {
@@ -35,7 +32,7 @@ namespace SampleWebApi
                 // Adds fluent validators to Asp.net
                 .AddFluentValidation(c =>
                 {
-                    c.RegisterValidatorsFromAssemblyContaining<Startup>();
+                    c.RegisterValidatorsFromAssemblyContaining<Startup>(lifetime: ServiceLifetime.Transient);
                     // Optionally set validator factory if you have problems with scope resolve inside validators.
                     c.ValidatorFactoryType = typeof(HttpContextServiceProviderValidatorFactory);
                 })
@@ -43,7 +40,7 @@ namespace SampleWebApi
                 {
                     // Workaround for snake_case
                     // options.JsonSerializerOptions.PropertyNamingPolicy = new NewtonsoftJsonNamingPolicy(new SnakeCaseNamingStrategy());
-                    //options.JsonSerializerOptions.DictionaryKeyPolicy = new NewtonsoftJsonNamingPolicy(new SnakeCaseNamingStrategy());
+                    // options.JsonSerializerOptions.DictionaryKeyPolicy = new NewtonsoftJsonNamingPolicy(new SnakeCaseNamingStrategy());
                 })
                 //.AddNewtonsoftJson(options =>
                 //    options.SerializerSettings.ContractResolver = new DefaultContractResolver()
@@ -53,23 +50,29 @@ namespace SampleWebApi
                 ;
 
             // Register all validators as IValidator?
-            var serviceDescriptors = services.Where(descriptor => descriptor.ServiceType.GetInterfaces().Contains(typeof(IValidator))).ToList();
-            serviceDescriptors.ForEach(descriptor => services.Add(ServiceDescriptor.Transient(typeof(IValidator), descriptor.ImplementationType)));
+            //var serviceDescriptors = services.Where(descriptor => descriptor.ServiceType.GetInterfaces().Contains(typeof(IValidator))).ToList();
+            //serviceDescriptors.ForEach(descriptor => services.Add(ServiceDescriptor.Transient(typeof(IValidator), descriptor.ImplementationType)));
 
             // One more way to set custom factory.
             //services = services.Replace(ServiceDescriptor.Scoped<IValidatorFactory, ScopedServiceProviderValidatorFactory>());
 
-            //IOptions<SwaggerGeneratorOptions>
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo(){ Title = "My API", Version = "v1" });
-                // Adds fluent validation rules to swagger
-                c.AddFluentValidationRules();
             });
 
-            // Optional schema generation configuration.
-            services.Configure<SchemaGenerationOptions>(options =>
-                options.SetNotNullableIfMinLengthGreaterThenZero = true);
+            // [Optional] Add INameResolver (SystemTextJsonNameResolver will be registered by default)
+            // services.AddSingleton<INameResolver, CustomNameResolver>();
+
+            // Adds FluentValidationRules staff to Swagger
+            services.AddFluentValidationRulesToSwagger();
+
+            // [Optional] Configure generation options for your needs. Also can be done with services.Configure<SchemaGenerationOptions>
+            // services.AddFluentValidationRulesToSwagger(configure: options =>
+            // {
+            //     options.SetNotNullableIfMinLengthGreaterThenZero = true;
+            //     options.UseAllOffForMultipleRules = true;
+            // });
 
             // Adds logging
             services.AddLogging(builder => builder.AddConsole().AddFilter(level => true));
