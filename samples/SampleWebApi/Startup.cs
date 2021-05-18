@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using FluentValidation.AspNetCore;
 using MicroElements.Swashbuckle.FluentValidation;
 using MicroElements.Swashbuckle.FluentValidation.AspNetCore;
@@ -6,9 +8,13 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using SampleWebApi.DbModels;
+using SampleWebApi.ValidatorFactories;
+using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace SampleWebApi
 {
@@ -32,7 +38,7 @@ namespace SampleWebApi
                 // Adds fluent validators to Asp.net
                 .AddFluentValidation(c =>
                 {
-                    c.RegisterValidatorsFromAssemblyContaining<Startup>(lifetime: ServiceLifetime.Transient);
+                    c.RegisterValidatorsFromAssemblyContaining<Startup>(lifetime: ServiceLifetime.Scoped);
                     // Optionally set validator factory if you have problems with scope resolve inside validators.
                     c.ValidatorFactoryType = typeof(HttpContextServiceProviderValidatorFactory);
                 })
@@ -60,6 +66,17 @@ namespace SampleWebApi
             {
                 c.SwaggerDoc("v1", new OpenApiInfo(){ Title = "My API", Version = "v1" });
             });
+
+            // workaround with scope change is not working
+            //var configureSchemaGeneratorOptions = services.FirstOrDefault(descriptor => descriptor.ServiceType == typeof(IConfigureOptions<SchemaGeneratorOptions>));
+            //var configureSwaggerGeneratorOptions = services.FirstOrDefault(descriptor => descriptor.ServiceType == typeof(IConfigureOptions<SwaggerGeneratorOptions>));
+            //var configureDocumentProvider  = services.FirstOrDefault(descriptor => descriptor.ServiceType.Name == "IDocumentProvider");
+            //var configureSchemaGeneratorOptionsScoped = new ServiceDescriptor(configureSchemaGeneratorOptions.ServiceType, configureSchemaGeneratorOptions.ImplementationType, ServiceLifetime.Scoped);
+            //var configureSwaggerGeneratorOptionsScoped = new ServiceDescriptor(configureSwaggerGeneratorOptions.ServiceType, configureSwaggerGeneratorOptions.ImplementationType, ServiceLifetime.Scoped);
+            //var configureDocumentProviderScoped = new ServiceDescriptor(configureDocumentProvider.ServiceType, configureDocumentProvider.ImplementationType, ServiceLifetime.Scoped);
+            //services.Replace(configureSchemaGeneratorOptionsScoped);
+            //services.Replace(configureSwaggerGeneratorOptionsScoped);
+            //services.Replace(configureDocumentProviderScoped);
 
             // [Optional] Add INameResolver (SystemTextJsonNameResolver will be registered by default)
             // services.AddSingleton<INameResolver, CustomNameResolver>();

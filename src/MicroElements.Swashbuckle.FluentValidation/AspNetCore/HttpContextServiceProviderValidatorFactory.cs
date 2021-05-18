@@ -17,7 +17,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <summary>
         /// Initializes a new instance of the <see cref="HttpContextServiceProviderValidatorFactory"/> class.
         /// </summary>
-        /// <param name="httpContextAccessor">Access to the current HttpContext</param>
+        /// <param name="httpContextAccessor">Access to the current HttpContext.</param>
         public HttpContextServiceProviderValidatorFactory(IHttpContextAccessor httpContextAccessor)
         {
             _httpContextAccessor = httpContextAccessor;
