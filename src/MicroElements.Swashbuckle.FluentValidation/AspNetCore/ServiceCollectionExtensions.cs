@@ -41,6 +41,11 @@ namespace MicroElements.Swashbuckle.FluentValidation.AspNetCore
             /// Default: true.
             /// </summary>
             public bool RegisterSystemTextJsonNameResolver { get; set; } = true;
+
+            /// <summary>
+            /// ServiceLifetime to use for service registration.
+            /// </summary>
+            public ServiceLifetime ServiceLifetime { get; set; } = ServiceLifetime.Scoped;
         }
 
         /// <summary>
@@ -61,8 +66,11 @@ namespace MicroElements.Swashbuckle.FluentValidation.AspNetCore
             // Adds fluent validation rules to swagger
             if (registrationOptions.RegisterFluentValidationRules)
             {
+                services.Add(new ServiceDescriptor(typeof(FluentValidationRules), typeof(FluentValidationRules), registrationOptions.ServiceLifetime));
+                services.Add(new ServiceDescriptor(typeof(FluentValidationOperationFilter), typeof(FluentValidationOperationFilter), registrationOptions.ServiceLifetime));
+
                 services.Configure<SwaggerGenOptions>(options =>
-                    options.AddFluentValidationRules());
+                    options.AddFluentValidationRules(registrationOptions.ServiceLifetime));
             }
 
             // Register JsonSerializerOptions (reference to Microsoft.AspNetCore.Mvc.JsonOptions.Value)

@@ -30,16 +30,17 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <summary>
         /// Initializes a new instance of the <see cref="FluentValidationRules"/> class.
         /// </summary>
+        /// <param name="loggerFactory"><see cref="ILoggerFactory"/> for logging. Can be null.</param>
         /// <param name="validatorFactory">Validator factory.</param>
         /// <param name="rules">External FluentValidation rules. External rule overrides default rule with the same name.</param>
-        /// <param name="loggerFactory"><see cref="ILoggerFactory"/> for logging. Can be null.</param>
         /// <param name="schemaGenerationOptions">Schema generation options.</param>
         /// <param name="nameResolver">Optional name resolver.</param>
+        /// <param name="swaggerGenOptions">SwaggerGenOptions.</param>
         public FluentValidationRules(
-            // System services
+            /* System services */
             ILoggerFactory? loggerFactory = null,
 
-            // FluentValidation services
+            /* FluentValidation services */
             IValidatorFactory? validatorFactory = null,
 
             // MicroElements services
@@ -52,6 +53,8 @@ namespace MicroElements.Swashbuckle.FluentValidation
         {
             // System services
             _logger = loggerFactory?.CreateLogger(typeof(FluentValidationRules)) ?? NullLogger.Instance;
+
+            _logger.LogDebug("FluentValidationRules Created");
 
             // FluentValidation services
             _validatorFactory = validatorFactory;

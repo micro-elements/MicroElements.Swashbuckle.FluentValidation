@@ -67,22 +67,11 @@ namespace SampleWebApi
                 c.SwaggerDoc("v1", new OpenApiInfo(){ Title = "My API", Version = "v1" });
             });
 
-            // workaround with scope change is not working
-            //var configureSchemaGeneratorOptions = services.FirstOrDefault(descriptor => descriptor.ServiceType == typeof(IConfigureOptions<SchemaGeneratorOptions>));
-            //var configureSwaggerGeneratorOptions = services.FirstOrDefault(descriptor => descriptor.ServiceType == typeof(IConfigureOptions<SwaggerGeneratorOptions>));
-            //var configureDocumentProvider  = services.FirstOrDefault(descriptor => descriptor.ServiceType.Name == "IDocumentProvider");
-            //var configureSchemaGeneratorOptionsScoped = new ServiceDescriptor(configureSchemaGeneratorOptions.ServiceType, configureSchemaGeneratorOptions.ImplementationType, ServiceLifetime.Scoped);
-            //var configureSwaggerGeneratorOptionsScoped = new ServiceDescriptor(configureSwaggerGeneratorOptions.ServiceType, configureSwaggerGeneratorOptions.ImplementationType, ServiceLifetime.Scoped);
-            //var configureDocumentProviderScoped = new ServiceDescriptor(configureDocumentProvider.ServiceType, configureDocumentProvider.ImplementationType, ServiceLifetime.Scoped);
-            //services.Replace(configureSchemaGeneratorOptionsScoped);
-            //services.Replace(configureSwaggerGeneratorOptionsScoped);
-            //services.Replace(configureDocumentProviderScoped);
-
             // [Optional] Add INameResolver (SystemTextJsonNameResolver will be registered by default)
             // services.AddSingleton<INameResolver, CustomNameResolver>();
 
             // Adds FluentValidationRules staff to Swagger
-            services.AddFluentValidationRulesToSwagger();
+            services.AddFluentValidationRulesToSwagger(configureRegistration: options => options.ServiceLifetime = ServiceLifetime.Scoped);
 
             // [Optional] Configure generation options for your needs. Also can be done with services.Configure<SchemaGenerationOptions>
             // services.AddFluentValidationRulesToSwagger(configure: options =>

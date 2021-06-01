@@ -28,23 +28,23 @@ namespace MicroElements.Swashbuckle.FluentValidation
         private readonly ISchemaGenerationOptions _schemaGenerationOptions;
         private readonly SchemaGenerationSettings _schemaGenerationSettings;
 
-
         /// <summary>
         /// Initializes a new instance of the <see cref="FluentValidationOperationFilter"/> class.
         /// </summary>
-        /// <param name="swaggerGenOptions">Swagger generation options.</param>
+        /// <param name="loggerFactory"> Logger factory.</param>
         /// <param name="validatorFactory">FluentValidation factory.</param>
         /// <param name="rules">External FluentValidation rules. External rule overrides default rule with the same name.</param>
-        /// <param name="loggerFactory">Logger factory.</param>
         /// <param name="schemaGenerationOptions">Schema generation options.</param>
+        /// <param name="nameResolver">Optional name resolver.</param>
+        /// <param name="swaggerGenOptions">Swagger generation options.</param>
         public FluentValidationOperationFilter(
-            // System services
+            /* System services */
             ILoggerFactory? loggerFactory = null,
 
-            // FluentValidation services
+            /* FluentValidation services */
             IValidatorFactory? validatorFactory = null,
 
-            // MicroElements services
+            /* MicroElements services */
             IEnumerable<FluentValidationRule>? rules = null,
             IOptions<SchemaGenerationOptions>? schemaGenerationOptions = null,
             INameResolver? nameResolver = null,

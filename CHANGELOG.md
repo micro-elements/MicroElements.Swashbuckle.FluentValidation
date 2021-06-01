@@ -1,3 +1,6 @@
+# Changes in 5.1.0:
+* Added ability to set ServiceLifetime in AddFluentValidationRulesToSwagger, default value: Scoped. Fixes #83
+
 # Changes in 5.0.0:
 * FluentValidation updated to 10.0.0
 * Swashbuckle.AspNetCore updated to 6.0.0
