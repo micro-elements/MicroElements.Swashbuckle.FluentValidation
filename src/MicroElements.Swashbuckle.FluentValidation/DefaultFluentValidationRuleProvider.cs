@@ -3,9 +3,11 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using FluentValidation.Validators;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
+using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace MicroElements.Swashbuckle.FluentValidation
 {
@@ -34,10 +36,17 @@ namespace MicroElements.Swashbuckle.FluentValidation
         public IEnumerable<FluentValidationRule> GetRules()
         {
             yield return new FluentValidationRule("BeforeAll")
+                .WithCondition(validator => false)
                 .WithApply(context =>
                 {
-                    var property = context.Property;
-                    property.Nullable = property.Nullable;
+                    if (context.Property is { } property && context.ReflectionContext.PropertyInfo is PropertyInfo propertyInfo)
+                    {
+                        // Set Nullability from type? (This should be done by swagger settings see: swagger.SupportNonNullableReferenceTypes)
+                        if (property.Nullable != propertyInfo.PropertyType.IsReferenceOrNullableType())
+                        {
+                            //property.Nullable = propertyInfo.PropertyType.IsReferenceOrNullableType();
+                        }
+                    }
                 });
 
             yield return new FluentValidationRule("Required")

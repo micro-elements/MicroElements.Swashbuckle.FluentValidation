@@ -2,7 +2,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using MicroElements.Swashbuckle.FluentValidation.AspNetCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
@@ -22,9 +24,20 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <param name="serviceLifetime"><see cref="ServiceLifetime"/> to use.</param>
         public FluentValidationRulesScopeAdapter(IServiceProvider serviceProvider, ServiceLifetime serviceLifetime)
         {
+            // Hack with the scope mismatch.
             if (serviceLifetime == ServiceLifetime.Scoped || serviceLifetime == ServiceLifetime.Transient)
                 serviceProvider = serviceProvider.CreateScope().ServiceProvider;
+
             _fluentValidationRules = serviceProvider.GetService<FluentValidationRules>();
+
+            if (_fluentValidationRules == null)
+            {
+                var logger = serviceProvider.GetService<ILoggerFactory>()?.CreateLogger(typeof(FluentValidationRulesScopeAdapter));
+                logger?.LogWarning($"{nameof(FluentValidationRules)} should be registered in services. Hint: Use registration method '{nameof(ServiceCollectionExtensions.AddFluentValidationRulesToSwagger)}'");
+            }
+
+            // Last chance to create filter
+            _fluentValidationRules ??= ActivatorUtilities.CreateInstance<FluentValidationRules>(serviceProvider);
         }
 
         /// <inheritdoc />
@@ -48,9 +61,20 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <param name="serviceLifetime"><see cref="ServiceLifetime"/> to use.</param>
         public FluentValidationOperationFilterScopeAdapter(IServiceProvider serviceProvider, ServiceLifetime serviceLifetime)
         {
+            // Hack with the scope mismatch.
             if (serviceLifetime == ServiceLifetime.Scoped || serviceLifetime == ServiceLifetime.Transient)
                 serviceProvider = serviceProvider.CreateScope().ServiceProvider;
+
             _fluentValidationRules = serviceProvider.GetService<FluentValidationOperationFilter>();
+
+            if (_fluentValidationRules == null)
+            {
+                var logger = serviceProvider.GetService<ILoggerFactory>()?.CreateLogger(typeof(FluentValidationRulesScopeAdapter));
+                logger?.LogWarning($"{nameof(FluentValidationOperationFilter)} should be registered in services. Hint: Use registration method '{nameof(ServiceCollectionExtensions.AddFluentValidationRulesToSwagger)}'");
+            }
+
+            // Last chance to create filter
+            _fluentValidationRules ??= ActivatorUtilities.CreateInstance<FluentValidationOperationFilter>(serviceProvider);
         }
 
         /// <inheritdoc />

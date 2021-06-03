@@ -1,5 +1,10 @@
 # Changes in 5.1.0:
+* Use new registration method AddFluentValidationRulesToSwagger instead of AddFluentValidationRules to allow all feature set
+* AddFluentValidationRules become obsolete
 * Added ability to set ServiceLifetime in AddFluentValidationRulesToSwagger, default value: Scoped. Fixes #83
+* Turned off test rule BeforeAll. Fixes #87
+* More detailed warnings in FluentValidationRulesScopeAdapter
+* Added detailed error on getting absent property by name
 
 # Changes in 5.0.0:
 * FluentValidation updated to 10.0.0

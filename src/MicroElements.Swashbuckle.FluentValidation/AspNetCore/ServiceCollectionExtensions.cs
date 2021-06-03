@@ -2,14 +2,10 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Linq;
-using System.Reflection;
 using System.Text.Json;
 using MicroElements.Swashbuckle.FluentValidation.Generation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Options;
-using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace MicroElements.Swashbuckle.FluentValidation.AspNetCore
@@ -19,35 +15,6 @@ namespace MicroElements.Swashbuckle.FluentValidation.AspNetCore
     /// </summary>
     public static class ServiceCollectionExtensions
     {
-        /// <summary>
-        /// Registration customization.
-        /// </summary>
-        public class RegistrationOptions
-        {
-            /// <summary>
-            /// Register fluent validation rules generators to swagger.
-            /// Default: true.
-            /// </summary>
-            public bool RegisterFluentValidationRules { get; set; } = true;
-
-            /// <summary>
-            /// Register <see cref="AspNetJsonSerializerOptions"/> and <see cref="JsonSerializerOptions"/> as reference to Microsoft.AspNetCore.Mvc.JsonOptions.Value.
-            /// Default: true.
-            /// </summary>
-            public bool RegisterJsonSerializerOptions { get; set; } = true;
-
-            /// <summary>
-            /// Register <see cref="SystemTextJsonNameResolver"/> as default <see cref="INameResolver"/>.
-            /// Default: true.
-            /// </summary>
-            public bool RegisterSystemTextJsonNameResolver { get; set; } = true;
-
-            /// <summary>
-            /// ServiceLifetime to use for service registration.
-            /// </summary>
-            public ServiceLifetime ServiceLifetime { get; set; } = ServiceLifetime.Scoped;
-        }
-
         /// <summary>
         /// Adds FluentValidationRules staff to Swagger.
         /// </summary>
@@ -70,7 +37,11 @@ namespace MicroElements.Swashbuckle.FluentValidation.AspNetCore
                 services.Add(new ServiceDescriptor(typeof(FluentValidationOperationFilter), typeof(FluentValidationOperationFilter), registrationOptions.ServiceLifetime));
 
                 services.Configure<SwaggerGenOptions>(options =>
-                    options.AddFluentValidationRules(registrationOptions.ServiceLifetime));
+                {
+                    // Registers Swashbuckle filters
+                    options.SchemaFilter<FluentValidationRulesScopeAdapter>(registrationOptions.ServiceLifetime);
+                    options.OperationFilter<FluentValidationOperationFilterScopeAdapter>(registrationOptions.ServiceLifetime);
+                });
             }
 
             // Register JsonSerializerOptions (reference to Microsoft.AspNetCore.Mvc.JsonOptions.Value)
@@ -91,107 +62,6 @@ namespace MicroElements.Swashbuckle.FluentValidation.AspNetCore
                 services.Configure<SchemaGenerationOptions>(configure);
 
             return services;
-        }
-    }
-
-    /// <summary>
-    /// DependencyInjection through Reflection.
-    /// </summary>
-    internal static class ReflectionDependencyInjectionExtensions
-    {
-        public static Type? GetByFullName(string typeName)
-        {
-            Type type = AppDomain
-                .CurrentDomain
-                .GetAssemblies()
-                .Where(assembly => assembly.FullName.Contains("Microsoft"))
-                .SelectMany(assembly => assembly.GetTypes())
-                .FirstOrDefault(type => type.FullName == typeName);
-
-            return type;
-        }
-
-        /// <summary>
-        /// Calls through reflection: <c>services.Configure&lt;JsonOptions&gt;(options =&gt; configureJson(options));</c>.
-        /// Can be used from netstandard.
-        /// </summary>
-        /// <param name="services">Services.</param>
-        /// <param name="configureJson">Action to configure <see cref="JsonSerializerOptions"/> in JsonOptions.</param>
-        public static void ConfigureJsonOptionsForAspNetCore(this IServiceCollection services, Action<JsonSerializerOptions> configureJson)
-        {
-            Action<object> configureJsonOptionsUntyped = options =>
-            {
-                PropertyInfo? propertyInfo = options.GetType().GetProperty("JsonSerializerOptions");
-
-                if (propertyInfo?.GetValue(options) is JsonSerializerOptions jsonSerializerOptions)
-                {
-                    configureJson(jsonSerializerOptions);
-                }
-            };
-
-            Type? jsonOptionsType = GetByFullName("Microsoft.AspNetCore.Mvc.JsonOptions");
-            if (jsonOptionsType != null)
-            {
-                Type? extensionsType = GetByFullName("Microsoft.Extensions.DependencyInjection.OptionsServiceCollectionExtensions");
-
-                MethodInfo? configureMethodGeneric = extensionsType
-                    ?.GetTypeInfo()
-                    .DeclaredMethods
-                    .FirstOrDefault(info => info.Name == "Configure" && info.GetParameters().Length == 2);
-
-                MethodInfo? configureMethod = configureMethodGeneric?.MakeGenericMethod(jsonOptionsType);
-
-                if (configureMethod != null)
-                {
-                    // services.Configure<JsonOptions>(options => configureJson(options));
-                    configureMethod.Invoke(services, new object?[] { services, configureJsonOptionsUntyped });
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets <see cref="JsonSerializerOptions"/> from JsonOptions registered in AspNetCore.
-        /// Uses reflection to call code:
-        /// <code>serviceProvider.GetService&lt;IOptions&lt;JsonOptions&gt;&gt;()?.Value?.JsonSerializerOptions;</code>
-        /// </summary>
-        /// <param name="serviceProvider">Source service provider.</param>
-        /// <returns>Optional <see cref="JsonSerializerOptions"/>.</returns>
-        public static JsonSerializerOptions? GetJsonSerializerOptions(this IServiceProvider serviceProvider)
-        {
-            JsonSerializerOptions? jsonSerializerOptions = null;
-
-            Type? jsonOptionsType = GetByFullName("Microsoft.AspNetCore.Mvc.JsonOptions");
-            if (jsonOptionsType != null)
-            {
-                // IOptions<JsonOptions>
-                Type jsonOptionsInterfaceType = typeof(IOptions<>).MakeGenericType(jsonOptionsType);
-                object? jsonOptionsOption = serviceProvider.GetService(jsonOptionsInterfaceType);
-
-                if (jsonOptionsOption != null)
-                {
-                    PropertyInfo? valueProperty = jsonOptionsInterfaceType.GetProperty("Value", BindingFlags.Instance | BindingFlags.Public);
-                    PropertyInfo? jsonSerializerOptionsProperty = jsonOptionsType.GetProperty("JsonSerializerOptions", BindingFlags.Instance | BindingFlags.Public);
-
-                    if (valueProperty != null && jsonSerializerOptionsProperty != null)
-                    {
-                        // JsonOptions
-                        var jsonOptions = valueProperty.GetValue(jsonOptionsOption);
-
-                        // JsonSerializerOptions
-                        if (jsonOptions != null)
-                        {
-                            jsonSerializerOptions = jsonSerializerOptionsProperty.GetValue(jsonOptions) as JsonSerializerOptions;
-                        }
-                    }
-                }
-            }
-
-            return jsonSerializerOptions;
-        }
-
-        public static JsonSerializerOptions GetJsonSerializerOptionsOrDefault(this IServiceProvider serviceProvider)
-        {
-            return serviceProvider.GetJsonSerializerOptions() ?? new JsonSerializerOptions();
         }
     }
 }

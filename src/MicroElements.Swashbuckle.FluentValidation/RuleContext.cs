@@ -5,6 +5,7 @@ using System;
 using System.Reflection;
 using FluentValidation;
 using FluentValidation.Validators;
+using MicroElements.Swashbuckle.FluentValidation.Generation;
 using Microsoft.OpenApi.Models;
 
 namespace MicroElements.Swashbuckle.FluentValidation
@@ -42,7 +43,19 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <summary>
         /// Gets target property schema.
         /// </summary>
-        public OpenApiSchema Property => !IsCollectionValidator ? Schema.Properties[PropertyKey] : Schema.Properties[PropertyKey].Items;
+        public OpenApiSchema Property
+        {
+            get
+            {
+                if (!Schema.Properties.ContainsKey(PropertyKey))
+                {
+                    throw new ApplicationException($"Schema for type '{ReflectionContext.Type}' does not contain property '{PropertyKey}'.\nRegister {typeof(INameResolver)} if name in type differs from name in json.");
+                }
+
+                var schemaProperty = Schema.Properties[PropertyKey];
+                return !IsCollectionValidator ? schemaProperty : schemaProperty.Items;
+            }
+        }
 
         /// <summary>
         /// Gets reflection context.

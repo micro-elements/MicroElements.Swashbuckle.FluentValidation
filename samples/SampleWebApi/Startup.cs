@@ -14,6 +14,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using SampleWebApi.DbModels;
 using SampleWebApi.ValidatorFactories;
+using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace SampleWebApi
@@ -65,13 +66,16 @@ namespace SampleWebApi
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo(){ Title = "My API", Version = "v1" });
+
+                // Use new AddFluentValidationRulesToSwagger instead of AddFluentValidationRules
+                //c.AddFluentValidationRules();
             });
 
             // [Optional] Add INameResolver (SystemTextJsonNameResolver will be registered by default)
             // services.AddSingleton<INameResolver, CustomNameResolver>();
 
             // Adds FluentValidationRules staff to Swagger
-            services.AddFluentValidationRulesToSwagger(configureRegistration: options => options.ServiceLifetime = ServiceLifetime.Scoped);
+            services.AddFluentValidationRulesToSwagger();
 
             // [Optional] Configure generation options for your needs. Also can be done with services.Configure<SchemaGenerationOptions>
             // services.AddFluentValidationRulesToSwagger(configure: options =>
