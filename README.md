@@ -105,7 +105,7 @@ MicroElements.Swashbuckle.FluentValidation | Swashbuckle.AspNetCore | FluentVali
 
 ## Sample application
 
-See sample project: https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/tree/master/src/SampleWebApi
+See sample project: https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/tree/master/samples/SampleWebApi
 
 ## Supported validators
 
