@@ -63,7 +63,11 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 .WithCondition(validator => validator is INotEmptyValidator)
                 .WithApply(context =>
                 {
-                    context.Property.SetNewMin(p => p.MinLength, 1, _options.Value.SetNotNullableIfMinLengthGreaterThenZero);
+                    if (context.Property.Type == "string")
+                        context.Property.SetNewMin(p => p.MinLength, 1, _options.Value.SetNotNullableIfMinLengthGreaterThenZero);
+
+                    if (context.Property.Type == "array")
+                        context.Property.SetNewMin(p => p.MinItems, 1, _options.Value.SetNotNullableIfMinLengthGreaterThenZero);
                 });
 
             yield return new FluentValidationRule("Length")

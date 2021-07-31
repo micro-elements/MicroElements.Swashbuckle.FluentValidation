@@ -40,10 +40,10 @@ namespace MicroElements.Swashbuckle.FluentValidation
             schemaPropertyNames ??= schema.Properties?.Keys ?? Array.Empty<string>();
             foreach (var schemaPropertyName in schemaPropertyNames)
             {
-                ValidationRuleInfo? validationRuleInfo = validationRules
-                    .FirstOrDefault(propertyRule => IsMatchesRule(propertyRule, schemaPropertyName, schemaGenerationContext.SchemaGenerationSettings));
+                var validationRuleInfoList = validationRules
+                    .Where(propertyRule => IsMatchesRule(propertyRule, schemaPropertyName, schemaGenerationContext.SchemaGenerationSettings));
 
-                if (validationRuleInfo != null)
+                foreach (var validationRuleInfo in validationRuleInfoList)
                 {
                     var propertyValidators = validationRuleInfo.PropertyRule.GetValidators();
 

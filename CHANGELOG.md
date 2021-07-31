@@ -1,3 +1,7 @@
+# Changes in 5.2.0:
+* Fixed case with many rules for one property. Issue #92
+* Change: NotEmpty rule sets minItems for arrays instead minLength.
+
 # Changes in 5.1.0:
 * Use new registration method AddFluentValidationRulesToSwagger instead of AddFluentValidationRules to allow all feature set
 * AddFluentValidationRules become obsolete
