@@ -8,7 +8,7 @@ namespace SampleWebApi.Controllers
     /// </summary>
     [Route("api/[controller]")]
     [ApiController]
-    public class Issue92Controller : Controller
+    public class Issue92 : Controller
     {
         [HttpPost("[action]")]
         public ActionResult<Bookshelf> CreateBookshelf(CreateBookshelfCommand command)

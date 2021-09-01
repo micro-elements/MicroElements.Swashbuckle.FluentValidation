@@ -7,6 +7,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.Generation
 {
     /// <summary>
     /// Name resolver.
+    /// Gets property name using naming conventions.
     /// </summary>
     public interface INameResolver
     {

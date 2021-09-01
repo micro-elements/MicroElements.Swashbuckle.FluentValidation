@@ -19,8 +19,8 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
         }
 
         public SchemaGenerator SchemaGenerator(
-            Action<SchemaGeneratorOptions> configureGenerator = null,
-            Action<JsonSerializerOptions> configureSerializer = null)
+            Action<SchemaGeneratorOptions>? configureGenerator = null,
+            Action<JsonSerializerOptions>? configureSerializer = null)
         {
             var generatorOptions = new SchemaGeneratorOptions();
             configureGenerator?.Invoke(generatorOptions);
@@ -31,10 +31,12 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             return new SchemaGenerator(generatorOptions, new JsonSerializerDataContractResolver(serializerOptions));
         }
 
-        private void ConfigureGenerator(SchemaGeneratorOptions options, params IValidator[] validators)
+        private void ConfigureGenerator(SchemaGeneratorOptions options, IValidator[] validators)
         {
             IValidatorFactory validatorFactory = new CustomValidatorFactory(validators);
-            options.SchemaFilters.Add(new FluentValidationRules(validatorFactory: validatorFactory));
+            options.SchemaFilters.Add(new FluentValidationRules(
+                validatorFactory: validatorFactory,
+                nameResolver: new SystemTextJsonNameResolver()));
         }
     }
 

@@ -91,12 +91,14 @@ namespace MicroElements.Swashbuckle.FluentValidation
         {
             if (schemaGenerationSettings.NameResolver != null && validationRuleInfo.ReflectionContext?.PropertyInfo is PropertyInfo propertyInfo)
             {
-                var propertyName = schemaGenerationSettings.NameResolver.GetPropertyName(propertyInfo);
-                if (propertyName.EqualsIgnoreAll(schemaPropertyName))
-                    return true;
+                var rulePropertyName = schemaGenerationSettings.NameResolver.GetPropertyName(propertyInfo);
+                return rulePropertyName.EqualsIgnoreAll(schemaPropertyName);
             }
-
-            return validationRuleInfo.PropertyRule.PropertyName.EqualsIgnoreAll(schemaPropertyName);
+            else
+            {
+                var rulePropertyName = validationRuleInfo.PropertyRule.PropertyName;
+                return rulePropertyName.EqualsIgnoreAll(schemaPropertyName);
+            }
         }
 
         internal static void AddRulesFromIncludedValidators(

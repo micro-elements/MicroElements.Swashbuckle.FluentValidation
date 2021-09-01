@@ -1,3 +1,6 @@
+# Changes in 5.3.0:
+* Fixed Issue #94: Rule with overridden property name unexpectedly applied to property
+
 # Changes in 5.2.0:
 * Fixed case with many rules for one property. Issue #92
 * Change: NotEmpty rule sets minItems for arrays instead minLength.
