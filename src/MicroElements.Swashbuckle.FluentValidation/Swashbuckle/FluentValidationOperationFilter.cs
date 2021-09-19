@@ -161,6 +161,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                                 || schema.Properties.TryGetValue(schemaPropertyName, out property))
                             {
                                 // Copy from property schema to parameter schema.
+                                parameterSchema.Description = property.Description;
                                 parameterSchema.MinLength = property.MinLength;
                                 parameterSchema.Nullable = property.Nullable;
                                 parameterSchema.MaxLength = property.MaxLength;
@@ -169,6 +170,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                                 parameterSchema.Maximum = property.Maximum;
                                 parameterSchema.ExclusiveMaximum = property.ExclusiveMaximum;
                                 parameterSchema.ExclusiveMinimum = property.ExclusiveMinimum;
+                                parameterSchema.Enum = property.Enum;
                                 parameterSchema.AllOf = property.AllOf;
                             }
                         }
