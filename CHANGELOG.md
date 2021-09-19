@@ -1,3 +1,6 @@
+# Changes in 5.4.0:
+* Adding additional fields (Enum, Description) for overridden schema in FluentValidationOperationFilter. (PR#95 by kritsda-jiwatrakan)
+
 # Changes in 5.3.0:
 * Fixed Issue #94: Rule with overridden property name unexpectedly applied to property
 
