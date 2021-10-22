@@ -277,6 +277,14 @@ Example: You split validator into several small validators but AspNetCore uses o
 Workaround: Hide dependent validators with `internal` and use `Include` to include other validation rules to one "Main" validator.
 
 
+## Problem: I'm using `FluentValidation` or `FluentValidation.DependencyInjectionExtensions` instead of `FluentValidation.AspNetCore`
+
+If you are using the more basic `FluentValidation` or `FluentValidation.DependencyInjectionExtensions` libraries, then they will not automatically register `IValidatorFactory` and you will get an error at runtime: "ValidatorFactory is not provided. Please register FluentValidation." In that case you must register it manually (see [issue 97](https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/issues/97) for more details):
+````cs
+services.TryAddTransient<IValidatorFactory, ServiceProviderValidatorFactory>();
+services.AddFluentValidationRulesToSwagger();
+````
+
 ## Problem: Newtonsoft.Json DefaultNamingStrategy, SnakeCaseNamingStrategy does not work
 
 ```csharp
