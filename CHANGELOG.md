@@ -1,3 +1,6 @@
+# Changes in 5.5.0:
+* Added ValidatorServiceProvider to optionally register types used only for validators. Fixes #96 (PR#99 by @icnocop)
+
 # Changes in 5.4.0:
 * Adding additional fields (Enum, Description) for overridden schema in FluentValidationOperationFilter. (PR#95 by kritsda-jiwatrakan)
 

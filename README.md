@@ -270,7 +270,7 @@ public static IWebHost BuildWebHost(string[] args) =>
         .Build();
 ```
 
-## Problem: I cant use several validators of one type
+## Problem: I can't use several validators of one type
 
 Example: You split validator into several small validators but AspNetCore uses only one of them.
 
@@ -320,6 +320,16 @@ Startup.cs:
             return _namingStrategy.GetPropertyName(name, false);
         }
     }
+```
+
+## Error: `System.InvalidOperationException: Unable to resolve service for type 'x' while attempting to activate 'y'.`
+
+Example: You pass an instance of an object into a validator dynamically which shouldn't be registered with Dependency Injection.
+
+Workaround: Register a dummy instance using the `ValidatorServiceProvider`.
+
+```csharp
+services.AddFluentValidationRulesToSwagger(configureServices: services => services.AddScoped(c => new DummyInstance()));
 ```
 
 ## Credits
