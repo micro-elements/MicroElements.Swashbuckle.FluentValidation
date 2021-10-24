@@ -13,21 +13,27 @@ namespace MicroElements.Swashbuckle.FluentValidation
     public class HttpContextServiceProviderValidatorFactory : ValidatorFactoryBase
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly ValidatorServiceProvider _validatorServiceProvider;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="HttpContextServiceProviderValidatorFactory"/> class.
+        /// Initializes a new instance of the <see cref="HttpContextServiceProviderValidatorFactory" /> class.
         /// </summary>
         /// <param name="httpContextAccessor">Access to the current HttpContext.</param>
-        public HttpContextServiceProviderValidatorFactory(IHttpContextAccessor httpContextAccessor)
+        /// <param name="validationServiceProvider">The validation service provider.</param>
+        public HttpContextServiceProviderValidatorFactory(
+            IHttpContextAccessor httpContextAccessor,
+            ValidatorServiceProvider validationServiceProvider)
         {
             _httpContextAccessor = httpContextAccessor;
+            _validatorServiceProvider = validationServiceProvider;
         }
 
         /// <inheritdoc/>
-        public override IValidator CreateInstance(Type validatorType)
+        public override IValidator? CreateInstance(Type validatorType)
         {
             var serviceProvider = _httpContextAccessor.HttpContext.RequestServices;
-            return serviceProvider.GetService(validatorType) as IValidator;
+            _validatorServiceProvider.AddFallbackServiceProvider(serviceProvider);
+            return _validatorServiceProvider.GetService(validatorType) as IValidator;
         }
     }
 }

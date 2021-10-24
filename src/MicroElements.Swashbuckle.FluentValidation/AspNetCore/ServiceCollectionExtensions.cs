@@ -16,17 +16,23 @@ namespace MicroElements.Swashbuckle.FluentValidation.AspNetCore
     public static class ServiceCollectionExtensions
     {
         /// <summary>
-        /// Adds FluentValidationRules staff to Swagger.
+        /// Adds FluentValidationRules stuff to Swagger.
         /// </summary>
         /// <param name="services">Services.</param>
         /// <param name="configure">Optional configure action.</param>
         /// <param name="configureRegistration">Optional configure registration options.</param>
+        /// <param name="configureServices">Optional configure services action.</param>
         /// <returns>The same service collection.</returns>
         public static IServiceCollection AddFluentValidationRulesToSwagger(
             this IServiceCollection services,
             Action<SchemaGenerationOptions>? configure = null,
-            Action<RegistrationOptions>? configureRegistration = null)
+            Action<RegistrationOptions>? configureRegistration = null,
+            Action<IServiceCollection>? configureServices = null)
         {
+            ValidatorServiceProvider validationServiceProvider = new ValidatorServiceProvider(services);
+            configureServices?.Invoke(validationServiceProvider);
+            services.AddSingleton(validationServiceProvider);
+
             var registrationOptions = new RegistrationOptions();
             configureRegistration?.Invoke(registrationOptions);
 

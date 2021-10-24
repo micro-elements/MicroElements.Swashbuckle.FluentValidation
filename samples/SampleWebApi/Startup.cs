@@ -74,8 +74,9 @@ namespace SampleWebApi
             // [Optional] Add INameResolver (SystemTextJsonNameResolver will be registered by default)
             // services.AddSingleton<INameResolver, CustomNameResolver>();
 
-            // Adds FluentValidationRules staff to Swagger
-            services.AddFluentValidationRulesToSwagger();
+            // Adds FluentValidationRules stuff to Swagger
+            services.AddFluentValidationRulesToSwagger(
+                configureServices: services => services.AddScoped(c => new Controllers.Issue96.Tenant96()));
 
             // [Optional] Configure generation options for your needs. Also can be done with services.Configure<SchemaGenerationOptions>
             // services.AddFluentValidationRulesToSwagger(configure: options =>
