@@ -49,12 +49,7 @@ namespace SampleWebApi
                     // options.JsonSerializerOptions.PropertyNamingPolicy = new NewtonsoftJsonNamingPolicy(new SnakeCaseNamingStrategy());
                     // options.JsonSerializerOptions.DictionaryKeyPolicy = new NewtonsoftJsonNamingPolicy(new SnakeCaseNamingStrategy());
                 })
-                //.AddNewtonsoftJson(options =>
-                //    options.SerializerSettings.ContractResolver = new DefaultContractResolver()
-                //    {
-                //        NamingStrategy = new SnakeCaseNamingStrategy()
-                //    })
-                ;
+                .AddNewtonsoftJson();
 
             // Register all validators as IValidator?
             //var serviceDescriptors = services.Where(descriptor => descriptor.ServiceType.GetInterfaces().Contains(typeof(IValidator))).ToList();
@@ -69,6 +64,8 @@ namespace SampleWebApi
 
                 // Use new AddFluentValidationRulesToSwagger instead of AddFluentValidationRules
                 //c.AddFluentValidationRules();
+
+                c.EnableAnnotations(enableAnnotationsForInheritance: true, enableAnnotationsForPolymorphism: true);
             });
 
             // [Optional] Add INameResolver (SystemTextJsonNameResolver will be registered by default)
