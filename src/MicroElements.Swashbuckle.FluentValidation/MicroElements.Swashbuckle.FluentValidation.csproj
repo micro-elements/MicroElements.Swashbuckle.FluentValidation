@@ -14,7 +14,7 @@
 
   <ItemGroup>
     <PackageReference Include="FluentValidation" Version="[10.0.0, 11)" />
-    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="[6.0.2, 7)" />
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="[6.3.0, 7)" />
   </ItemGroup>
 
 </Project>
