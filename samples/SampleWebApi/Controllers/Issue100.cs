@@ -18,6 +18,9 @@ namespace SampleWebApi.Controllers
         public class Person100A : Person100
         {
             public const string DiscriminatorValue = nameof(Person100A);
+
+            // There should be real class that will be registered in FluentValidationFactory
+            public class Person100AValidator : Person100Validator<Person100A> { }
         }
 
         public class Person100B : Person100
@@ -70,24 +73,25 @@ namespace SampleWebApi.Controllers
         [JsonInheritance(Person100B.DiscriminatorValue, typeof(Person100B))]
         public abstract class BasePerson100
         {
-            [UsedImplicitly]
-            public class BasePerson100Validator<T> : AbstractValidator<BasePerson100>
-            {
-                public BasePerson100Validator()
-                {
-                    this.RuleFor(x => x)
-                        .SetInheritanceValidator(x =>
-                        {
-                            x.Add<Person100A>(new Person100.Person100Validator<Person100A>());
-                            x.Add<Person100B>(new Person100B.Person100BValidator());
-                        });
-                }
-            }
         }
 
         public class MyEntity100
         {
             public BasePerson100 Person { get; set; }
+
+            [UsedImplicitly]
+            public class MyEntity100Validator : AbstractValidator<MyEntity100>
+            {
+                public MyEntity100Validator()
+                {
+                    this.RuleFor(x => x.Person)
+                        .SetInheritanceValidator(x =>
+                        {
+                            x.Add<Person100A>(new Person100A.Person100AValidator());
+                            x.Add<Person100B>(new Person100B.Person100BValidator());
+                        });
+                }
+            }
         }
 
         [HttpPost("[action]")]
