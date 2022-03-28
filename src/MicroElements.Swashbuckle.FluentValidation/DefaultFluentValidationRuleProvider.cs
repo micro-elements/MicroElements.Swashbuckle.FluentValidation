@@ -168,6 +168,8 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     var betweenValidator = (IBetweenValidator)context.PropertyValidator;
                     var schemaProperty = context.Property;
 
+                    //OpenApi: date-time has not support range validations see: https://github.com/json-schema-org/json-schema-spec/issues/116
+
                     if (betweenValidator.From.IsNumeric())
                     {
                         schemaProperty.SetNewMin(p => p.Minimum, betweenValidator.From.NumericToDecimal(), _options.Value.SetNotNullableIfMinLengthGreaterThenZero);
