@@ -1,3 +1,6 @@
+# Changes in 5.5.0:
+* Sets min compatibility to Swashbuckle.AspNetCore 6.3.0. (PR#102 by guimabdo)
+
 # Changes in 5.4.0:
 * Adding additional fields (Enum, Description) for overridden schema in FluentValidationOperationFilter. (PR#95 by kritsda-jiwatrakan)
 
