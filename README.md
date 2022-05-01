@@ -25,9 +25,9 @@ If you find MicroElements.Swashbuckle.FluentValidation useful, please consider f
 ### 1. Reference packages in your web project:
 
 ```xml
-<PackageReference Include="FluentValidation.AspNetCore" Version="8.5.0" />
-<PackageReference Include="MicroElements.Swashbuckle.FluentValidation" Version="3.1.0" />
-<PackageReference Include="Swashbuckle.AspNetCore" Version="5.2.0" />
+<PackageReference Include="FluentValidation.AspNetCore" Version="10.1.0" />
+<PackageReference Include="MicroElements.Swashbuckle.FluentValidation" Version="5.5.0" />
+<PackageReference Include="Swashbuckle.AspNetCore" Version="6.3.0" />
 ```
 
 ### 2. Change Startup.cs
@@ -101,7 +101,7 @@ MicroElements.Swashbuckle.FluentValidation | Swashbuckle.AspNetCore | FluentVali
 [3.0.0, 3.1.0) | [5.0.0, 5.2.0) | >=8.3.0
 [3.1.0, 4.2.1) | [5.2.0, 6.0.0) | >=8.3.0
 [4.2.0, 5.0.0) | [5.5.1, 7.0.0) | [9.0.0, 10)
-[5.0.0, 6.0.0) | [6.0.2, 7.0.0) | [10.0.0, 11)
+[5.0.0, 6.0.0) | [6.3.0, 7.0.0) | [10.0.0, 11)
 
 ## Sample application
 
