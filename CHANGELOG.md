@@ -1,3 +1,6 @@
+# Changes in 5.6.0:
+* Supported FluentValidation 11
+
 # Changes in 5.5.0:
 * Sets min compatibility to Swashbuckle.AspNetCore 6.3.0. (PR#102 by guimabdo)
 
