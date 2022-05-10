@@ -3,18 +3,18 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using FluentValidation.Validators;
+using MicroElements.OpenApi.Core;
+using MicroElements.OpenApi.FluentValidation;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
-using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace MicroElements.Swashbuckle.FluentValidation
 {
     /// <summary>
     /// Default rule provider.
     /// </summary>
-    public class DefaultFluentValidationRuleProvider : IFluentValidationRuleProvider
+    public class DefaultFluentValidationRuleProvider : IFluentValidationRuleProvider<OpenApiSchema>
     {
         /// <summary>
         /// Gets global static default <see cref="IFluentValidationRuleProvider"/>.
@@ -33,22 +33,8 @@ namespace MicroElements.Swashbuckle.FluentValidation
         }
 
         /// <inheritdoc />
-        public IEnumerable<FluentValidationRule> GetRules()
+        public IEnumerable<IFluentValidationRule<OpenApiSchema>> GetRules()
         {
-            yield return new FluentValidationRule("BeforeAll")
-                .WithCondition(validator => false)
-                .WithApply(context =>
-                {
-                    if (context.Property is { } property && context.ReflectionContext.PropertyInfo is PropertyInfo propertyInfo)
-                    {
-                        // Set Nullability from type? (This should be done by swagger settings see: swagger.SupportNonNullableReferenceTypes)
-                        if (property.Nullable != propertyInfo.PropertyType.IsReferenceOrNullableType())
-                        {
-                            //property.Nullable = propertyInfo.PropertyType.IsReferenceOrNullableType();
-                        }
-                    }
-                });
-
             yield return new FluentValidationRule("Required")
                 .WithCondition(validator => validator is INotNullValidator || validator is INotEmptyValidator)
                 .WithApply(context =>

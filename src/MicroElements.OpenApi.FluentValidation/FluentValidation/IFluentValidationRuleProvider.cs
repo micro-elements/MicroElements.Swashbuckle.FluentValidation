@@ -3,17 +3,17 @@
 
 using System.Collections.Generic;
 
-namespace MicroElements.Swashbuckle.FluentValidation
+namespace MicroElements.OpenApi.FluentValidation
 {
     /// <summary>
     /// Provides rules for schema generation.
     /// </summary>
-    public interface IFluentValidationRuleProvider
+    public interface IFluentValidationRuleProvider<TSchema>
     {
         /// <summary>
         /// Gets rules for schema generation.
         /// </summary>
         /// <returns>Enumeration of <see cref="FluentValidationRule"/>.</returns>
-        IEnumerable<FluentValidationRule> GetRules();
+        IEnumerable<IFluentValidationRule<TSchema>> GetRules();
     }
 }

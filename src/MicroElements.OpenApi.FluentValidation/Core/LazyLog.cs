@@ -6,7 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 
-namespace MicroElements.Swashbuckle.FluentValidation
+namespace MicroElements.OpenApi.Core
 {
     /// <summary>
     /// Helps to log something only once in some context.
@@ -14,7 +14,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
     internal class LazyLog
     {
         private readonly Lazy<object> _lazyLog;
-
+        
         public LazyLog(ILogger logger, Action<ILogger> logAction)
         {
             _lazyLog = new Lazy<object>(() =>
@@ -23,12 +23,12 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 return new object();
             });
         }
-
+        
         /// <summary>
         /// Executes log action only once.
         /// </summary>
         public void LogOnce() => IgnoreResult(_lazyLog.Value);
-
+        
         [MethodImpl(MethodImplOptions.NoInlining)]
         [SuppressMessage("ReSharper", "UnusedParameter.Local", Justification = "Ok.")]
         [SuppressMessage("Style", "IDE0060:Remove unused parameter", Justification = "Ok.")]

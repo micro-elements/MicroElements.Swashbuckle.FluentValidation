@@ -3,11 +3,13 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using FluentValidation;
 using FluentValidation.Internal;
 using FluentValidation.Validators;
+using MicroElements.OpenApi.Core;
 
-namespace MicroElements.Swashbuckle.FluentValidation
+namespace MicroElements.OpenApi.FluentValidation
 {
     /// <summary>
     /// Extensions for FluentValidation specific work.
@@ -94,5 +96,59 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 .Where(component => component.HasNoCondition())
                 .Select(component => component.Validator);
         }
+
+        internal static bool IsMatchesRule(this ValidationRuleInfo validationRuleInfo, string schemaPropertyName, ISchemaGenerationSettings schemaGenerationSettings)
+        {
+            if (schemaGenerationSettings.NameResolver != null && validationRuleInfo.ReflectionContext?.PropertyInfo is PropertyInfo propertyInfo)
+            {
+                var rulePropertyName = schemaGenerationSettings.NameResolver.GetPropertyName(propertyInfo);
+                return rulePropertyName.EqualsIgnoreAll(schemaPropertyName);
+            }
+            else
+            {
+                var rulePropertyName = validationRuleInfo.PropertyRule.PropertyName;
+                return rulePropertyName.EqualsIgnoreAll(schemaPropertyName);
+            }
+        }
+
+        internal static IValidator? GetValidatorFromChildValidatorAdapter(this IChildValidatorAdaptor childValidatorAdapter)
+        {
+            // Try to validator with reflection.
+            var childValidatorAdapterType = childValidatorAdapter.GetType();
+            var genericTypeArguments = childValidatorAdapterType.GenericTypeArguments;
+            if (genericTypeArguments.Length != 2)
+                return null;
+
+            var getValidatorGeneric = typeof(FluentValidationExtensions)
+                .GetMethod(nameof(GetValidatorGeneric), BindingFlags.Static | BindingFlags.NonPublic)
+                ?.MakeGenericMethod(genericTypeArguments[0]);
+
+            if (getValidatorGeneric != null)
+            {
+                var validator = (IValidator)getValidatorGeneric.Invoke(null, new []{ childValidatorAdapter });
+                return validator;
+            }
+
+            return null;
+        }
+
+        internal static IValidator? GetValidatorGeneric<T>(this IChildValidatorAdaptor childValidatorAdapter)
+        {
+            // public class ChildValidatorAdaptor<T,TProperty>
+            // public virtual IValidator GetValidator(ValidationContext<T> context, TProperty value) {
+            var getValidatorMethodName = nameof(ChildValidatorAdaptor<object, object>.GetValidator);
+            var getValidatorMethod = childValidatorAdapter.GetType().GetMethod(getValidatorMethodName);
+            if (getValidatorMethod != null)
+            {
+                // Fake context. We have not got real context because no validation yet.
+                var fakeContext = new ValidationContext<T>(default);
+                object? value = null;
+
+                var validator = (IValidator)getValidatorMethod.Invoke(childValidatorAdapter, new[] { fakeContext, value });
+                return validator;
+            }
+
+            return null;
+        }        
     }
 }

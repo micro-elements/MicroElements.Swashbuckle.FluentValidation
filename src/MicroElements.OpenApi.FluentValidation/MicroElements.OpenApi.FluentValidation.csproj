@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="..\common.props" />
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <LangVersion>9.0</LangVersion>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <RootNamespace>MicroElements.OpenApi</RootNamespace>
+    </PropertyGroup>
+    
+    <ItemGroup>
+        <PackageReference Include="FluentValidation" Version="[10.0.0, 12)" />
+        <PackageReference Include="MicroElements.IsExternalInit" Version="1.1.0" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
+    </ItemGroup>
+    
+</Project>

@@ -3,7 +3,7 @@
 
 using FluentValidation;
 
-namespace MicroElements.Swashbuckle.FluentValidation
+namespace MicroElements.OpenApi.FluentValidation
 {
     /// <summary>
     /// Contains <see cref="PropertyRule"/> and additional info.

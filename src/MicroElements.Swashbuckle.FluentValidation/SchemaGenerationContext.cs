@@ -3,62 +3,97 @@
 
 using System;
 using System.Collections.Generic;
-using MicroElements.Swashbuckle.FluentValidation.Generation;
+using FluentValidation.Validators;
+using MicroElements.OpenApi.FluentValidation;
 using Microsoft.OpenApi.Models;
+using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace MicroElements.Swashbuckle.FluentValidation
 {
     /// <summary>
     /// Schema generation context.
     /// </summary>
-    public record SchemaGenerationContext
+    public record SchemaGenerationContext : ISchemaGenerationContext<OpenApiSchema>
     {
-        /// <summary>
-        /// Gets OpenApi schema.
-        /// </summary>
+        /// <inheritdoc/>
+        public Type SchemaType { get; }
+
+        /// <inheritdoc />
+        IReadOnlyList<IFluentValidationRule> ISchemaGenerationContext.Rules => Rules;
+
+        /// <inheritdoc/>
+        public IReadOnlyList<IFluentValidationRule<OpenApiSchema>> Rules { get; }
+
+        /// <inheritdoc/>
+        public ISchemaGenerationOptions SchemaGenerationOptions { get; }
+
+        /// <inheritdoc/>
+        public ISchemaGenerationSettings SchemaGenerationSettings { get; }
+
+        /// <inheritdoc/>
         public OpenApiSchema Schema { get; init; }
 
-        /// <summary>
-        /// Schema type.
-        /// </summary>
-        public Type SchemaType { get; init; }
+        /// <inheritdoc/>
+        public ISchemaProvider<OpenApiSchema> SchemaProvider { get; }
 
-        /// <summary>
-        /// Gets all registered <see cref="FluentValidationRule"/>.
-        /// </summary>
-        public IReadOnlyList<FluentValidationRule> Rules { get; init; }
+        public IEnumerable<string> Properties => Schema.Properties?.Keys ?? Array.Empty<string>();
 
-        /// <summary>
-        /// Gets <see cref="ISchemaGenerationOptions"/> (constant user options).
-        /// </summary>
-        public ISchemaGenerationOptions SchemaGenerationOptions { get; init; }
+        public ISchemaGenerator SchemaGenerator { get; }
 
-        /// <summary>
-        /// Gets <see cref="ISchemaGenerationSettings"/> (runtime options and services).
-        /// </summary>
-        public ISchemaGenerationSettings SchemaGenerationSettings { get; init; }
+        public SchemaRepository SchemaRepository { get; }
+        
+        /// <inheritdoc />
+        public ISchemaGenerationContext<OpenApiSchema> With(OpenApiSchema schema)
+        {
+            return new SchemaGenerationContext(
+                schemaRepository: SchemaRepository,
+                schemaGenerator: SchemaGenerator,
+                schema: schema,
+                schemaType: SchemaType,
+                rules: Rules,
+                schemaGenerationOptions: SchemaGenerationOptions,
+                schemaGenerationSettings: SchemaGenerationSettings,
+                schemaProvider: SchemaProvider);
+        }
 
-        /// <summary>
-        /// Gets schema provider.
-        /// </summary>
-        public ISchemaProvider<OpenApiSchema> SchemaProvider { get; init; }
+        /// <inheritdoc />
+        public IRuleContext<OpenApiSchema> Create(
+            string schemaPropertyName,
+            ValidationRuleInfo validationRuleInfo,
+            IPropertyValidator propertyValidator)
+        {
+            return new OpenApiRuleContext(Schema, schemaPropertyName, validationRuleInfo, propertyValidator);
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SchemaGenerationContext"/> class.
         /// </summary>
         public SchemaGenerationContext(
+            SchemaRepository schemaRepository,
+            ISchemaGenerator schemaGenerator,
+            
             OpenApiSchema schema,
             Type schemaType,
-            IReadOnlyList<FluentValidationRule> rules,
+            
+            IReadOnlyList<IFluentValidationRule<OpenApiSchema>> rules,
             ISchemaGenerationOptions schemaGenerationOptions,
             ISchemaGenerationSettings schemaGenerationSettings,
-            ISchemaProvider<OpenApiSchema> schemaProvider)
+            ISchemaProvider<OpenApiSchema>? schemaProvider = null)
         {
+            SchemaRepository = schemaRepository;
+            SchemaGenerator = schemaGenerator;
+      
+
             Schema = schema;
             SchemaType = schemaType;
             Rules = rules;
             SchemaGenerationOptions = schemaGenerationOptions;
             SchemaGenerationSettings = schemaGenerationSettings;
+
+            schemaProvider ??= new SwashbuckleSchemaProvider(
+                schemaRepository,
+                schemaGenerator,
+                schemaGenerationSettings.SchemaIdSelector);
             SchemaProvider = schemaProvider;
         }
     }

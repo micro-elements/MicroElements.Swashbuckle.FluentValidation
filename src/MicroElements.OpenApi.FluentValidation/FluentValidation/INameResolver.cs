@@ -3,7 +3,7 @@
 
 using System.Reflection;
 
-namespace MicroElements.Swashbuckle.FluentValidation.Generation
+namespace MicroElements.OpenApi.FluentValidation
 {
     /// <summary>
     /// Name resolver.

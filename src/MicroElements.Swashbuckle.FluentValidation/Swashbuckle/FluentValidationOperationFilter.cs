@@ -5,7 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using FluentValidation;
-using MicroElements.Swashbuckle.FluentValidation.Generation;
+using MicroElements.OpenApi.Core;
+using MicroElements.OpenApi.FluentValidation;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -24,7 +25,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
         private readonly IValidatorFactory? _validatorFactory;
 
-        private readonly IReadOnlyList<FluentValidationRule> _rules;
+        private readonly IReadOnlyList<IFluentValidationRule<OpenApiSchema>> _rules;
         private readonly ISchemaGenerationOptions _schemaGenerationOptions;
         private readonly SchemaGenerationSettings _schemaGenerationSettings;
 
@@ -137,6 +138,8 @@ namespace MicroElements.Swashbuckle.FluentValidation
                         }
 
                         var schemaContext = new SchemaGenerationContext(
+                            schemaRepository: context.SchemaRepository,
+                            schemaGenerator: context.SchemaGenerator,
                             schema: schema,
                             schemaType: parameterType,
                             rules: _rules,

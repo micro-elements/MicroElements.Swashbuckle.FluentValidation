@@ -2,7 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using MicroElements.Swashbuckle.FluentValidation.Generation;
+using MicroElements.OpenApi.FluentValidation;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 

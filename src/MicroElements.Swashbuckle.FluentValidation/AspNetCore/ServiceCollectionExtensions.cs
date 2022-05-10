@@ -3,6 +3,7 @@
 
 using System;
 using System.Text.Json;
+using MicroElements.OpenApi.FluentValidation;
 using MicroElements.Swashbuckle.FluentValidation.Generation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;

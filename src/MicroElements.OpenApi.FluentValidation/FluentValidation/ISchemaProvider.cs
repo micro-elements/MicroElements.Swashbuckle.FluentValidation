@@ -3,7 +3,7 @@
 
 using System;
 
-namespace MicroElements.Swashbuckle.FluentValidation.Generation
+namespace MicroElements.OpenApi.FluentValidation
 {
     /// <summary>
     /// Schema provider.

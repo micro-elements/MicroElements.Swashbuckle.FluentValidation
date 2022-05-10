@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace MicroElements.Swashbuckle.FluentValidation
+namespace MicroElements.OpenApi.Core
 {
     /// <summary>
     /// Extensions for some swagger specific work.

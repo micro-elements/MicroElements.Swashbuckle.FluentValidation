@@ -3,7 +3,6 @@ using System.Text.Json.Serialization;
 using FluentAssertions;
 using FluentValidation;
 using Microsoft.OpenApi.Models;
-using Newtonsoft.Json;
 using SampleWebApi.Contracts;
 using SampleWebApi.Validators;
 using Swashbuckle.AspNetCore.SwaggerGen;

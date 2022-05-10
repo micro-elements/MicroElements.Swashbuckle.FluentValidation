@@ -3,7 +3,7 @@
 
 using System;
 
-namespace MicroElements.Swashbuckle.FluentValidation
+namespace MicroElements.OpenApi.Core
 {
     /// <summary>
     /// Returns string equality only by symbols ignore case.

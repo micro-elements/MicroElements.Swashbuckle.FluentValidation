@@ -2,9 +2,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using MicroElements.Swashbuckle.FluentValidation.Generation;
 
-namespace MicroElements.Swashbuckle.FluentValidation
+namespace MicroElements.OpenApi.FluentValidation
 {
     /// <summary>
     /// SchemaGenerationSettings provides runtime options and services.

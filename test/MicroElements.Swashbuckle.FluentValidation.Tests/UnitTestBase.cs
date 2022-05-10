@@ -3,6 +3,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json;
 using FluentValidation;
+using MicroElements.OpenApi.FluentValidation;
 using MicroElements.Swashbuckle.FluentValidation.Generation;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;

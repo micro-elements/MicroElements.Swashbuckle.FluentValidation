@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using FluentValidation.AspNetCore;
 using MicroElements.Swashbuckle.FluentValidation;
 using MicroElements.Swashbuckle.FluentValidation.AspNetCore;
@@ -8,14 +6,9 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using SampleWebApi.DbModels;
-using SampleWebApi.ValidatorFactories;
-using Swashbuckle.AspNetCore.Swagger;
-using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace SampleWebApi
 {

@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using FluentValidation;
-using MicroElements.Swashbuckle.FluentValidation.Generation;
+using MicroElements.OpenApi.FluentValidation;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -23,7 +23,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
         private readonly IValidatorFactory? _validatorFactory;
 
-        private readonly IReadOnlyList<FluentValidationRule> _rules;
+        private readonly IReadOnlyList<IFluentValidationRule<OpenApiSchema>> _rules;
         private readonly ISchemaGenerationOptions _schemaGenerationOptions;
         private readonly SchemaGenerationSettings _schemaGenerationSettings;
 
@@ -99,21 +99,20 @@ namespace MicroElements.Swashbuckle.FluentValidation
             if (validator == null)
                 return;
 
-            var schemaProvider = new SwashbuckleSchemaProvider(context.SchemaRepository, context.SchemaGenerator, _schemaGenerationSettings.SchemaIdSelector);
-
             var schemaContext = new SchemaGenerationContext(
+                schemaRepository: context.SchemaRepository,
+                schemaGenerator: context.SchemaGenerator,
                 schema: schema,
                 schemaType: context.Type,
                 rules: _rules,
                 schemaGenerationOptions: _schemaGenerationOptions,
-                schemaGenerationSettings: _schemaGenerationSettings,
-                schemaProvider: schemaProvider);
+                schemaGenerationSettings: _schemaGenerationSettings);
 
-            ApplyRulesToSchema(context, validator, schemaContext);
+            ApplyRulesToSchema(schemaContext, validator);
 
             try
             {
-                AddRulesFromIncludedValidators(context, validator, schemaContext);
+                AddRulesFromIncludedValidators(schemaContext, validator);
             }
             catch (Exception e)
             {
@@ -121,17 +120,17 @@ namespace MicroElements.Swashbuckle.FluentValidation
             }
         }
 
-        private void ApplyRulesToSchema(SchemaFilterContext context, IValidator validator, SchemaGenerationContext schemaGenerationContext)
+        private void ApplyRulesToSchema(SchemaGenerationContext schemaGenerationContext, IValidator validator)
         {
             FluentValidationSchemaBuilder.ApplyRulesToSchema(
-                schemaType: context.Type,
-                schemaPropertyNames: null,
+                schemaType: schemaGenerationContext.SchemaType,
+                schemaPropertyNames: schemaGenerationContext.Properties,
                 validator: validator,
                 logger: _logger,
                 schemaGenerationContext: schemaGenerationContext);
         }
 
-        private void AddRulesFromIncludedValidators(SchemaFilterContext context, IValidator validator, SchemaGenerationContext schemaGenerationContext)
+        private void AddRulesFromIncludedValidators(SchemaGenerationContext schemaGenerationContext, IValidator validator)
         {
             FluentValidationSchemaBuilder.AddRulesFromIncludedValidators(
                 validator: validator,
