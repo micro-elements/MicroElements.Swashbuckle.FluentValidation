@@ -111,7 +111,7 @@ See sample project: https://github.com/micro-elements/MicroElements.Swashbuckle.
 
 * INotNullValidator (NotNull)
 * INotEmptyValidator (NotEmpty)
-* ILengthValidator (Length, MinimumLength, MaximumLength, ExactLength)
+* ILengthValidator (for strings: Length, MinimumLength, MaximumLength, ExactLength) (for arrays: MinItems, MaxItems)
 * IRegularExpressionValidator (Email, Matches)
 * IComparisonValidator (GreaterThan, GreaterThanOrEqual, LessThan, LessThanOrEqual)
 * IBetweenValidator (InclusiveBetween, ExclusiveBetween)
