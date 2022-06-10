@@ -1,3 +1,6 @@
+# Changes in 5.7.0:
+* Change: ILengthValidator support for arrays. Sets MinItems, MaxItems (PR#108 by biggik)
+
 # Changes in 5.6.0:
 * Supported FluentValidation 11
 
