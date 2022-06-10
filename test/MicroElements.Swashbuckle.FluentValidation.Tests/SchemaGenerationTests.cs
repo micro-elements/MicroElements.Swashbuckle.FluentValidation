@@ -1,7 +1,9 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using FluentAssertions;
 using FluentValidation;
+using FluentValidation.Validators;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
 using SampleWebApi.Contracts;
@@ -364,6 +366,117 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
                 .AddRule(entity => entity.Link,
                     rule => rule.MinimumLength(5),
                     schema => schema.MinLength.Should().Be(5));
+        }
+
+        public class MinMaxLength
+        {
+            public string Name { get; set; }
+            public List<string> Qualities { get; set; }
+        }
+
+        public class MinMaxLengthValidator : AbstractValidator<MinMaxLength>
+        {
+            public MinMaxLengthValidator(int min, int max)
+            {
+                RuleFor(x => x.Name).MinimumLength(min).MaximumLength(max);
+                RuleFor(x => x.Qualities).ListRange(min, max);
+            }
+        }
+
+        [Theory]
+        [InlineData(0, 40)]
+        [InlineData(10, 0)]
+        [InlineData(3, 40)]
+        public void ILengthValidator_ProperlyAppliesMinMax_ToStrings(int min, int max)
+        {
+            var schemaRepository = new SchemaRepository();
+            var referenceSchema = SchemaGenerator(new MinMaxLengthValidator(min, max)).GenerateSchema(typeof(MinMaxLength), schemaRepository);
+
+            var schema = schemaRepository.Schemas[referenceSchema.Reference.Id];
+
+            if (min > 0)
+                schema.Properties[nameof(MinMaxLength.Name)].MinLength.Should().Be(min);
+            else
+                schema.Properties[nameof(MinMaxLength.Name)].MinLength.Should().BeNull();
+            if (max > 0)
+                schema.Properties[nameof(MinMaxLength.Name)].MaxLength.Should().Be(max);
+            else
+                schema.Properties[nameof(MinMaxLength.Name)].MaxLength.Should().BeNull();
+
+            // MinItems / MaxItems shoiuld not be set for strings
+            schema.Properties[nameof(MinMaxLength.Name)].MinItems.Should().BeNull();
+            schema.Properties[nameof(MinMaxLength.Name)].MaxItems.Should().BeNull();
+        }
+
+        [Theory]
+        [InlineData(0, 40)]
+        [InlineData(10, 0)]
+        [InlineData(3, 40)]
+        public void ILengthValidator_ProperlyAppliesMinMax_ToArrays(int min, int max)
+        {
+            var schemaRepository = new SchemaRepository();
+            var referenceSchema = SchemaGenerator(new MinMaxLengthValidator(min, max)).GenerateSchema(typeof(MinMaxLength), schemaRepository);
+
+            var schema = schemaRepository.Schemas[referenceSchema.Reference.Id];
+
+            // MinLength / MaxLength should not be set for arrays
+            schema.Properties[nameof(MinMaxLength.Qualities)].MinLength.Should().BeNull();
+            schema.Properties[nameof(MinMaxLength.Qualities)].MaxLength.Should().BeNull();
+
+            if (min > 0)
+                schema.Properties[nameof(MinMaxLength.Qualities)].MinItems.Should().Be(min);
+            else
+                schema.Properties[nameof(MinMaxLength.Qualities)].MinItems.Should().BeNull();
+            if (max > 0)
+                schema.Properties[nameof(MinMaxLength.Qualities)].MaxItems.Should().Be(max);
+            else
+                schema.Properties[nameof(MinMaxLength.Qualities)].MaxItems.Should().BeNull();
+        }
+    }
+
+    public static class ValidatorExtensions
+    {
+        public static IRuleBuilderOptions<T, TProperty> ListRange<T, TProperty>(this IRuleBuilder<T, TProperty> ruleBuilder, int minimumLenghtInclusive, int maximumLengthInclusive)
+            where TProperty : IEnumerable
+        {
+            return ruleBuilder.SetValidator((IPropertyValidator<T, TProperty>)new ListLengthValidator<T, TProperty>(minimumLenghtInclusive, maximumLengthInclusive));
+        }
+
+        private sealed class ListLengthValidator<T, TProperty> : PropertyValidator<T, TProperty>, ILengthValidator
+        {
+            public ListLengthValidator(int minimumLength, int maximumLength)
+            {
+                Min = minimumLength;
+                Max = maximumLength;
+            }
+
+            public int Min { get; }
+
+            public int Max { get; }
+
+            public override string Name => nameof(ListLengthValidator<T, TProperty>);
+
+            public override bool IsValid(ValidationContext<T> context, TProperty value)
+            {
+                if (value is IList listvalue)
+                {
+                    return listvalue.Count >= this.Min && listvalue.Count <= this.Max;
+                }
+
+                return true;
+            }
+
+            protected override string GetDefaultMessageTemplate(string errorCode)
+            {
+                if (this.Min == 0)
+                {
+                    return $"The number of elements in '{{PropertyName}}' must not exceed '{Max}'.";
+                }
+                else
+                {
+                    return $"The number of elements in '{{PropertyName}}' must be between '{Min}' and '{Max}'.";
+                }
+            }
         }
     }
 }
