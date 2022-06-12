@@ -63,11 +63,22 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     var lengthValidator = (ILengthValidator) context.PropertyValidator;
                     var schemaProperty = context.Property;
 
-                    if (lengthValidator.Max > 0)
-                        schemaProperty.SetNewMax(p => p.MaxLength, lengthValidator.Max);
+                    if (schemaProperty.Type == "array")
+                    {
+                        if (lengthValidator.Max > 0)
+                            schemaProperty.SetNewMax(p => p.MaxItems, lengthValidator.Max);
 
-                    if (lengthValidator.Min > 0)
-                        schemaProperty.SetNewMin(p => p.MinLength, lengthValidator.Min, _options.Value.SetNotNullableIfMinLengthGreaterThenZero);
+                        if (lengthValidator.Min > 0)
+                            schemaProperty.SetNewMin(p => p.MinItems, lengthValidator.Min, _options.Value.SetNotNullableIfMinLengthGreaterThenZero);
+                    }
+                    else
+                    {
+                        if (lengthValidator.Max > 0)
+                            schemaProperty.SetNewMax(p => p.MaxLength, lengthValidator.Max);
+
+                        if (lengthValidator.Min > 0)
+                            schemaProperty.SetNewMin(p => p.MinLength, lengthValidator.Min, _options.Value.SetNotNullableIfMinLengthGreaterThenZero);
+                    }
                 });
 
             yield return new FluentValidationRule("Pattern")
