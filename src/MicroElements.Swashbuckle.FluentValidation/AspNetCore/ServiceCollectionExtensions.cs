@@ -36,12 +36,14 @@ namespace MicroElements.Swashbuckle.FluentValidation.AspNetCore
             {
                 services.Add(new ServiceDescriptor(typeof(FluentValidationRules), typeof(FluentValidationRules), registrationOptions.ServiceLifetime));
                 services.Add(new ServiceDescriptor(typeof(FluentValidationOperationFilter), typeof(FluentValidationOperationFilter), registrationOptions.ServiceLifetime));
+                services.Add(new ServiceDescriptor(typeof(FluentValidationDocumentFilter), typeof(FluentValidationDocumentFilter), registrationOptions.ServiceLifetime));
 
                 services.Configure<SwaggerGenOptions>(options =>
                 {
                     // Registers Swashbuckle filters
-                    options.SchemaFilter<FluentValidationRulesScopeAdapter>(registrationOptions.ServiceLifetime);
+                    //options.SchemaFilter<FluentValidationRulesScopeAdapter>(registrationOptions.ServiceLifetime);
                     options.OperationFilter<FluentValidationOperationFilterScopeAdapter>(registrationOptions.ServiceLifetime);
+                    options.DocumentFilter<DocumentFilterScopeAdapter<FluentValidationDocumentFilter>>(registrationOptions.ServiceLifetime);
                 });
             }
 

@@ -3,6 +3,7 @@ using MicroElements.NSwag.FluentValidation;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using NSwag.Generation.Processors;
 
 namespace SampleWebApi
 {
@@ -39,6 +40,8 @@ namespace SampleWebApi
 
                 // Add the fluent validations schema processor
                 settings.SchemaProcessors.Add(fluentValidationSchemaProcessor);
+                
+                //settings.DocumentProcessors.Add(new FluentValidationDocumentProcessor());
             });
 
             // Add the FluentValidationSchemaProcessor as a scoped service
