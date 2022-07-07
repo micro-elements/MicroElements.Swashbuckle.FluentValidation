@@ -18,24 +18,31 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// Gets validation rules for validator.
         /// </summary>
         /// <param name="validator">Validator.</param>
+        /// <param name="schemaGenerationOptions">SchemaGenerationOptions</param>
         /// <returns>enumeration.</returns>
-        public static IEnumerable<ValidationRuleInfo> GetValidationRules(this IValidator validator)
+        public static IEnumerable<ValidationRuleInfo> GetValidationRules(
+            this IValidator validator,
+            ISchemaGenerationOptions schemaGenerationOptions)
         {
             return (validator as IEnumerable<IValidationRule>)
                 .NotNull()
-                .GetPropertyRules();
+                .GetPropertyRules(schemaGenerationOptions);
         }
 
         /// <summary>
         /// Returns validation rules by property name ignoring name case.
         /// </summary>
         /// <param name="validator">Validator</param>
+        /// <param name="schemaGenerationOptions">SchemaGenerationOptions</param>
         /// <param name="name">Property name.</param>
         /// <returns>enumeration.</returns>
-        public static IEnumerable<ValidationRuleInfo> GetValidationRulesForMemberIgnoreCase(this IValidator validator, string name)
+        public static IEnumerable<ValidationRuleInfo> GetValidationRulesForMemberIgnoreCase(
+            this IValidator validator,
+            ISchemaGenerationOptions schemaGenerationOptions,
+            string name)
         {
             return validator
-                .GetValidationRules()
+                .GetValidationRules(schemaGenerationOptions)
                 .Where(propertyRule => propertyRule.PropertyRule.PropertyName.EqualsIgnoreAll(name));
         }
 
@@ -44,10 +51,11 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// If rule is CollectionPropertyRule then isCollectionRule set to true.
         /// </summary>
         internal static IEnumerable<ValidationRuleInfo> GetPropertyRules(
-            this IEnumerable<IValidationRule> validationRules)
+              this IEnumerable<IValidationRule> validationRules,
+              ISchemaGenerationOptions schemaGenerationOptions)
         {
             return validationRules
-                .Where(rule => rule.HasNoCondition())
+                .Where(rule => schemaGenerationOptions.AllowConditionalRules || rule.HasNoCondition())
                 .Select(rule =>
                 {
                     // CollectionPropertyRule<T, TElement> is also a PropertyRule.
@@ -85,14 +93,23 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// Gets validators for <see cref="IValidationRule"/>.
         /// </summary>
         /// <param name="validationRule">Validator.</param>
+        /// <param name="schemaGenerationOptions">SchemaGenerationOptions</param>
         /// <returns>enumeration.</returns>
-        public static IEnumerable<IPropertyValidator> GetValidators(this IValidationRule validationRule)
+        public static IEnumerable<IPropertyValidator> GetValidators(
+            this IValidationRule validationRule,
+            ISchemaGenerationOptions schemaGenerationOptions)
         {
             return validationRule
                 .Components
                 .NotNull()
-                .Where(component => component.HasNoCondition())
+                .Where(component => (schemaGenerationOptions.AllowConditionalValidators && HasNoRequiredRule(component))
+                                 || component.HasNoCondition())
                 .Select(component => component.Validator);
+        }
+
+        private static bool HasNoRequiredRule(IRuleComponent ruleComponent)
+        {
+            return ruleComponent.Validator is not INotNullValidator && ruleComponent.Validator is not INotEmptyValidator;
         }
     }
 }

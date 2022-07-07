@@ -17,6 +17,16 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// Gets a value indicating whether schema generator should use AllOf for multiple rules (for example for multiple patterns).
         /// </summary>
         bool UseAllOffForMultipleRules { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether conditional rules are allowed to effect schema generation.
+        /// </summary>
+        bool AllowConditionalRules { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether conditional validators are allowed to effect schema generation.
+        /// </summary>
+        bool AllowConditionalValidators { get; }
     }
 
     /// <summary>
@@ -35,6 +45,16 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// Default: true.
         /// </summary>
         public bool UseAllOffForMultipleRules { get; set; } = true;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether conditional rules are allowed to effect schema generation.
+        /// </summary>
+        public bool AllowConditionalRules { get; set; } = false;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether conditional validators are allowed to effect schema generation.
+        /// </summary>
+        public bool AllowConditionalValidators { get; set; } = false;
 
         /// <summary>
         /// Sets values that compatible with FluentValidation.

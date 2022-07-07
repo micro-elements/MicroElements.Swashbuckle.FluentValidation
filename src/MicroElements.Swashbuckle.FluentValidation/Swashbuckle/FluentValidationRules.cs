@@ -128,7 +128,8 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 schemaPropertyNames: null,
                 validator: validator,
                 logger: _logger,
-                schemaGenerationContext: schemaGenerationContext);
+                schemaGenerationContext: schemaGenerationContext,
+                schemaGenerationOptions: _schemaGenerationOptions);
         }
 
         private void AddRulesFromIncludedValidators(SchemaFilterContext context, IValidator validator, SchemaGenerationContext schemaGenerationContext)
@@ -136,7 +137,8 @@ namespace MicroElements.Swashbuckle.FluentValidation
             FluentValidationSchemaBuilder.AddRulesFromIncludedValidators(
                 validator: validator,
                 logger: _logger,
-                schemaGenerationContext: schemaGenerationContext);
+                schemaGenerationContext: schemaGenerationContext,
+                schemaGenerationOptions: _schemaGenerationOptions);
         }
     }
 }

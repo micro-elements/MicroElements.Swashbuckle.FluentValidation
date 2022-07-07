@@ -66,6 +66,9 @@ namespace SampleWebApi
                 //c.AddFluentValidationRules();
 
                 c.EnableAnnotations(enableAnnotationsForInheritance: true, enableAnnotationsForPolymorphism: true);
+
+                // [Optional] Use native C#'s reference type nullable feature
+                //c.SupportNonNullableReferenceTypes();
             });
 
             // [Optional] Add INameResolver (SystemTextJsonNameResolver will be registered by default)
@@ -80,6 +83,13 @@ namespace SampleWebApi
             //     options.SetNotNullableIfMinLengthGreaterThenZero = true;
             //     options.UseAllOffForMultipleRules = true;
             // });
+
+            // [Optional] Configures generation options to support conditional rules and validators
+            //services.AddFluentValidationRulesToSwagger(configure: options =>
+            //{
+            //    options.AllowConditionalRules = true;
+            //    options.AllowConditionalValidators = true;
+            //});
 
             // Adds logging
             services.AddLogging(builder => builder.AddConsole().AddFilter(level => true));

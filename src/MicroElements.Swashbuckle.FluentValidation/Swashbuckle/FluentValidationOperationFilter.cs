@@ -149,7 +149,8 @@ namespace MicroElements.Swashbuckle.FluentValidation
                             schemaPropertyNames: new[] { schemaPropertyName },
                             validator: validator,
                             logger: _logger,
-                            schemaGenerationContext: schemaContext);
+                            schemaGenerationContext: schemaContext,
+                            schemaGenerationOptions: _schemaGenerationOptions);
 
                         if (schema.Required != null)
                             operationParameter.Required = schema.Required.Contains(schemaPropertyName, IgnoreAllStringComparer.Instance);
