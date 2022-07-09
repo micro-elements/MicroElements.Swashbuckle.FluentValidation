@@ -124,13 +124,13 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     if (schemaGenerationOptions.AllowConditionalValidators
                     && component.HasCondition())
                     {
-                        return component.Validator.IsConditionalValidatorAllowed();
+                        return component.Validator.IsAllowedAsConditionalValidator();
                     }
 
                     if (schemaGenerationOptions.AllowConditionalRules
                     && validationRule.HasCondition())
                     {
-                        return component.Validator.IsConditionalValidatorAllowed();
+                        return component.Validator.IsAllowedAsConditionalValidator();
                     }
 
                     return component.HasNoCondition();
@@ -138,7 +138,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 .Select(component => component.Validator);
         }
 
-        private static bool IsConditionalValidatorAllowed(this IPropertyValidator validator)
+        private static bool IsAllowedAsConditionalValidator(this IPropertyValidator validator)
         {
             Type validatorType = validator.GetType();
             return _allowedConditionalValidators.Any(x => x.IsAssignableFrom(validatorType));
