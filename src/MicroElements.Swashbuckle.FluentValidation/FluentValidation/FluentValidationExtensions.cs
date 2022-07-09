@@ -1,6 +1,7 @@
 ﻿// Copyright (c) MicroElements. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using FluentValidation;
@@ -81,12 +82,28 @@ namespace MicroElements.Swashbuckle.FluentValidation
         }
 
         /// <summary>
-        /// Returns a <see cref="bool"/> indicating if the <paramref name="propertyRule"/> is conditional.
+        /// Returns a <see cref="bool"/> indicating if the <paramref name="ruleComponent"/> is conditional.
         /// </summary>
         internal static bool HasNoCondition(this IRuleComponent ruleComponent)
         {
             var hasCondition = ruleComponent.HasCondition || ruleComponent.HasAsyncCondition;
             return !hasCondition;
+        }
+
+        /// <summary>
+        /// Returns a <see cref="bool"/> indicating if the <paramref name="ruleComponent"/> is conditional.
+        /// </summary>
+        internal static bool HasCondition(this IRuleComponent ruleComponent)
+        {
+            return !ruleComponent.HasNoCondition();
+        }
+
+        /// <summary>
+        /// Returns a <see cref="bool"/> indicating if the <paramref name="propertyRule"/> is conditional.
+        /// </summary>
+        internal static bool HasCondition(this IValidationRule propertyRule)
+        {
+            return !propertyRule.HasNoCondition();
         }
 
         /// <summary>
@@ -102,14 +119,38 @@ namespace MicroElements.Swashbuckle.FluentValidation
             return validationRule
                 .Components
                 .NotNull()
-                .Where(component => (schemaGenerationOptions.AllowConditionalValidators && HasNoRequiredRule(component))
-                                 || component.HasNoCondition())
+                .Where(component =>
+                {
+                    if (schemaGenerationOptions.AllowConditionalValidators
+                    && component.HasCondition())
+                    {
+                        return component.Validator.IsConditionalValidatorAllowed();
+                    }
+
+                    if (schemaGenerationOptions.AllowConditionalRules
+                    && validationRule.HasCondition())
+                    {
+                        return component.Validator.IsConditionalValidatorAllowed();
+                    }
+
+                    return component.HasNoCondition();
+                })
                 .Select(component => component.Validator);
         }
 
-        private static bool HasNoRequiredRule(IRuleComponent ruleComponent)
+        private static bool IsConditionalValidatorAllowed(this IPropertyValidator validator)
         {
-            return ruleComponent.Validator is not INotNullValidator && ruleComponent.Validator is not INotEmptyValidator;
+            Type validatorType = validator.GetType();
+            return _allowedConditionalValidators.Any(x => x.IsAssignableFrom(validatorType));
         }
+
+        private static readonly IEnumerable<Type> _allowedConditionalValidators = new[]
+        {
+            typeof(ILengthValidator),
+            typeof(IRegularExpressionValidator),
+            typeof(IComparisonValidator),
+            typeof(IEmailValidator),
+            typeof(IBetweenValidator),
+        };
     }
 }

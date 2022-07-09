@@ -109,6 +109,11 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 schemaGenerationSettings: _schemaGenerationSettings,
                 schemaProvider: schemaProvider);
 
+            if (context.Type.Name == "Club")
+            {
+
+            }
+
             ApplyRulesToSchema(context, validator, schemaContext);
 
             try

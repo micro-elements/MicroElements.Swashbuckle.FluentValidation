@@ -1,5 +1,7 @@
 ﻿using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace SampleWebApi.Controllers
 {
@@ -20,14 +22,20 @@ namespace SampleWebApi.Controllers
 
     public class Club
     {
+        public string Id { get; init; } = null!;
         public string ClubNumber { get; init; } = null!;
         public string? Email { get; init; }
     }
 
     public class ClubValidator : AbstractValidator<Club>
     {
+
+
         public ClubValidator()
         {
+            RuleFor(x => x.Id)
+                .NotNull();
+
             RuleFor(x => x.ClubNumber)
                 .Length(4);
 
@@ -37,6 +45,13 @@ namespace SampleWebApi.Controllers
                 .NotNull()
                 .NotEmpty()
                 .When(x => x.ClubNumber == "8088");
+
+            WhenAsync((_, _) => Task.FromResult(false), () =>
+            {
+                RuleFor(x => x.ClubNumber)
+                    .NotEmpty()
+                    .Matches(new Regex(@"^\d$"));
+            });
         }
     }
 }
