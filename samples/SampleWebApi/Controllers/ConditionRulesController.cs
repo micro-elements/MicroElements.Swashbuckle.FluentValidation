@@ -29,8 +29,6 @@ namespace SampleWebApi.Controllers
 
     public class ClubValidator : AbstractValidator<Club>
     {
-
-
         public ClubValidator()
         {
             RuleFor(x => x.Id)
