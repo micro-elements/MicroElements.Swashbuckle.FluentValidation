@@ -21,7 +21,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
     {
         private readonly ILogger _logger;
 
-        private readonly IValidatorFactory? _validatorFactory;
+        private readonly IValidatorRegistry _validatorRegistry;
 
         private readonly IReadOnlyList<FluentValidationRule> _rules;
         private readonly ISchemaGenerationOptions _schemaGenerationOptions;
@@ -41,9 +41,10 @@ namespace MicroElements.Swashbuckle.FluentValidation
             ILoggerFactory? loggerFactory = null,
 
             /* FluentValidation services */
-            IValidatorFactory? validatorFactory = null,
+            IServiceProvider? serviceProvider = null,
 
             // MicroElements services
+            IValidatorRegistry? validatorRegistry = null,
             IEnumerable<FluentValidationRule>? rules = null,
             IOptions<SchemaGenerationOptions>? schemaGenerationOptions = null,
             INameResolver? nameResolver = null,
@@ -57,7 +58,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             _logger.LogDebug("FluentValidationRules Created");
 
             // FluentValidation services
-            _validatorFactory = validatorFactory;
+            _validatorRegistry = validatorRegistry ?? new ServiceProviderValidatorRegistry(serviceProvider);
 
             // MicroElements services
             _rules = new DefaultFluentValidationRuleProvider(schemaGenerationOptions).GetRules().ToArray().OverrideRules(rules);
@@ -77,19 +78,13 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <inheritdoc />
         public void Apply(OpenApiSchema schema, SchemaFilterContext context)
         {
-            if (_validatorFactory == null)
-            {
-                _logger.LogWarning(0, "ValidatorFactory is not provided. Please register FluentValidation.");
-                return;
-            }
-
             if (schema == null)
                 return;
 
             IValidator? validator = null;
             try
             {
-                validator = _validatorFactory.GetValidator(context.Type);
+                validator = _validatorRegistry.GetValidator(context.Type);
             }
             catch (Exception e)
             {

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using FluentValidation;
 using FluentValidation.AspNetCore;
 using MicroElements.Swashbuckle.FluentValidation;
 using MicroElements.Swashbuckle.FluentValidation.AspNetCore;
@@ -36,13 +37,6 @@ namespace SampleWebApi
 
             services
                 .AddControllers()
-                // Adds fluent validators to Asp.net
-                .AddFluentValidation(c =>
-                {
-                    c.RegisterValidatorsFromAssemblyContaining<Startup>(lifetime: ServiceLifetime.Scoped);
-                    // Optionally set validator factory if you have problems with scope resolve inside validators.
-                    c.ValidatorFactoryType = typeof(HttpContextServiceProviderValidatorFactory);
-                })
                 .AddJsonOptions(options =>
                 {
                     // Workaround for snake_case
@@ -50,6 +44,12 @@ namespace SampleWebApi
                     // options.JsonSerializerOptions.DictionaryKeyPolicy = new NewtonsoftJsonNamingPolicy(new SnakeCaseNamingStrategy());
                 })
                 .AddNewtonsoftJson();
+
+            // Register FV validators
+            services.AddValidatorsFromAssemblyContaining<Startup>(lifetime: ServiceLifetime.Scoped);
+
+            // Add FV to Asp.net
+            services.AddFluentValidationAutoValidation();
 
             // Register all validators as IValidator?
             //var serviceDescriptors = services.Where(descriptor => descriptor.ServiceType.GetInterfaces().Contains(typeof(IValidator))).ToList();
