@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Text.Json;
 using FluentValidation;
 using MicroElements.OpenApi.FluentValidation;
+using MicroElements.Swashbuckle.FluentValidation;
 using MicroElements.Swashbuckle.FluentValidation.Generation;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
@@ -34,9 +35,9 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
 
         private void ConfigureGenerator(SchemaGeneratorOptions options, IValidator[] validators)
         {
-            IValidatorFactory validatorFactory = new CustomValidatorFactory(validators);
+            IValidatorRegistry validatorRegistry = new ValidatorRegistry(validators);
             options.SchemaFilters.Add(new FluentValidationRules(
-                validatorFactory: validatorFactory,
+                validatorRegistry: validatorRegistry,
                 nameResolver: new SystemTextJsonNameResolver()));
         }
     }
@@ -125,10 +126,10 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             return CreateSchemaGenerator(
                 configureGenerator: options =>
                 {
-                    IValidatorFactory validatorFactory = new CustomValidatorFactory(validators);
+                    IValidatorRegistry validatorRegistry = new ValidatorRegistry(validators);
 
                     options.SchemaFilters.Add(new FluentValidationRules(
-                        validatorFactory: validatorFactory, 
+                        validatorRegistry: validatorRegistry, 
                         rules: null, 
                         loggerFactory: null,
                         schemaGenerationOptions: schemaGenerationOptions != null ? new OptionsWrapper<SchemaGenerationOptions>(schemaGenerationOptions) : null,

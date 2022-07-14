@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Diagnostics;
 using FluentValidation;
+using MicroElements.Swashbuckle.FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace SampleWebApi.ValidatorFactories
 {
     /// <summary>
-    /// <see cref="IValidatorFactory"/> like default <see cref="FluentValidation.AspNetCore.ServiceProviderValidatorFactory"/>.
+    /// <see cref="IValidatorRegistry"/> like default <see cref="FluentValidation.AspNetCore.ServiceProviderValidatorFactory"/>.
     /// The main difference that this factory tries to get <see cref="IValidator"/> on new scope if first try fails.
     /// </summary>
     public class ScopedServiceProviderValidatorFactory : ValidatorFactoryBase

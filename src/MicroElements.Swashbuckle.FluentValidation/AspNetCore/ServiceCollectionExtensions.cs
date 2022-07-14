@@ -60,6 +60,9 @@ namespace MicroElements.Swashbuckle.FluentValidation.AspNetCore
                 services.TryAddSingleton<INameResolver, SystemTextJsonNameResolver>();
             }
 
+            // Adds default IValidatorRegistry
+            services.TryAdd(new ServiceDescriptor(typeof(IValidatorRegistry), typeof(ServiceProviderValidatorRegistry), registrationOptions.ServiceLifetime));
+
             // Schema generation configuration.
             if (configure != null)
                 services.Configure<SchemaGenerationOptions>(configure);

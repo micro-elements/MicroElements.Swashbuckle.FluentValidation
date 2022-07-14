@@ -23,7 +23,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
     {
         private readonly ILogger _logger;
 
-        private readonly IValidatorFactory? _validatorFactory;
+        private readonly IValidatorRegistry? _validatorRegistry;
 
         private readonly IReadOnlyList<IFluentValidationRule<OpenApiSchema>> _rules;
         private readonly ISchemaGenerationOptions _schemaGenerationOptions;
@@ -43,7 +43,8 @@ namespace MicroElements.Swashbuckle.FluentValidation
             ILoggerFactory? loggerFactory = null,
 
             /* FluentValidation services */
-            IValidatorFactory? validatorFactory = null,
+            IServiceProvider? serviceProvider = null,
+            IValidatorRegistry? validatorRegistry = null,
 
             /* MicroElements services */
             IEnumerable<FluentValidationRule>? rules = null,
@@ -57,7 +58,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             _logger = loggerFactory?.CreateLogger(typeof(FluentValidationRules)) ?? NullLogger.Instance;
 
             // FluentValidation services
-            _validatorFactory = validatorFactory;
+            _validatorRegistry = validatorRegistry ?? new ServiceProviderValidatorRegistry(serviceProvider);
 
             // MicroElements services
             _rules = new DefaultFluentValidationRuleProvider(schemaGenerationOptions).GetRules().ToArray().OverrideRules(rules);
@@ -93,7 +94,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             if (operation.Parameters == null)
                 return;
 
-            if (_validatorFactory == null)
+            if (_validatorRegistry == null)
             {
                 _logger.LogWarning(0, "ValidatorFactory is not provided. Please register FluentValidation.");
                 return;
@@ -113,7 +114,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     if (parameterType == null)
                         continue;
 
-                    var validator = _validatorFactory.GetValidator(parameterType);
+                    var validator = _validatorRegistry.GetValidator(parameterType);
                     if (validator == null)
                         continue;
 
