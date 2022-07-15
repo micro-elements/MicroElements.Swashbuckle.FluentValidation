@@ -17,7 +17,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
     {
         private readonly ILogger _logger;
 
-        private readonly IValidatorFactory? _validatorFactory;
+        private readonly IValidatorRegistry? _validatorRegistry;
 
         private readonly IReadOnlyList<IFluentValidationRule<OpenApiSchema>> _rules;
         private readonly ISchemaGenerationOptions _schemaGenerationOptions;
@@ -28,7 +28,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             ILoggerFactory? loggerFactory = null,
 
             /* FluentValidation services */
-            IValidatorFactory? validatorFactory = null,
+            IValidatorRegistry? validatorRegistry = null,
 
             // MicroElements services
             IEnumerable<FluentValidationRule>? rules = null,
@@ -44,7 +44,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             _logger.LogDebug("FluentValidationRules Created");
 
             // FluentValidation services
-            _validatorFactory = validatorFactory;
+            _validatorRegistry = validatorRegistry;
 
             // MicroElements services
             _rules = new DefaultFluentValidationRuleProvider(schemaGenerationOptions).GetRules().ToArray().OverrideRules(rules);
@@ -67,7 +67,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             public string SchemaName { get; init; }
             public OpenApiSchema Schema { get; init; }
         };
-        
+
         record ParameterItem
         {
             public ApiDescription ApiDescription { get; init; }
@@ -76,7 +76,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             public string SchemaName { get; init; }
             public OpenApiSchema Schema { get; init; }
             public OpenApiSchema ParameterSchema { get; init; }
-        }; 
+        };
 
         /// <inheritdoc />
         public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
@@ -87,19 +87,18 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
             var apiDescriptions = context.ApiDescriptions.ToArray();
 
-
             var modelTypes = apiDescriptions
                 .SelectMany(description => description.ParameterDescriptions)
                 .Where(description => description.ModelMetadata.ContainerType is null)
                 .Select(description => description.ModelMetadata.ModelType)
                 .Distinct();
-            
+
             var containerTypes = apiDescriptions
                 .SelectMany(description => description.ParameterDescriptions)
                 .Where(description => description.ModelMetadata.ContainerType != null)
                 .Select(description => description.ModelMetadata.ContainerType)
                 .Distinct();
-            
+
             var schemasForTypes = modelTypes
                 .Concat(containerTypes)
                 .Distinct()
@@ -136,7 +135,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
                             var parameterSchema = FindParam(parameterItem);
                             parameterItem = parameterItem with { ParameterSchema = parameterSchema };
-                            
+
                             yield return parameterItem;
                         }
                     }
@@ -158,7 +157,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 IValidator? validator = null;
                 try
                 {
-                    validator = _validatorFactory.GetValidator(item.ModelType);
+                    validator = _validatorRegistry.GetValidator(item.ModelType);
                 }
                 catch (Exception e)
                 {

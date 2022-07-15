@@ -9,24 +9,25 @@ namespace MicroElements.Swashbuckle.FluentValidation
 {
     /// <summary>
     /// Allows for the creation of validators that have dependencies on scoped services.
+    /// Add <c>services.AddHttpContextAccessor();</c> to use <see cref="IHttpContextAccessor"/>.
     /// </summary>
-    public class HttpContextServiceProviderValidatorFactory : ValidatorFactoryBase
+    public class HttpContextValidatorRegistry : IValidatorRegistry
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="HttpContextServiceProviderValidatorFactory"/> class.
+        /// Initializes a new instance of the <see cref="HttpContextValidatorRegistry"/> class.
         /// </summary>
         /// <param name="httpContextAccessor">Access to the current HttpContext.</param>
-        public HttpContextServiceProviderValidatorFactory(IHttpContextAccessor httpContextAccessor)
+        public HttpContextValidatorRegistry(IHttpContextAccessor httpContextAccessor)
         {
             _httpContextAccessor = httpContextAccessor;
         }
 
-        /// <inheritdoc/>
-        public override IValidator CreateInstance(Type validatorType)
+        public IValidator? GetValidator(Type type)
         {
-            var serviceProvider = _httpContextAccessor.HttpContext.RequestServices;
+            IServiceProvider serviceProvider = _httpContextAccessor.HttpContext.RequestServices;
+            Type validatorType = typeof(IValidator<>).MakeGenericType(type);
             return serviceProvider.GetService(validatorType) as IValidator;
         }
     }
