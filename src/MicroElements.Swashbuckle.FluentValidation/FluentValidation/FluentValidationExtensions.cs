@@ -143,7 +143,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             , ISchemaGenerationOptions schemaGenerationOptions)
         {
             Type validatorType = validator.GetType();
-            return schemaGenerationOptions.AllowedConditionalValidators.Any(x => x.IsAssignableFrom(validatorType));
+            return schemaGenerationOptions.AllowedConditionalValidatorTypes.Any(x => x.IsAssignableFrom(validatorType));
         }
     }
 }

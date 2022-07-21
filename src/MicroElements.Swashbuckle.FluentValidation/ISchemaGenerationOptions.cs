@@ -35,7 +35,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <summary>
         /// Gets a list that contains the allowed conditional validator types.
         /// </summary>
-        List<Type> AllowedConditionalValidators { get; }
+        List<Type> AllowedConditionalValidatorTypes { get; }
     }
 
     /// <summary>
@@ -68,7 +68,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <summary>
         /// Gets a list that contains the allowed conditional validator types.
         /// </summary>
-        public List<Type> AllowedConditionalValidators { get; } = new List<Type>()
+        public List<Type> AllowedConditionalValidatorTypes { get; } = new List<Type>()
         {
             typeof(ILengthValidator),
             typeof(IRegularExpressionValidator),
