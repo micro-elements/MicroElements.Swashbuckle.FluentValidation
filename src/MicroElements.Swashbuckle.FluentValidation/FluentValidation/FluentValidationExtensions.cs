@@ -124,13 +124,13 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     if (schemaGenerationOptions.AllowConditionalValidators
                     && component.HasCondition())
                     {
-                        return component.Validator.IsAllowedAsConditionalValidator();
+                        return component.Validator.IsAllowedAsConditionalValidator(schemaGenerationOptions);
                     }
 
                     if (schemaGenerationOptions.AllowConditionalRules
                     && validationRule.HasCondition())
                     {
-                        return component.Validator.IsAllowedAsConditionalValidator();
+                        return component.Validator.IsAllowedAsConditionalValidator(schemaGenerationOptions);
                     }
 
                     return component.HasNoCondition();
@@ -138,19 +138,12 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 .Select(component => component.Validator);
         }
 
-        private static bool IsAllowedAsConditionalValidator(this IPropertyValidator validator)
+        private static bool IsAllowedAsConditionalValidator(
+              this IPropertyValidator validator
+            , ISchemaGenerationOptions schemaGenerationOptions)
         {
             Type validatorType = validator.GetType();
-            return _allowedConditionalValidators.Any(x => x.IsAssignableFrom(validatorType));
+            return schemaGenerationOptions.AllowedConditionalValidators.Any(x => x.IsAssignableFrom(validatorType));
         }
-
-        private static readonly IEnumerable<Type> _allowedConditionalValidators = new[]
-        {
-            typeof(ILengthValidator),
-            typeof(IRegularExpressionValidator),
-            typeof(IComparisonValidator),
-            typeof(IEmailValidator),
-            typeof(IBetweenValidator),
-        };
     }
 }

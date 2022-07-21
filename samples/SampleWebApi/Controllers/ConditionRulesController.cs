@@ -25,6 +25,7 @@ namespace SampleWebApi.Controllers
         public string Id { get; init; } = null!;
         public string ClubNumber { get; init; } = null!;
         public string? Email { get; init; }
+        public int? Source { get; init; }
     }
 
     public class ClubValidator : AbstractValidator<Club>
@@ -48,7 +49,12 @@ namespace SampleWebApi.Controllers
             {
                 RuleFor(x => x.ClubNumber)
                     .NotEmpty()
-                    .Matches(new Regex(@"^\d$"));
+                    .Matches(new Regex(@"^\d$"))
+                    .When(x => x.Id == "1");
+
+                RuleFor(x => x.Source)
+                    .LessThanOrEqualTo(16)
+                    .When(x => x is not null);
             });
         }
     }

@@ -1,6 +1,10 @@
 ﻿// Copyright (c) MicroElements. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using FluentValidation.Validators;
+using System;
+using System.Collections.Generic;
+
 namespace MicroElements.Swashbuckle.FluentValidation
 {
     /// <summary>
@@ -27,6 +31,11 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// Gets a value indicating whether conditional validators are allowed to effect schema generation.
         /// </summary>
         bool AllowConditionalValidators { get; }
+
+        /// <summary>
+        /// Gets a list that contains the allowed conditional validator types.
+        /// </summary>
+        List<Type> AllowedConditionalValidators { get; }
     }
 
     /// <summary>
@@ -55,6 +64,18 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// Gets or sets a value indicating whether conditional validators are allowed to effect schema generation.
         /// </summary>
         public bool AllowConditionalValidators { get; set; } = false;
+
+        /// <summary>
+        /// Gets a list that contains the allowed conditional validator types.
+        /// </summary>
+        public List<Type> AllowedConditionalValidators { get; } = new List<Type>()
+        {
+            typeof(ILengthValidator),
+            typeof(IRegularExpressionValidator),
+            typeof(IComparisonValidator),
+            typeof(IEmailValidator),
+            typeof(IBetweenValidator),
+        };
 
         /// <summary>
         /// Sets values that compatible with FluentValidation.
