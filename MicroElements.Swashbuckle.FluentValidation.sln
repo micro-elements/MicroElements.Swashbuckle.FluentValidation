@@ -15,7 +15,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		CHANGELOG.md = CHANGELOG.md
 		src\common.props = src\common.props
 		src\Directory.Build.props = src\Directory.Build.props
-		.github\FUNDING.yml = .github\FUNDING.yml
 		.github\workflows\github_build_and_publish.yml = .github\workflows\github_build_and_publish.yml
 		README.md = README.md
 		version.props = version.props
