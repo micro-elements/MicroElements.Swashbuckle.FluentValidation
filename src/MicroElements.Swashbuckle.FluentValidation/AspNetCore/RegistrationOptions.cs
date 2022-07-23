@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Text.Json;
+using MicroElements.OpenApi.FluentValidation;
 using MicroElements.Swashbuckle.FluentValidation.Generation;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -34,5 +35,10 @@ namespace MicroElements.Swashbuckle.FluentValidation.AspNetCore
         /// ServiceLifetime to use for service registration.
         /// </summary>
         public ServiceLifetime ServiceLifetime { get; set; } = ServiceLifetime.Scoped;
+
+        /// <summary>
+        /// Use DocumentFilter instead of SchemaFilter.
+        /// </summary>
+        public bool ExperimentalUseDocumentFilter { get; set; } = false;
     }
 }

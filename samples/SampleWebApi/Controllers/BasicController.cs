@@ -9,7 +9,7 @@ namespace SampleWebApi.Controllers
     {
         [HttpGet("[action]")]
         [ProducesResponseType(typeof(IEnumerable<Customer>), 200)]
-        public IActionResult GetWithFluentValidation(BasicGetRequest req)
+        public IActionResult GetWithFluentValidation(BasicGetRequest request)
         {
             if (!ModelState.IsValid)
             {

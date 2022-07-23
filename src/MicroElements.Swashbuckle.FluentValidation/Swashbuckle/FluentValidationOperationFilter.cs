@@ -4,8 +4,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using FluentValidation;
-using MicroElements.Swashbuckle.FluentValidation.Generation;
+using MicroElements.OpenApi.Core;
+using MicroElements.OpenApi.FluentValidation;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -22,41 +22,41 @@ namespace MicroElements.Swashbuckle.FluentValidation
     {
         private readonly ILogger _logger;
 
-        private readonly IValidatorFactory? _validatorFactory;
+        private readonly IValidatorRegistry? _validatorRegistry;
 
-        private readonly IReadOnlyList<FluentValidationRule> _rules;
+        private readonly IReadOnlyList<IFluentValidationRule<OpenApiSchema>> _rules;
         private readonly ISchemaGenerationOptions _schemaGenerationOptions;
         private readonly SchemaGenerationSettings _schemaGenerationSettings;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FluentValidationOperationFilter"/> class.
         /// </summary>
-        /// <param name="loggerFactory"> Logger factory.</param>
-        /// <param name="validatorFactory">FluentValidation factory.</param>
+        /// <param name="loggerFactory"><see cref="ILoggerFactory"/> for logging. Can be null.</param>
+        /// <param name="serviceProvider">Validator factory.</param>
+        /// <param name="validatorRegistry">Gets validators for a particular type.</param>
         /// <param name="rules">External FluentValidation rules. External rule overrides default rule with the same name.</param>
         /// <param name="schemaGenerationOptions">Schema generation options.</param>
         /// <param name="nameResolver">Optional name resolver.</param>
-        /// <param name="swaggerGenOptions">Swagger generation options.</param>
+        /// <param name="swaggerGenOptions">SwaggerGenOptions.</param>
         public FluentValidationOperationFilter(
             /* System services */
             ILoggerFactory? loggerFactory = null,
-
-            /* FluentValidation services */
-            IValidatorFactory? validatorFactory = null,
+            IServiceProvider? serviceProvider = null,
 
             /* MicroElements services */
+            IValidatorRegistry? validatorRegistry = null,
             IEnumerable<FluentValidationRule>? rules = null,
             IOptions<SchemaGenerationOptions>? schemaGenerationOptions = null,
             INameResolver? nameResolver = null,
 
-            // Swashbuckle services
+            /* Swashbuckle services */
             IOptions<SwaggerGenOptions>? swaggerGenOptions = null)
         {
             // System services
             _logger = loggerFactory?.CreateLogger(typeof(FluentValidationRules)) ?? NullLogger.Instance;
 
             // FluentValidation services
-            _validatorFactory = validatorFactory;
+            _validatorRegistry = validatorRegistry ?? new ServiceProviderValidatorRegistry(serviceProvider);
 
             // MicroElements services
             _rules = new DefaultFluentValidationRuleProvider(schemaGenerationOptions).GetRules().ToArray().OverrideRules(rules);
@@ -92,7 +92,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             if (operation.Parameters == null)
                 return;
 
-            if (_validatorFactory == null)
+            if (_validatorRegistry == null)
             {
                 _logger.LogWarning(0, "ValidatorFactory is not provided. Please register FluentValidation.");
                 return;
@@ -112,7 +112,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     if (parameterType == null)
                         continue;
 
-                    var validator = _validatorFactory.GetValidator(parameterType);
+                    var validator = _validatorRegistry.GetValidator(parameterType);
                     if (validator == null)
                         continue;
 
@@ -137,6 +137,8 @@ namespace MicroElements.Swashbuckle.FluentValidation
                         }
 
                         var schemaContext = new SchemaGenerationContext(
+                            schemaRepository: context.SchemaRepository,
+                            schemaGenerator: context.SchemaGenerator,
                             schema: schema,
                             schemaType: parameterType,
                             rules: _rules,

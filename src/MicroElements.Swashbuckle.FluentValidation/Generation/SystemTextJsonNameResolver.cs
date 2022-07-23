@@ -4,6 +4,7 @@
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using MicroElements.OpenApi.FluentValidation;
 using MicroElements.Swashbuckle.FluentValidation.AspNetCore;
 
 namespace MicroElements.Swashbuckle.FluentValidation.Generation

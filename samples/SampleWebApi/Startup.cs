@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using FluentValidation;
 using FluentValidation.AspNetCore;
 using MicroElements.Swashbuckle.FluentValidation;
 using MicroElements.Swashbuckle.FluentValidation.AspNetCore;
@@ -13,7 +14,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using SampleWebApi.DbModels;
-using SampleWebApi.ValidatorFactories;
 using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
@@ -31,18 +31,11 @@ namespace SampleWebApi
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            // HttpContextServiceProviderValidatorFactory requires access to HttpContext
+            // HttpContextValidatorRegistry requires access to HttpContext
             services.AddHttpContextAccessor();
 
             services
                 .AddControllers()
-                // Adds fluent validators to Asp.net
-                .AddFluentValidation(c =>
-                {
-                    c.RegisterValidatorsFromAssemblyContaining<Startup>(lifetime: ServiceLifetime.Scoped);
-                    // Optionally set validator factory if you have problems with scope resolve inside validators.
-                    c.ValidatorFactoryType = typeof(HttpContextServiceProviderValidatorFactory);
-                })
                 .AddJsonOptions(options =>
                 {
                     // Workaround for snake_case
@@ -51,9 +44,15 @@ namespace SampleWebApi
                 })
                 .AddNewtonsoftJson();
 
+            // Register FV validators
+            services.AddValidatorsFromAssemblyContaining<Startup>(lifetime: ServiceLifetime.Scoped);
+
+            // Add FV to Asp.net
+            services.AddFluentValidationAutoValidation();
+            
             // Register all validators as IValidator?
             //var serviceDescriptors = services.Where(descriptor => descriptor.ServiceType.GetInterfaces().Contains(typeof(IValidator))).ToList();
-            //serviceDescriptors.ForEach(descriptor => services.Add(ServiceDescriptor.Transient(typeof(IValidator), descriptor.ImplementationType)));
+            //serviceDescriptors.ForEach(descriptor => services.Add(ServiceDescriptor.Describe(typeof(IValidator), descriptor.ImplementationType, descriptor.Lifetime)));
 
             // One more way to set custom factory.
             //services = services.Replace(ServiceDescriptor.Scoped<IValidatorFactory, ScopedServiceProviderValidatorFactory>());
@@ -61,10 +60,6 @@ namespace SampleWebApi
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo(){ Title = "My API", Version = "v1" });
-
-                // Use new AddFluentValidationRulesToSwagger instead of AddFluentValidationRules
-                //c.AddFluentValidationRules();
-
                 c.EnableAnnotations(enableAnnotationsForInheritance: true, enableAnnotationsForPolymorphism: true);
             });
 

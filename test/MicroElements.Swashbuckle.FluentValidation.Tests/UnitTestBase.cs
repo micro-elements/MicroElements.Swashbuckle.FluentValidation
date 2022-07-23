@@ -3,16 +3,40 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json;
 using FluentValidation;
+using MicroElements.OpenApi.FluentValidation;
 using MicroElements.Swashbuckle.FluentValidation.Generation;
+using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
-using SampleWebApi.ValidatorFactories;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace MicroElements.Swashbuckle.FluentValidation.Tests
 {
     public class UnitTestBase
     {
+        public SwaggerGenerator SwaggerGenerator(
+            Action<SwaggerGeneratorOptions> configureSwaggerGenerator = null,
+            Action<SchemaGeneratorOptions>? configureGenerator = null,
+            Action<JsonSerializerOptions>? configureSerializer = null)
+        {
+            var swaggerGeneratorOptions = new SwaggerGeneratorOptions();
+            configureSwaggerGenerator?.Invoke(swaggerGeneratorOptions);
+
+            var schemaGenerator = SchemaGenerator(configureGenerator, configureSerializer);
+            var apiDescriptionGroups = new []{new ApiDescriptionGroup("GroupName", new ApiDescription[]
+            {
+                new ApiDescription()
+                {
+                    
+                }
+            })};
+            
+            var apiDescriptionsProvider = new ApiDescriptionGroupCollectionProvider(
+                new ApiDescriptionGroupCollection(apiDescriptionGroups, 1));
+            
+            return new SwaggerGenerator(swaggerGeneratorOptions, apiDescriptionsProvider, schemaGenerator);
+        }
+
         public SchemaGenerator SchemaGenerator(params IValidator[] validators)
         {
             return SchemaGenerator(options => ConfigureGenerator(options, validators));
@@ -33,10 +57,20 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
 
         private void ConfigureGenerator(SchemaGeneratorOptions options, IValidator[] validators)
         {
-            IValidatorFactory validatorFactory = new CustomValidatorFactory(validators);
+            IValidatorRegistry validatorRegistry = new ValidatorRegistry(validators);
             options.SchemaFilters.Add(new FluentValidationRules(
-                validatorFactory: validatorFactory,
+                validatorRegistry: validatorRegistry,
                 nameResolver: new SystemTextJsonNameResolver()));
+        }
+    }
+
+    public class ApiDescriptionGroupCollectionProvider : IApiDescriptionGroupCollectionProvider
+    {
+        public ApiDescriptionGroupCollection ApiDescriptionGroups { get; }
+
+        public ApiDescriptionGroupCollectionProvider(ApiDescriptionGroupCollection apiDescriptionGroups)
+        {
+            ApiDescriptionGroups = apiDescriptionGroups;
         }
     }
 
@@ -124,10 +158,10 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             return CreateSchemaGenerator(
                 configureGenerator: options =>
                 {
-                    IValidatorFactory validatorFactory = new CustomValidatorFactory(validators);
+                    IValidatorRegistry validatorRegistry = new ValidatorRegistry(validators);
 
                     options.SchemaFilters.Add(new FluentValidationRules(
-                        validatorFactory: validatorFactory, 
+                        validatorRegistry: validatorRegistry, 
                         rules: null, 
                         loggerFactory: null,
                         schemaGenerationOptions: schemaGenerationOptions != null ? new OptionsWrapper<SchemaGenerationOptions>(schemaGenerationOptions) : null,

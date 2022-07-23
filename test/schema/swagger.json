@@ -1,0 +1,1729 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "My API",
+    "version": "v1"
+  },
+  "paths": {
+    "/api/Basic/GetWithFluentValidation": {
+      "get": {
+        "tags": [
+          "Basic"
+        ],
+        "parameters": [
+          {
+            "name": "StandardHeaders.TransactionId",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "StandardHeaders.RequestId",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ValueFromHeader",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "maxLength": 10,
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "name": "ValueFromQuery",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Customer"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Customer"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Customer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Basic/GetWithDataAnnotation": {
+      "get": {
+        "tags": [
+          "Basic"
+        ],
+        "parameters": [
+          {
+            "name": "Headers.TransactionId",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "minLength": 5,
+              "type": "string"
+            }
+          },
+          {
+            "name": "Headers.RequestId",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "pattern": "^([0-9A-Fa-f]{8}[-][0-9A-Fa-f]{4}[-][0-9A-Fa-f]{4}[-][0-9A-Fa-f]{4}[-][0-9A-Fa-f]{12})$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "ValueFromHeader",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "maxLength": 10,
+              "type": "string"
+            }
+          },
+          {
+            "name": "ValueFromQuery",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Customer"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Customer"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Customer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Blogging/AddBlog": {
+      "post": {
+        "tags": [
+          "Blogging"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Blog"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Blog"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Blog"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Blog"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Blogging/GetBlogs": {
+      "get": {
+        "tags": [
+          "Blogging"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Blog"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Blog"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Blog"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Issue100/AddMyEntity100": {
+      "post": {
+        "tags": [
+          "Issue100"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/MyEntity100"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MyEntity100"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MyEntity100"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/MyEntity100"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyEntity100"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyEntity100"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyEntity100"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Issue103/Add": {
+      "post": {
+        "tags": [
+          "Issue103"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Dict"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Dict"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Dict"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Dict"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Issue103/Add2": {
+      "post": {
+        "tags": [
+          "Issue103"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Dict2"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Dict2"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Dict2"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Dict2"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Issue103/Add3": {
+      "post": {
+        "tags": [
+          "Issue103"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Dict3"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Dict3"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Dict3"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Dict3"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Issue54/Get": {
+      "get": {
+        "tags": [
+          "Issue54"
+        ],
+        "parameters": [
+          {
+            "name": "Id",
+            "in": "query",
+            "schema": {
+              "minLength": 6,
+              "type": "string",
+              "nullable": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Issue80/PostBestShot": {
+      "post": {
+        "tags": [
+          "Issue80"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BestShot"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BestShot"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BestShot"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BestShot"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Issue80/PostBestShot2": {
+      "post": {
+        "tags": [
+          "Issue80"
+        ],
+        "parameters": [
+          {
+            "name": "Link",
+            "in": "query",
+            "schema": {
+              "minLength": 5,
+              "type": "string",
+              "nullable": true
+            }
+          },
+          {
+            "name": "Area",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Issue92/CreateBookshelf": {
+      "post": {
+        "tags": [
+          "Issue92"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBookshelfCommand"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBookshelfCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBookshelfCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBookshelfCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Bookshelf"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Bookshelf"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Bookshelf"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Issue94/AddPerson94": {
+      "post": {
+        "tags": [
+          "Issue94"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Person94"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Person94"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Person94"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Person94"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Person94"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Person94"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Person94"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Person/AddPerson": {
+      "post": {
+        "tags": [
+          "Person"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Person"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Person"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Person"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Person"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Person"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Person"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Person"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Person/AddPhoneEntity": {
+      "post": {
+        "tags": [
+          "Person"
+        ],
+        "parameters": [
+          {
+            "name": "MobilePhoneNumber",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "maxLength": 10,
+              "minLength": 10,
+              "type": "string",
+              "allOf": [
+                {
+                  "pattern": "^3"
+                },
+                {
+                  "pattern": "^\\d*$"
+                },
+                {
+                  "pattern": "^3"
+                },
+                {
+                  "pattern": "^\\d*$"
+                }
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhoneEntity"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhoneEntity"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhoneEntity"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/SampleApi": {
+      "get": {
+        "tags": [
+          "SampleApi"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Customer"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Customer"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Customer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/SampleApi/AddCustomer": {
+      "post": {
+        "tags": [
+          "SampleApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Customer"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Customer"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Customer"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Customer"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/SampleApi/AddSample": {
+      "post": {
+        "tags": [
+          "SampleApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Sample"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Sample"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Sample"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Sample"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/SampleApi/AddSampleWithDataAnnotations": {
+      "post": {
+        "tags": [
+          "SampleApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SampleWithDataAnnotations"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SampleWithDataAnnotations"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SampleWithDataAnnotations"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SampleWithDataAnnotations"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/SampleApi/AddSampleFromQuery": {
+      "post": {
+        "tags": [
+          "SampleApi"
+        ],
+        "parameters": [
+          {
+            "name": "PropertyWithNoRules",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          {
+            "name": "NotNull",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "NotEmpty",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "name": "EmailAddressRegex",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "allOf": [
+                {
+                  "pattern": "^((([a-z]|\\d|[!#\\$%&'\\*\\+\\-\\/=\\?\\^_`{\\|}~]|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])+(\\.([a-z]|\\d|[!#\\$%&'\\*\\+\\-\\/=\\?\\^_`{\\|}~]|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])+)*)|((\\x22)((((\\x20|\\x09)*(\\x0d\\x0a))?(\\x20|\\x09)+)?(([\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x7f]|\\x21|[\\x23-\\x5b]|[\\x5d-\\x7e]|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])|(\\\\([\\x01-\\x09\\x0b\\x0c\\x0d-\\x7f]|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF]))))*(((\\x20|\\x09)*(\\x0d\\x0a))?(\\x20|\\x09)+)?(\\x22)))@((([a-z]|\\d|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])|(([a-z]|\\d|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])([a-z]|\\d|-||_|~|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])*([a-z]|\\d|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])))\\.)+(([a-z]|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])+|(([a-z]|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])+([a-z]+|\\d|-|\\.{0,1}|_|~|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])?([a-z]|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])))$"
+                },
+                {
+                  "pattern": "^((([a-z]|\\d|[!#\\$%&'\\*\\+\\-\\/=\\?\\^_`{\\|}~]|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])+(\\.([a-z]|\\d|[!#\\$%&'\\*\\+\\-\\/=\\?\\^_`{\\|}~]|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])+)*)|((\\x22)((((\\x20|\\x09)*(\\x0d\\x0a))?(\\x20|\\x09)+)?(([\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x7f]|\\x21|[\\x23-\\x5b]|[\\x5d-\\x7e]|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])|(\\\\([\\x01-\\x09\\x0b\\x0c\\x0d-\\x7f]|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF]))))*(((\\x20|\\x09)*(\\x0d\\x0a))?(\\x20|\\x09)+)?(\\x22)))@((([a-z]|\\d|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])|(([a-z]|\\d|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])([a-z]|\\d|-||_|~|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])*([a-z]|\\d|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])))\\.)+(([a-z]|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])+|(([a-z]|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])+([a-z]+|\\d|-|\\.{0,1}|_|~|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])?([a-z]|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])))$"
+                }
+              ],
+              "nullable": true
+            }
+          },
+          {
+            "name": "EmailAddress",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          {
+            "name": "RegexField",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "allOf": [
+                {
+                  "pattern": "(\\d{4})-(\\d{2})-(\\d{2})"
+                },
+                {
+                  "pattern": "(\\d{4})-(\\d{2})-(\\d{2})"
+                }
+              ],
+              "nullable": true
+            }
+          },
+          {
+            "name": "ValueInRange",
+            "in": "query",
+            "schema": {
+              "maximum": 10,
+              "minimum": 5,
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "ValueInRangeExclusive",
+            "in": "query",
+            "schema": {
+              "maximum": 10,
+              "exclusiveMaximum": true,
+              "minimum": 5,
+              "exclusiveMinimum": true,
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "ValueInRangeFloat",
+            "in": "query",
+            "schema": {
+              "maximum": 10.2,
+              "minimum": 5.1,
+              "type": "number",
+              "format": "float"
+            }
+          },
+          {
+            "name": "ValueInRangeDouble",
+            "in": "query",
+            "schema": {
+              "maximum": 10.2,
+              "exclusiveMaximum": true,
+              "minimum": 5.1,
+              "exclusiveMinimum": true,
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "DecimalValue",
+            "in": "query",
+            "schema": {
+              "maximum": 200.333,
+              "minimum": 1.333,
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "NotEmptyWithMaxLength",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "maxLength": 50,
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "name": "javaStyleProperty",
+            "in": "query",
+            "schema": {
+              "maxLength": 6,
+              "type": "string",
+              "nullable": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/SampleApi/AddObjectA": {
+      "post": {
+        "tags": [
+          "SampleApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ObjectA"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ObjectA"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ObjectA"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ObjectA"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/SampleApi/AddSampleWithNoRequired": {
+      "post": {
+        "tags": [
+          "SampleApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SampleWithNoRequired"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SampleWithNoRequired"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SampleWithNoRequired"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SampleWithNoRequired"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/SampleApi/Get": {
+      "get": {
+        "tags": [
+          "SampleApi"
+        ],
+        "parameters": [
+          {
+            "name": "Id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "maxLength": 3,
+              "minLength": 6,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BasicGetRequest": {
+        "required": [
+          "valueFromHeader",
+          "valueFromQuery"
+        ],
+        "type": "object",
+        "properties": {
+          "standardHeaders": {
+            "$ref": "#/components/schemas/StandardHeaders"
+          },
+          "valueFromHeader": {
+            "maxLength": 10,
+            "minLength": 1,
+            "type": "string"
+          },
+          "valueFromQuery": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "BestShot": {
+        "type": "object",
+        "properties": {
+          "photo": {
+            "minLength": 5,
+            "type": "string",
+            "nullable": true
+          },
+          "zone": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Blog": {
+        "required": [
+          "author",
+          "blogId",
+          "url"
+        ],
+        "type": "object",
+        "properties": {
+          "blogId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "url": {
+            "type": "string"
+          },
+          "author": {
+            "maxLength": 7,
+            "type": "string"
+          },
+          "posts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Post"
+            },
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Bookshelf": {
+        "type": "object",
+        "properties": {
+          "books": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateBookshelfCommand": {
+        "required": [
+          "books"
+        ],
+        "type": "object",
+        "properties": {
+          "books": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "maxLength": 250,
+              "minLength": 5,
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "Customer": {
+        "required": [
+          "forename",
+          "surname"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "surname": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "forename": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "discount": {
+            "maximum": 5,
+            "exclusiveMaximum": true,
+            "minimum": 4,
+            "exclusiveMinimum": true,
+            "type": "number",
+            "format": "double"
+          },
+          "address": {
+            "maxLength": 250,
+            "minLength": 20,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DataType": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DataType100": {
+        "required": [
+          "value"
+        ],
+        "type": "object",
+        "properties": {
+          "value": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DataType5000": {
+        "required": [
+          "value"
+        ],
+        "type": "object",
+        "properties": {
+          "value": {
+            "maxLength": 5000,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Dict": {
+        "required": [
+          "value"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/DataType"
+          },
+          "value": {
+            "$ref": "#/components/schemas/DataType"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Dict2": {
+        "required": [
+          "type",
+          "value"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/DataType100"
+          },
+          "value": {
+            "$ref": "#/components/schemas/DataType5000"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Dict3": {
+        "required": [
+          "type",
+          "value"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          },
+          "value": {
+            "maxLength": 5000,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "GetRequest": {
+        "required": [
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "maxLength": 3,
+            "minLength": 6,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "MyEntity100": {
+        "type": "object",
+        "properties": {
+          "person": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Person100A"
+              },
+              {
+                "$ref": "#/components/schemas/Person100B"
+              }
+            ],
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ObjectA": {
+        "required": [
+          "key",
+          "objectB"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "objectB": {
+            "$ref": "#/components/schemas/ObjectB"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ObjectB": {
+        "required": [
+          "key",
+          "objectC"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "objectC": {
+            "$ref": "#/components/schemas/ObjectC"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ObjectC": {
+        "required": [
+          "key",
+          "objectA"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "objectA": {
+            "$ref": "#/components/schemas/ObjectA"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Person": {
+        "type": "object",
+        "properties": {
+          "emails": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "email"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Person100A": {
+        "type": "object",
+        "properties": {
+          "birthDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "age": {
+            "maximum": 150,
+            "minimum": 18,
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Person100B": {
+        "type": "object",
+        "properties": {
+          "birthDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "age": {
+            "maximum": 150,
+            "minimum": 18,
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "children": {
+            "maximum": 100,
+            "minimum": 0,
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Person94": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "maxLength": 101,
+            "type": "string",
+            "nullable": true
+          },
+          "emails": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "email"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PhoneEntity": {
+        "required": [
+          "mobilePhoneNumber"
+        ],
+        "type": "object",
+        "properties": {
+          "mobilePhoneNumber": {
+            "maxLength": 10,
+            "minLength": 10,
+            "type": "string",
+            "allOf": [
+              {
+                "pattern": "^3"
+              },
+              {
+                "pattern": "^\\d*$"
+              },
+              {
+                "pattern": "^3"
+              },
+              {
+                "pattern": "^\\d*$"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "Post": {
+        "type": "object",
+        "properties": {
+          "postId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "content": {
+            "type": "string",
+            "nullable": true
+          },
+          "blogId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "blog": {
+            "$ref": "#/components/schemas/Blog"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Sample": {
+        "required": [
+          "notEmpty",
+          "notEmptyWithMaxLength",
+          "notNull"
+        ],
+        "type": "object",
+        "properties": {
+          "propertyWithNoRules": {
+            "type": "string",
+            "nullable": true
+          },
+          "notNull": {
+            "type": "string"
+          },
+          "notEmpty": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "emailAddressRegex": {
+            "type": "string",
+            "allOf": [
+              {
+                "pattern": "^((([a-z]|\\d|[!#\\$%&'\\*\\+\\-\\/=\\?\\^_`{\\|}~]|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])+(\\.([a-z]|\\d|[!#\\$%&'\\*\\+\\-\\/=\\?\\^_`{\\|}~]|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])+)*)|((\\x22)((((\\x20|\\x09)*(\\x0d\\x0a))?(\\x20|\\x09)+)?(([\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x7f]|\\x21|[\\x23-\\x5b]|[\\x5d-\\x7e]|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])|(\\\\([\\x01-\\x09\\x0b\\x0c\\x0d-\\x7f]|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF]))))*(((\\x20|\\x09)*(\\x0d\\x0a))?(\\x20|\\x09)+)?(\\x22)))@((([a-z]|\\d|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])|(([a-z]|\\d|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])([a-z]|\\d|-||_|~|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])*([a-z]|\\d|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])))\\.)+(([a-z]|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])+|(([a-z]|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])+([a-z]+|\\d|-|\\.{0,1}|_|~|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])?([a-z]|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])))$"
+              },
+              {
+                "pattern": "^((([a-z]|\\d|[!#\\$%&'\\*\\+\\-\\/=\\?\\^_`{\\|}~]|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])+(\\.([a-z]|\\d|[!#\\$%&'\\*\\+\\-\\/=\\?\\^_`{\\|}~]|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])+)*)|((\\x22)((((\\x20|\\x09)*(\\x0d\\x0a))?(\\x20|\\x09)+)?(([\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x7f]|\\x21|[\\x23-\\x5b]|[\\x5d-\\x7e]|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])|(\\\\([\\x01-\\x09\\x0b\\x0c\\x0d-\\x7f]|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF]))))*(((\\x20|\\x09)*(\\x0d\\x0a))?(\\x20|\\x09)+)?(\\x22)))@((([a-z]|\\d|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])|(([a-z]|\\d|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])([a-z]|\\d|-||_|~|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])*([a-z]|\\d|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])))\\.)+(([a-z]|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])+|(([a-z]|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])+([a-z]+|\\d|-|\\.{0,1}|_|~|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])?([a-z]|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])))$"
+              }
+            ],
+            "format": "email",
+            "nullable": true
+          },
+          "emailAddress": {
+            "type": "string",
+            "format": "email",
+            "nullable": true
+          },
+          "regexField": {
+            "type": "string",
+            "allOf": [
+              {
+                "pattern": "(\\d{4})-(\\d{2})-(\\d{2})"
+              },
+              {
+                "pattern": "(\\d{4})-(\\d{2})-(\\d{2})"
+              }
+            ],
+            "nullable": true
+          },
+          "valueInRange": {
+            "maximum": 10,
+            "minimum": 5,
+            "type": "integer",
+            "format": "int32"
+          },
+          "valueInRangeExclusive": {
+            "maximum": 10,
+            "exclusiveMaximum": true,
+            "minimum": 5,
+            "exclusiveMinimum": true,
+            "type": "integer",
+            "format": "int32"
+          },
+          "valueInRangeFloat": {
+            "maximum": 10.2,
+            "minimum": 5.1,
+            "type": "number",
+            "format": "float"
+          },
+          "valueInRangeDouble": {
+            "maximum": 10.2,
+            "exclusiveMaximum": true,
+            "minimum": 5.1,
+            "exclusiveMinimum": true,
+            "type": "number",
+            "format": "double"
+          },
+          "decimalValue": {
+            "maximum": 200.333,
+            "minimum": 1.333,
+            "type": "number",
+            "format": "double"
+          },
+          "notEmptyWithMaxLength": {
+            "maxLength": 50,
+            "minLength": 1,
+            "type": "string"
+          },
+          "javaStyleProperty": {
+            "maxLength": 6,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SampleWithDataAnnotations": {
+        "required": [
+          "notNull"
+        ],
+        "type": "object",
+        "properties": {
+          "propertyWithNoRules": {
+            "type": "string",
+            "nullable": true
+          },
+          "notNull": {
+            "type": "string"
+          },
+          "notEmpty": {
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          },
+          "emailAddress": {
+            "type": "string",
+            "format": "email",
+            "nullable": true
+          },
+          "regexField": {
+            "pattern": "(\\d{4})-(\\d{2})-(\\d{2})",
+            "type": "string",
+            "nullable": true
+          },
+          "valueInRange": {
+            "maximum": 10,
+            "minimum": 5,
+            "type": "integer",
+            "format": "int32"
+          },
+          "valueInRangeFloat": {
+            "maximum": 10.199999809265137,
+            "minimum": 5.099999904632568,
+            "type": "number",
+            "format": "float"
+          },
+          "valueInRangeDouble": {
+            "maximum": 10.2,
+            "minimum": 5.1,
+            "type": "number",
+            "format": "double"
+          },
+          "decimalValue": {
+            "maximum": 200.333,
+            "minimum": 1.333,
+            "type": "number",
+            "format": "double"
+          },
+          "javaStyleProperty": {
+            "maxLength": 6,
+            "type": "string",
+            "nullable": true
+          },
+          "notEmptyWithMaxLength": {
+            "maxLength": 50,
+            "minLength": 1,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SampleWithNoRequired": {
+        "type": "object",
+        "properties": {
+          "propertyWithNoRules": {
+            "type": "string",
+            "nullable": true
+          },
+          "valueInRange": {
+            "maximum": 10,
+            "minimum": 5,
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "StandardHeaders": {
+        "required": [
+          "requestId",
+          "transactionId"
+        ],
+        "type": "object",
+        "properties": {
+          "transactionId": {
+            "minLength": 8,
+            "type": "string"
+          },
+          "requestId": {
+            "minLength": 1,
+            "type": "string",
+            "allOf": [
+              {
+                "pattern": "^([0-9A-Fa-f]{8}[-][0-9A-Fa-f]{4}[-][0-9A-Fa-f]{4}[-][0-9A-Fa-f]{4}[-][0-9A-Fa-f]{12})$"
+              },
+              {
+                "pattern": "^([0-9A-Fa-f]{8}[-][0-9A-Fa-f]{4}[-][0-9A-Fa-f]{4}[-][0-9A-Fa-f]{4}[-][0-9A-Fa-f]{12})$"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}

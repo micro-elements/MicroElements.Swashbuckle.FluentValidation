@@ -1,3 +1,10 @@
+# Changes in 6.0.0 - beta.1:
+- Abstracted common logic for NSwag
+- Moved from `IValidationFactory` (obsolete in FV 11.1.0) to `IValidationRegistry`
+- Supported FluentValidation 11 `AddFluentValidationAutoValidation`
+- Removed `HttpContextServiceProviderValidatorFactory`
+- Experimental `DocumentFilter`
+
 # Changes in 5.7.0:
 * Change: ILengthValidator support for arrays. Sets MinItems, MaxItems (PR#108 by biggik)
 

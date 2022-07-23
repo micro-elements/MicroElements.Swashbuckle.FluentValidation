@@ -5,13 +5,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using FluentValidation.Validators;
+using MicroElements.OpenApi.FluentValidation;
+using Microsoft.OpenApi.Models;
 
 namespace MicroElements.Swashbuckle.FluentValidation
 {
     /// <summary>
     /// FluentValidationRule.
     /// </summary>
-    public class FluentValidationRule
+    public class FluentValidationRule : IFluentValidationRule<OpenApiSchema>
     {
         /// <summary>
         /// Gets rule name.
@@ -26,7 +28,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <summary>
         /// Gets action that modifies swagger schema.
         /// </summary>
-        public Action<RuleContext> Apply { get; }
+        public Action<IRuleContext<OpenApiSchema>>? Apply { get; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FluentValidationRule"/> class.
@@ -37,27 +39,11 @@ namespace MicroElements.Swashbuckle.FluentValidation
         public FluentValidationRule(
             string name,
             IReadOnlyCollection<Func<IPropertyValidator, bool>>? matches = null,
-            Action<RuleContext>? apply = null)
+            Action<IRuleContext<OpenApiSchema>>? apply = null)
         {
             Name = name;
             Conditions = matches ?? Array.Empty<Func<IPropertyValidator, bool>>();
-            Apply = apply ?? (context => { });
-        }
-
-        /// <summary>
-        /// Checks that validator is matches rule.
-        /// </summary>
-        /// <param name="validator">Validator.</param>
-        /// <returns>True if validator matches rule.</returns>
-        public bool IsMatches(IPropertyValidator validator)
-        {
-            foreach (var match in Conditions)
-            {
-                if (!match(validator))
-                    return false;
-            }
-
-            return true;
+            Apply = apply;
         }
     }
 
@@ -84,7 +70,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <param name="rule">Source rule.</param>
         /// <param name="applyAction">New apply action.</param>
         /// <returns>New rule instance.</returns>
-        public static FluentValidationRule WithApply(this FluentValidationRule rule, Action<RuleContext> applyAction)
+        public static FluentValidationRule WithApply(this FluentValidationRule rule, Action<IRuleContext<OpenApiSchema>> applyAction)
         {
             return new FluentValidationRule(rule.Name, rule.Conditions, applyAction);
         }

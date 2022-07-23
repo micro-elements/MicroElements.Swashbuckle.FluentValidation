@@ -23,6 +23,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MicroElements.Swashbuckle.FluentValidation.Tests", "test\MicroElements.Swashbuckle.FluentValidation.Tests\MicroElements.Swashbuckle.FluentValidation.Tests.csproj", "{AAA88B0E-AA41-402F-B41B-AE95DBBD746C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MicroElements.NSwag.FluentValidation", "src\MicroElements.NSwag.FluentValidation\MicroElements.NSwag.FluentValidation.csproj", "{7E43FAC3-6039-49B7-B9DA-69F21423BE94}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MicroElements.OpenApi.FluentValidation", "src\MicroElements.OpenApi.FluentValidation\MicroElements.OpenApi.FluentValidation.csproj", "{A713B613-8E56-4069-BB22-C1BCFA7C6465}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleNSwagWebApi", "samples\SampleNSwagWebApi\SampleNSwagWebApi.csproj", "{2E20C501-F63A-4CA2-9A9F-8F1BE7BC5E14}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{9ED7D819-FC90-4504-A46D-D38E3BE107B7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -41,11 +49,27 @@ Global
 		{AAA88B0E-AA41-402F-B41B-AE95DBBD746C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AAA88B0E-AA41-402F-B41B-AE95DBBD746C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AAA88B0E-AA41-402F-B41B-AE95DBBD746C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7E43FAC3-6039-49B7-B9DA-69F21423BE94}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7E43FAC3-6039-49B7-B9DA-69F21423BE94}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7E43FAC3-6039-49B7-B9DA-69F21423BE94}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7E43FAC3-6039-49B7-B9DA-69F21423BE94}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A713B613-8E56-4069-BB22-C1BCFA7C6465}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A713B613-8E56-4069-BB22-C1BCFA7C6465}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A713B613-8E56-4069-BB22-C1BCFA7C6465}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A713B613-8E56-4069-BB22-C1BCFA7C6465}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2E20C501-F63A-4CA2-9A9F-8F1BE7BC5E14}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2E20C501-F63A-4CA2-9A9F-8F1BE7BC5E14}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2E20C501-F63A-4CA2-9A9F-8F1BE7BC5E14}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2E20C501-F63A-4CA2-9A9F-8F1BE7BC5E14}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1AA0A677-C642-44C8-A6CE-495E7B7074B8}
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{2E20C501-F63A-4CA2-9A9F-8F1BE7BC5E14} = {9ED7D819-FC90-4504-A46D-D38E3BE107B7}
+		{FEDDFEAF-E8D0-4E7D-BCDC-AEFE3517BEAD} = {9ED7D819-FC90-4504-A46D-D38E3BE107B7}
 	EndGlobalSection
 EndGlobal
