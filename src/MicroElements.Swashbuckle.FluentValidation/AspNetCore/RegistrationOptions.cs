@@ -35,5 +35,10 @@ namespace MicroElements.Swashbuckle.FluentValidation.AspNetCore
         /// ServiceLifetime to use for service registration.
         /// </summary>
         public ServiceLifetime ServiceLifetime { get; set; } = ServiceLifetime.Scoped;
+
+        /// <summary>
+        /// Use DocumentFilter instead of SchemaFilter.
+        /// </summary>
+        public bool ExperimentalUseDocumentFilter { get; set; } = false;
     }
 }

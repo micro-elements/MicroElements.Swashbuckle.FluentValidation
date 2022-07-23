@@ -24,6 +24,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             _httpContextAccessor = httpContextAccessor;
         }
 
+        /// <inheritdoc />
         public IValidator? GetValidator(Type type)
         {
             IServiceProvider serviceProvider = _httpContextAccessor.HttpContext.RequestServices;

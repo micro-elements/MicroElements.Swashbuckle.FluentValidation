@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using FluentValidation;
+using MicroElements.OpenApi.Core;
 using MicroElements.OpenApi.FluentValidation;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -31,7 +32,8 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// Initializes a new instance of the <see cref="FluentValidationRules"/> class.
         /// </summary>
         /// <param name="loggerFactory"><see cref="ILoggerFactory"/> for logging. Can be null.</param>
-        /// <param name="validatorFactory">Validator factory.</param>
+        /// <param name="serviceProvider">Validator factory.</param>
+        /// <param name="validatorRegistry">Gets validators for a particular type.</param>
         /// <param name="rules">External FluentValidation rules. External rule overrides default rule with the same name.</param>
         /// <param name="schemaGenerationOptions">Schema generation options.</param>
         /// <param name="nameResolver">Optional name resolver.</param>
@@ -39,17 +41,15 @@ namespace MicroElements.Swashbuckle.FluentValidation
         public FluentValidationRules(
             /* System services */
             ILoggerFactory? loggerFactory = null,
-
-            /* FluentValidation services */
             IServiceProvider? serviceProvider = null,
 
-            // MicroElements services
+            /* MicroElements services */
             IValidatorRegistry? validatorRegistry = null,
             IEnumerable<FluentValidationRule>? rules = null,
             IOptions<SchemaGenerationOptions>? schemaGenerationOptions = null,
             INameResolver? nameResolver = null,
 
-            // Swashbuckle services
+            /* Swashbuckle services */
             IOptions<SwaggerGenOptions>? swaggerGenOptions = null)
         {
             // System services
@@ -78,7 +78,11 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <inheritdoc />
         public void Apply(OpenApiSchema schema, SchemaFilterContext context)
         {
-            if (schema == null)
+            if (schema is null)
+                return;
+
+            // Do not process simple types.
+            if (context.Type.IsPrimitiveType())
                 return;
 
             IValidator? validator = null;

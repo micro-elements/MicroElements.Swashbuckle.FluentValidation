@@ -28,6 +28,11 @@ namespace MicroElements.OpenApi.Core
         internal static IEnumerable<TValue> NotNull<TValue>(this IEnumerable<TValue>? collection) =>
             collection ?? Array.Empty<TValue>();
 
+        /// <summary>
+        /// Skip simple types from schema generation.
+        /// </summary>
+        internal static bool IsPrimitiveType(this Type type) => type.IsPrimitive || type == typeof(string) || type == typeof(decimal);
+
         internal static IEnumerable<TValue> ToArrayDebug<TValue>(this IEnumerable<TValue>? collection)
         {
 #if DEBUG

@@ -13,6 +13,9 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace MicroElements.Swashbuckle.FluentValidation
 {
+    /// <summary>
+    /// Experimental document filter.
+    /// </summary>
     public class FluentValidationDocumentFilter : IDocumentFilter
     {
         private readonly ILogger _logger;
@@ -26,16 +29,15 @@ namespace MicroElements.Swashbuckle.FluentValidation
         public FluentValidationDocumentFilter(
             /* System services */
             ILoggerFactory? loggerFactory = null,
+            IServiceProvider? serviceProvider = null,
 
-            /* FluentValidation services */
+            /* MicroElements services */
             IValidatorRegistry? validatorRegistry = null,
-
-            // MicroElements services
             IEnumerable<FluentValidationRule>? rules = null,
             IOptions<SchemaGenerationOptions>? schemaGenerationOptions = null,
             INameResolver? nameResolver = null,
 
-            // Swashbuckle services
+            /* Swashbuckle services */
             IOptions<SwaggerGenOptions>? swaggerGenOptions = null)
         {
             // System services
@@ -151,7 +153,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 var openApiParameter = path.Value.Operations.Values.FirstOrDefault().Parameters.FirstOrDefault(parameter => parameter.Name == item.ParameterDescription.Name);
                 return openApiParameter?.Schema;
             }
-            
+
             foreach (var item in schemasForTypes)
             {
                 IValidator? validator = null;

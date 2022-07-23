@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using FluentValidation;
 using MicroElements.OpenApi.Core;
 using MicroElements.OpenApi.FluentValidation;
 using Microsoft.Extensions.Logging;
@@ -32,26 +31,25 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <summary>
         /// Initializes a new instance of the <see cref="FluentValidationOperationFilter"/> class.
         /// </summary>
-        /// <param name="loggerFactory"> Logger factory.</param>
-        /// <param name="validatorFactory">FluentValidation factory.</param>
+        /// <param name="loggerFactory"><see cref="ILoggerFactory"/> for logging. Can be null.</param>
+        /// <param name="serviceProvider">Validator factory.</param>
+        /// <param name="validatorRegistry">Gets validators for a particular type.</param>
         /// <param name="rules">External FluentValidation rules. External rule overrides default rule with the same name.</param>
         /// <param name="schemaGenerationOptions">Schema generation options.</param>
         /// <param name="nameResolver">Optional name resolver.</param>
-        /// <param name="swaggerGenOptions">Swagger generation options.</param>
+        /// <param name="swaggerGenOptions">SwaggerGenOptions.</param>
         public FluentValidationOperationFilter(
             /* System services */
             ILoggerFactory? loggerFactory = null,
-
-            /* FluentValidation services */
             IServiceProvider? serviceProvider = null,
-            IValidatorRegistry? validatorRegistry = null,
 
             /* MicroElements services */
+            IValidatorRegistry? validatorRegistry = null,
             IEnumerable<FluentValidationRule>? rules = null,
             IOptions<SchemaGenerationOptions>? schemaGenerationOptions = null,
             INameResolver? nameResolver = null,
 
-            // Swashbuckle services
+            /* Swashbuckle services */
             IOptions<SwaggerGenOptions>? swaggerGenOptions = null)
         {
             // System services

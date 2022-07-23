@@ -4,13 +4,10 @@ using System.Reflection;
 using System.Text.Json;
 using FluentValidation;
 using MicroElements.OpenApi.FluentValidation;
-using MicroElements.Swashbuckle.FluentValidation;
 using MicroElements.Swashbuckle.FluentValidation.Generation;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
-using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
-using SampleWebApi.ValidatorFactories;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace MicroElements.Swashbuckle.FluentValidation.Tests
