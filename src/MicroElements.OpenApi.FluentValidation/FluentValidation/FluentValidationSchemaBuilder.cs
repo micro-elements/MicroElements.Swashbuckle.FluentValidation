@@ -43,7 +43,7 @@ namespace MicroElements.OpenApi.FluentValidation
 
                 foreach (var validationRuleInfo in validationRuleInfoList)
                 {
-                    var propertyValidators = validationRuleInfo.PropertyRule.GetValidators();
+                    var propertyValidators = validationRuleInfo.PropertyRule.GetValidators(validationRuleInfo);
 
                     foreach (var propertyValidator in propertyValidators)
                     {
@@ -92,7 +92,7 @@ namespace MicroElements.OpenApi.FluentValidation
                 .ToArrayDebug();
 
             var propertiesWithChildAdapters = validationRules
-                .Select(context => (context.PropertyRule, context.PropertyRule.GetValidators().OfType<IChildValidatorAdaptor>().ToArray()))
+                .Select(context => (context.PropertyRule, context.PropertyRule.GetValidators(context).OfType<IChildValidatorAdaptor>().ToArray()))
                 .ToArrayDebug();
 
             foreach ((IValidationRule propertyRule, IChildValidatorAdaptor[] childAdapters) in propertiesWithChildAdapters)

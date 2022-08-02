@@ -25,6 +25,8 @@ namespace MicroElements.OpenApi.FluentValidation
         /// </summary>
         public ReflectionContext? ReflectionContext { get; init; }
 
+        public IValidator? Validator { get; init; }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="ValidationRuleInfo"/> class.
         /// </summary>
@@ -34,11 +36,13 @@ namespace MicroElements.OpenApi.FluentValidation
         public ValidationRuleInfo(
             IValidationRule propertyRule,
             bool isCollectionRule,
-            ReflectionContext? reflectionContext)
+            ReflectionContext? reflectionContext,
+            IValidator? validator)
         {
             PropertyRule = propertyRule;
             IsCollectionRule = isCollectionRule;
             ReflectionContext = reflectionContext;
+            Validator = validator;
         }
     }
 }

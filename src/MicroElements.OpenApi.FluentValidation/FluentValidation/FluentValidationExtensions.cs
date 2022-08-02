@@ -1,9 +1,11 @@
 ﻿// Copyright (c) MicroElements. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using FluentValidation;
 using FluentValidation.Internal;
 using FluentValidation.Validators;
@@ -16,6 +18,21 @@ namespace MicroElements.OpenApi.FluentValidation
     /// </summary>
     public static class FluentValidationExtensions
     {
+        private static readonly IEnumerable<Type> _defaultAllowedConditionalValidatorTypes = new Type[]
+        {
+            typeof(ILengthValidator),
+            typeof(IRegularExpressionValidator),
+            typeof(IComparisonValidator),
+            typeof(IEmailValidator),
+            typeof(IBetweenValidator),
+        };
+
+        private static readonly ConditionalWeakTable<IValidator, IEnumerable<Type>> _allowedConditionalValidators = new ConditionalWeakTable<IValidator, IEnumerable<Type>>();
+
+        private static readonly ConditionalWeakTable<IValidationRule, IEnumerable<Type>> _allowedConditionalRules = new ConditionalWeakTable<IValidationRule, IEnumerable<Type>>();
+
+        private static readonly ConditionalWeakTable<IValidationRule, object> _excludedConditionalRules = new ConditionalWeakTable<IValidationRule, object>();
+
         /// <summary>
         /// Gets validation rules for validator.
         /// </summary>
@@ -41,6 +58,70 @@ namespace MicroElements.OpenApi.FluentValidation
                 .Where(propertyRule => propertyRule.PropertyRule.PropertyName.EqualsIgnoreAll(name));
         }
 
+        public static TValidator IncludeConditionalRulesInSchema<TValidator>(this TValidator validator)
+            where TValidator : IValidator
+        {
+            return validator.IncludeConditionalRulesInSchema(_defaultAllowedConditionalValidatorTypes);
+        }
+
+        public static TValidator IncludeConditionalRulesInSchema<TValidator>(
+            this TValidator validator,
+            IEnumerable<Type> allowedConditionalValidatorTypes)
+            where TValidator : IValidator
+        {
+            if (!_allowedConditionalValidators.TryGetValue(validator, out var _))
+            {
+                _allowedConditionalValidators.Add(validator, allowedConditionalValidatorTypes);
+            }
+
+            return validator;
+        }
+
+        public static IRuleBuilder<T, TProperty> IncludeConditionalRuleInSchema<T, TProperty>(this IRuleBuilder<T, TProperty> ruleBuilder)
+        {
+            return ruleBuilder.IncludeConditionalRuleInSchema(_defaultAllowedConditionalValidatorTypes);
+        }
+
+        public static IRuleBuilder<T, TProperty> IncludeConditionalRuleInSchema<T, TProperty>(
+            this IRuleBuilder<T, TProperty> ruleBuilder,
+            IEnumerable<Type> allowedConditionalValidatorTypes)
+        {
+            if (TryGetRuleFromBuilder(ruleBuilder, out IValidationRule<T, TProperty> rule)
+             && !_allowedConditionalRules.TryGetValue(rule, out var _))
+            {
+                _allowedConditionalRules.Add(rule, allowedConditionalValidatorTypes);
+            }
+
+            return ruleBuilder;
+        }
+
+        public static IRuleBuilder<T, TProperty> ExcludeConditionalRuleFromSchema<T, TProperty>(this IRuleBuilder<T, TProperty> ruleBuilder)
+        {
+            if (TryGetRuleFromBuilder(ruleBuilder, out IValidationRule<T, TProperty> rule)
+             && !_excludedConditionalRules.TryGetValue(rule, out var _))
+            {
+                _excludedConditionalRules.Add(rule, null!);
+            }
+
+            return ruleBuilder;
+        }
+
+        private static bool TryGetRuleFromBuilder<T, TProperty>(
+            IRuleBuilder<T, TProperty> builder,
+            out IValidationRule<T, TProperty> rule)
+        {
+            rule = null!;
+            object? value = builder.GetType().GetProperty("Rule")?.GetValue(builder, null);
+
+            if (value is IValidationRule<T, TProperty> ruleTmp)
+            {
+                rule = ruleTmp;
+                return true;
+            }
+
+            return false;
+        }
+
         /// <summary>
         /// Returns all IValidationRules that are PropertyRule.
         /// If rule is CollectionPropertyRule then isCollectionRule set to true.
@@ -49,7 +130,13 @@ namespace MicroElements.OpenApi.FluentValidation
             this IEnumerable<IValidationRule> validationRules)
         {
             return validationRules
-                .Where(rule => rule.HasNoCondition())
+                .Where(rule =>
+                {
+                    if (rule.HasNoCondition()) return true;
+                    if (validationRules is not IValidator validator) return false;
+
+                    return _allowedConditionalValidators.TryGetValue(validator, out IEnumerable<Type> _);
+                })
                 .Select(rule =>
                 {
                     // CollectionPropertyRule<T, TElement> is also a PropertyRule.
@@ -61,7 +148,13 @@ namespace MicroElements.OpenApi.FluentValidation
                         reflectionContext = ReflectionContext.CreateFromProperty(propertyInfo: rule.Member);
                     }
 
-                    return new ValidationRuleInfo(rule, isCollectionRule, reflectionContext);
+                    IValidator? validator = null;
+                    if (validationRules is IValidator)
+                    {
+                        validator = validationRules as IValidator;
+                    }
+
+                    return new ValidationRuleInfo(rule, isCollectionRule, reflectionContext, validator);
                 });
         }
 
@@ -88,12 +181,39 @@ namespace MicroElements.OpenApi.FluentValidation
         /// </summary>
         /// <param name="validationRule">Validator.</param>
         /// <returns>enumeration.</returns>
-        public static IEnumerable<IPropertyValidator> GetValidators(this IValidationRule validationRule)
+        public static IEnumerable<IPropertyValidator> GetValidators(
+            this IValidationRule validationRule,
+            ValidationRuleInfo context)
         {
             return validationRule
                 .Components
                 .NotNull()
-                .Where(component => component.HasNoCondition())
+                .Where(component =>
+                {
+                    if (component.HasNoCondition()) return true;
+
+                    IValidator? validator = context.Validator;
+                    if (validator is null) return false;
+
+                    if (_allowedConditionalValidators.TryGetValue(
+                        validator,
+                        out IEnumerable<Type> allowedConditionalValidatorTypes))
+                    {
+                        bool isExcluded = _excludedConditionalRules.TryGetValue(validationRule, out object _);
+                        if (isExcluded) return false;
+
+                        return component.Validator.IsAllowedAsConditionalValidator(allowedConditionalValidatorTypes);
+                    }
+
+                    if (_allowedConditionalRules.TryGetValue(
+                        validationRule,
+                        out IEnumerable<Type> allowedConditionalValidatorTypesForRule))
+                    {
+                        return component.Validator.IsAllowedAsConditionalValidator(allowedConditionalValidatorTypesForRule);
+                    }
+
+                    return false;
+                })
                 .Select(component => component.Validator);
         }
 
@@ -125,7 +245,7 @@ namespace MicroElements.OpenApi.FluentValidation
 
             if (getValidatorGeneric != null)
             {
-                var validator = (IValidator)getValidatorGeneric.Invoke(null, new []{ childValidatorAdapter });
+                var validator = (IValidator)getValidatorGeneric.Invoke(null, new[] { childValidatorAdapter });
                 return validator;
             }
 
@@ -149,6 +269,15 @@ namespace MicroElements.OpenApi.FluentValidation
             }
 
             return null;
-        }        
+        }
+
+        private static bool IsAllowedAsConditionalValidator(
+              this IPropertyValidator validator,
+              IEnumerable<Type> allowedConditionalValidatorTypes)
+        {
+            Type validatorType = validator.GetType();
+            return allowedConditionalValidatorTypes.Any(x => x.IsAssignableFrom(validatorType))
+                || typeof(IChildValidatorAdaptor).IsAssignableFrom(validatorType);
+        }
     }
 }

@@ -61,6 +61,9 @@ namespace SampleWebApi
             {
                 c.SwaggerDoc("v1", new OpenApiInfo(){ Title = "My API", Version = "v1" });
                 c.EnableAnnotations(enableAnnotationsForInheritance: true, enableAnnotationsForPolymorphism: true);
+
+                // [Optional] Use native C#'s reference type nullable feature
+                //c.SupportNonNullableReferenceTypes();
             });
 
             // [Optional] Add INameResolver (SystemTextJsonNameResolver will be registered by default)
