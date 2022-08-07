@@ -58,12 +58,27 @@ namespace MicroElements.OpenApi.FluentValidation
                 .Where(propertyRule => propertyRule.PropertyRule.PropertyName.EqualsIgnoreAll(name));
         }
 
+        /// <summary>
+        /// Include conditional rules and validators that are defined in the current validator
+        /// to be generated in Swagger's schema.
+        /// </summary>
+        /// <typeparam name="TValidator">Validator type.</typeparam>
+        /// <param name="validator">Validator.</param>
+        /// <returns>validator.</returns>
         public static TValidator IncludeConditionalRulesInSchema<TValidator>(this TValidator validator)
             where TValidator : IValidator
         {
             return validator.IncludeConditionalRulesInSchema(_defaultAllowedConditionalValidatorTypes);
         }
 
+        /// <summary>
+        /// Include conditional rules and specified validators that are defined in the current validator
+        /// to be generated in Swagger's schema.
+        /// </summary>
+        /// <typeparam name="TValidator">Validator type.</typeparam>
+        /// <param name="validator">Validator.</param>
+        /// <param name="allowedConditionalValidatorTypes">Allowed conditional validator types for the defined validator.</param>
+        /// <returns>validator.</returns>
         public static TValidator IncludeConditionalRulesInSchema<TValidator>(
             this TValidator validator,
             IEnumerable<Type> allowedConditionalValidatorTypes)
@@ -77,11 +92,26 @@ namespace MicroElements.OpenApi.FluentValidation
             return validator;
         }
 
+        /// <summary>
+        /// Include conditioanl validators on the current rule builder to be generated in Swagger's schema.
+        /// </summary>
+        /// <typeparam name="T">Type of object being validated.</typeparam>
+        /// <typeparam name="TProperty">Type of property being validated.</typeparam>
+        /// <param name="ruleBuilder">The rule builder on which the validator should be defined.</param>
+        /// <returns>ruleBuilder.</returns>
         public static IRuleBuilder<T, TProperty> IncludeConditionalRuleInSchema<T, TProperty>(this IRuleBuilder<T, TProperty> ruleBuilder)
         {
             return ruleBuilder.IncludeConditionalRuleInSchema(_defaultAllowedConditionalValidatorTypes);
         }
 
+        /// <summary>
+        /// Include the specified conditional validators on the current rule builder to be generated in Swagger's schema.
+        /// </summary>
+        /// <typeparam name="T">Type of object being validated.</typeparam>
+        /// <typeparam name="TProperty">Type of property being validated.</typeparam>
+        /// <param name="ruleBuilder">The rule builder on which the validator should be defined.</param>
+        /// <param name="allowedConditionalValidatorTypes">Allowed conditional validator types for the defined builder.</param>
+        /// <returns>ruleBuilder.</returns>
         public static IRuleBuilder<T, TProperty> IncludeConditionalRuleInSchema<T, TProperty>(
             this IRuleBuilder<T, TProperty> ruleBuilder,
             IEnumerable<Type> allowedConditionalValidatorTypes)
@@ -95,6 +125,14 @@ namespace MicroElements.OpenApi.FluentValidation
             return ruleBuilder;
         }
 
+        /// <summary>
+        /// Exlude all conditional validators on the current rule builder from being generated in Swagger's schema.
+        /// Only applies to conditional rules or validators.
+        /// </summary>
+        /// <typeparam name="T">Type of object being validated.</typeparam>
+        /// <typeparam name="TProperty">Type of property being validated.</typeparam>
+        /// <param name="ruleBuilder">The rule builder on which the validator should be defined.</param>
+        /// <returns>ruleBuilder.</returns>
         public static IRuleBuilder<T, TProperty> ExcludeConditionalRuleFromSchema<T, TProperty>(this IRuleBuilder<T, TProperty> ruleBuilder)
         {
             if (TryGetRuleFromBuilder(ruleBuilder, out IValidationRule<T, TProperty> rule)
@@ -180,6 +218,7 @@ namespace MicroElements.OpenApi.FluentValidation
         /// Gets validators for <see cref="IValidationRule"/>.
         /// </summary>
         /// <param name="validationRule">Validator.</param>
+        /// <param name="context">ValidationRuleInfo.</param>
         /// <returns>enumeration.</returns>
         public static IEnumerable<IPropertyValidator> GetValidators(
             this IValidationRule validationRule,
