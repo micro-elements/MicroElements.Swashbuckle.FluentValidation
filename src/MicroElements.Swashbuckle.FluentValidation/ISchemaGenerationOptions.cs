@@ -4,6 +4,7 @@
 using FluentValidation.Validators;
 using System;
 using System.Collections.Generic;
+using FluentValidation;
 
 namespace MicroElements.Swashbuckle.FluentValidation
 {
@@ -36,6 +37,8 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// Gets a list that contains the allowed conditional validator types.
         /// </summary>
         List<Type> AllowedConditionalValidatorTypes { get; }
+        
+        Func<IValidator, bool> GenerateSchemaForConditional { get; }
     }
 
     /// <summary>
@@ -76,6 +79,9 @@ namespace MicroElements.Swashbuckle.FluentValidation
             typeof(IEmailValidator),
             typeof(IBetweenValidator),
         };
+
+        /// <inheritdoc />
+        public Func<IValidator, bool> GenerateSchemaForConditional { get; }
 
         /// <summary>
         /// Sets values that compatible with FluentValidation.

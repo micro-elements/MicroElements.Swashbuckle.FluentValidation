@@ -121,14 +121,12 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 .NotNull()
                 .Where(component =>
                 {
-                    if (schemaGenerationOptions.AllowConditionalValidators
-                    && component.HasCondition())
+                    if (schemaGenerationOptions.AllowConditionalValidators && component.HasCondition())
                     {
                         return component.Validator.IsAllowedAsConditionalValidator(schemaGenerationOptions);
                     }
 
-                    if (schemaGenerationOptions.AllowConditionalRules
-                    && validationRule.HasCondition())
+                    if (schemaGenerationOptions.AllowConditionalRules && validationRule.HasCondition())
                     {
                         return component.Validator.IsAllowedAsConditionalValidator(schemaGenerationOptions);
                     }
@@ -138,9 +136,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 .Select(component => component.Validator);
         }
 
-        private static bool IsAllowedAsConditionalValidator(
-              this IPropertyValidator validator
-            , ISchemaGenerationOptions schemaGenerationOptions)
+        private static bool IsAllowedAsConditionalValidator(this IPropertyValidator validator, ISchemaGenerationOptions schemaGenerationOptions)
         {
             Type validatorType = validator.GetType();
             return schemaGenerationOptions.AllowedConditionalValidatorTypes.Any(x => x.IsAssignableFrom(validatorType));

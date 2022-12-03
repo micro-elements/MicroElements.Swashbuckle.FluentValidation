@@ -85,11 +85,12 @@ namespace SampleWebApi
             // });
 
             // [Optional] Configures generation options to support conditional rules and validators
-            //services.AddFluentValidationRulesToSwagger(configure: options =>
-            //{
-            //    options.AllowConditionalRules = true;
-            //    options.AllowConditionalValidators = true;
-            //});
+            services.AddFluentValidationRulesToSwagger(configure: options =>
+            {
+                options.AllowConditionalRules = true;
+                options.AllowConditionalValidators = true;
+                options.AllowedConditionalValidatorTypes.Add(typeof(int));
+            });
 
             // Adds logging
             services.AddLogging(builder => builder.AddConsole().AddFilter(level => true));

@@ -18,6 +18,7 @@ namespace SampleWebApi.Validators
             RuleFor(customer => customer.Discount)
                 .ExclusiveBetween(4, 5)
                 .WithMessage("This WILL be in the OpenAPI spec.");
+            
             RuleFor(customer => customer.Discount)
                 .NotEmpty()
                 .WhenAsync((customer, token) => Task.FromResult(customer.Id == 1))
@@ -25,6 +26,11 @@ namespace SampleWebApi.Validators
 
             RuleFor(customer => customer.Surname)
                 .NotEmpty();
+            
+            RuleFor(customer => customer.Surname)
+                .MinimumLength(10)
+                .When(customer => customer.Id == 111);          
+            
             RuleFor(customer => customer.Forename)
                 .NotEmpty()
                 .WithMessage("Please specify a first name");
