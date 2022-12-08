@@ -16,7 +16,7 @@ namespace MicroElements.OpenApi.FluentValidation
         /// <summary>
         /// Gets a value indicating whether schema generator should use AllOf for multiple rules (for example for multiple patterns).
         /// </summary>
-        bool UseAllOffForMultipleRules { get; }
+        bool UseAllOfForMultipleRules { get; }
     }
 
     /// <summary>
@@ -34,7 +34,7 @@ namespace MicroElements.OpenApi.FluentValidation
         /// Gets or sets a value indicating whether schema generator should use AllOf for multiple rules (for example for multiple patterns).
         /// Default: true.
         /// </summary>
-        public bool UseAllOffForMultipleRules { get; set; } = true;
+        public bool UseAllOfForMultipleRules { get; set; } = true;
 
         /// <summary>
         /// Sets values that compatible with FluentValidation.
