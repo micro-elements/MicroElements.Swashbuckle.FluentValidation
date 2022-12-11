@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using FluentValidation;
 using MicroElements.OpenApi.FluentValidation;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -32,7 +31,6 @@ namespace MicroElements.NSwag.FluentValidation
         public FluentValidationSchemaProcessor(
             /* System services */
             ILoggerFactory? loggerFactory = null,
-            IServiceProvider? serviceProvider = null,
 
             /* FluentValidation services */
             IValidatorRegistry? validatorFactory = null,
@@ -56,7 +54,6 @@ namespace MicroElements.NSwag.FluentValidation
             _rules = new NSwagFluentValidationRuleProvider().GetRules().ToArray().OverrideRules(rules);
             _schemaGenerationOptions = schemaGenerationOptions?.Value ?? new SchemaGenerationOptions();
             _schemaGenerationOptions.FillDefaults(swaggerGenOptions);
-            _schemaGenerationOptions.FillDefaultValues(serviceProvider);
         }
 
         /// <inheritdoc />

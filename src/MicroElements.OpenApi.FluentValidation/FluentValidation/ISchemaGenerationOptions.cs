@@ -129,16 +129,22 @@ namespace MicroElements.OpenApi.FluentValidation
     /// <param name="Validator">Validator.</param>
     public record ValidatorContext(Type TypeToValidate, IValidator Validator);
 
+    /// <summary>
+    /// Services that can be injected with DI.
+    /// </summary>
     public interface IServicesContext
     {
         INameResolver? NameResolver { get; }
     }
 
+    /// <summary>
+    /// Services that can be injected with DI.
+    /// </summary>
     public class ServicesContext : IServicesContext
     {
         public INameResolver? NameResolver { get; set; }
 
-        public ServicesContext(INameResolver? nameResolver)
+        public ServicesContext(INameResolver? nameResolver = null)
         {
             NameResolver = nameResolver;
         }

@@ -1,23 +1,14 @@
 ﻿using FluentValidation;
 using FluentValidation.AspNetCore;
 using MicroElements.NSwag.FluentValidation;
-using MicroElements.OpenApi.FluentValidation;
+using MicroElements.NSwag.FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace SampleWebApi
+namespace SampleNSwagWebApi
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
-        {
-            Configuration = configuration;
-        }
-
-        public IConfiguration Configuration { get; }
-
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
@@ -26,14 +17,10 @@ namespace SampleWebApi
 
             services
                 .AddControllers()
-
                 // Adds fluent validators to Asp.net
                 .AddFluentValidation(c =>
                 {
                     c.RegisterValidatorsFromAssemblyContaining<Startup>(includeInternalTypes: true);
-
-                    // Optionally set validator factory if you have problems with scope resolve inside validators.
-                    //c.ValidatorFactoryType = typeof(HttpContextServiceProviderValidatorFactory);
                 });
 
             services.AddOpenApiDocument((settings, serviceProvider) =>
@@ -47,10 +34,8 @@ namespace SampleWebApi
             // Register FV validators
             services.AddValidatorsFromAssemblyContaining<Startup>(lifetime: ServiceLifetime.Scoped);
 
-            services.TryAdd(new ServiceDescriptor(typeof(IValidatorRegistry), typeof(ServiceProviderValidatorRegistry), ServiceLifetime.Scoped));
-            
-            // Add the FluentValidationSchemaProcessor as a scoped service
-            services.AddScoped<FluentValidationSchemaProcessor>();
+            // Adds FV rules to NSwag
+            services.AddFluentValidationRulesToSwagger();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
