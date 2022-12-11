@@ -23,8 +23,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
         private readonly IValidatorRegistry? _validatorRegistry;
 
         private readonly IReadOnlyList<IFluentValidationRule<OpenApiSchema>> _rules;
-        private readonly ISchemaGenerationOptions _schemaGenerationOptions;
-        private readonly SchemaGenerationSettings _schemaGenerationSettings;
+        private readonly SchemaGenerationOptions _schemaGenerationOptions;
 
         public FluentValidationDocumentFilter(
             /* System services */
@@ -51,16 +50,11 @@ namespace MicroElements.Swashbuckle.FluentValidation
             // MicroElements services
             _rules = new DefaultFluentValidationRuleProvider(schemaGenerationOptions).GetRules().ToArray().OverrideRules(rules);
             _schemaGenerationOptions = schemaGenerationOptions?.Value ?? new SchemaGenerationOptions();
-            _schemaGenerationSettings = new SchemaGenerationSettings
-            {
-                NameResolver = nameResolver,
-            };
 
             // Swashbuckle services
-            _schemaGenerationSettings = _schemaGenerationSettings with
-            {
-                SchemaIdSelector = swaggerGenOptions?.Value?.SchemaGeneratorOptions.SchemaIdSelector ?? new SchemaGeneratorOptions().SchemaIdSelector,
-            };
+            _schemaGenerationOptions.FillFromSwashbuckleOptions(swaggerGenOptions);
+
+            _schemaGenerationOptions.FillDefaultValues(serviceProvider);
         }
 
         record SchemaItem
@@ -84,8 +78,8 @@ namespace MicroElements.Swashbuckle.FluentValidation
         public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
         {
             var schemaRepositorySchemas = context.SchemaRepository.Schemas;
-            var schemaIdSelector = _schemaGenerationSettings.SchemaIdSelector;
-            var schemaProvider = new SwashbuckleSchemaProvider(context.SchemaRepository, context.SchemaGenerator, _schemaGenerationSettings.SchemaIdSelector);
+            var schemaIdSelector = _schemaGenerationOptions.SchemaIdSelector;
+            var schemaProvider = new SwashbuckleSchemaProvider(context.SchemaRepository, context.SchemaGenerator, schemaIdSelector);
 
             var apiDescriptions = context.ApiDescriptions.ToArray();
 
@@ -175,8 +169,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     schema: item.Schema,
                     schemaType: item.ModelType,
                     rules: _rules,
-                    schemaGenerationOptions: _schemaGenerationOptions,
-                    schemaGenerationSettings: _schemaGenerationSettings);
+                    schemaGenerationOptions: _schemaGenerationOptions);
 
                 ApplyRulesToSchema(schemaContext, validator);
 

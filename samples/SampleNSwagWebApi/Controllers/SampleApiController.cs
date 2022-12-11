@@ -1,9 +1,78 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using FluentValidation;
 using FluentValidation.Validators;
+using JetBrains.Annotations;
+using Microsoft.AspNetCore.Mvc;
 
-namespace SampleWebApi.Contracts
+namespace SampleWebApi.Controllers
 {
+    [Route("api/[controller]")]
+    public class SampleApiController : Controller
+    {
+        [HttpPost("[action]")]
+        public IActionResult AddSample([FromBody] Sample sample)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            return Ok();
+        }
+
+        [HttpPost("[action]")]
+        public IActionResult AddSampleWithDataAnnotations([FromBody] SampleWithDataAnnotations sample)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            return Ok();
+        }
+
+        [HttpPost("[action]")]
+        public IActionResult AddSampleFromQuery([FromQuery] Sample sample)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            return Ok();
+        }
+        
+        [HttpPost("[action]")]
+        public IActionResult AddSampleWithNoRequired([FromBody] SampleWithNoRequired customer)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            return Ok();
+        }
+
+        [HttpGet("[action]")]
+        public IActionResult Get(GetRequest query) => Ok();
+
+        public class GetRequest
+        {
+            [FromQuery]
+            public string Id { get; set; }
+        }
+
+        public class BasicRequestValidator : AbstractValidator<GetRequest>
+        {
+            public BasicRequestValidator()
+            {
+                RuleFor(x => x.Id)
+                    .NotEmpty()
+                    .MaximumLength(3);
+            }
+        }
+    }
+    
     public class Sample
     {
         public string PropertyWithNoRules { get; set; }
@@ -28,6 +97,7 @@ namespace SampleWebApi.Contracts
         public string javaStyleProperty { get; set; }
     }
 
+    [UsedImplicitly]
     public class SampleValidator : AbstractValidator<Sample>
     {
         public SampleValidator()
@@ -95,6 +165,7 @@ namespace SampleWebApi.Contracts
         public int ValueInRange { get; set; }
     }
 
+    [UsedImplicitly]
     public class SampleWithNoRequiredValidator : AbstractValidator<SampleWithNoRequired>
     {
         public SampleWithNoRequiredValidator()

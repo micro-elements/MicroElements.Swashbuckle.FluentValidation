@@ -14,13 +14,15 @@
 
     <ItemGroup>
         <PackageReference Include="FluentValidation" Version="[10.0.0, 12)" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Options" Version="5.0.0" />
         <PackageReference Include="NJsonSchema" Version="10.4.4" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\MicroElements.OpenApi.FluentValidation\MicroElements.OpenApi.FluentValidation.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="AspNetCore" />
     </ItemGroup>
 
 </Project>

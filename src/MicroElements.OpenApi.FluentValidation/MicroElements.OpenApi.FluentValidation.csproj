@@ -12,8 +12,12 @@
     
     <ItemGroup>
         <PackageReference Include="FluentValidation" Version="[10.0.0, 12)" />
+        <PackageReference Include="MicroElements.CodeContracts.Sources" Version="1.3.0" PrivateAssets="all" />
         <PackageReference Include="MicroElements.IsExternalInit" Version="1.1.0" PrivateAssets="all" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.1.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />
+        <PackageReference Include="Microsoft.OpenApi" Version="1.2.3" />
     </ItemGroup>
     
 </Project>

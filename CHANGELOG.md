@@ -1,3 +1,18 @@
+# Changes in 6.0.0 - beta.2:
+Support for ManyForType validators strategy, support for custom Validator, Rule and RuleComponent filters.
+Default ValidatorFilter checks that validator CanValidateInstancesOfType
+Default Rule and RuleComponent filters checks that rule or component has no conditions.
+Codebase unified with NSwag
+
+- Added: MicroElements.NSwag.FluentValidation package. Early version
+- Change: `INameResolver` removed from FluentValidationRules ctor. Set it from `SchemaGenerationOptions`
+- Change: `ISchemaGenerationSettings` merged to `ISchemaGenerationOptions`
+- Change: `IValidatorRegistry` and it's implementations moved to MicroElements.OpenApi.FluentValidation namespace and package
+- Change: `IValidatorRegistry` can return more than one validator with method `GetValidators`
+- Added: `ValidatorSearch` strategy OneForType, ManyForType
+- Added: `ISchemaGenerationOptions.ValidatorFilter`, `ISchemaGenerationOptions.RuleFilter`, `ISchemaGenerationOptions.RuleComponentFilter`
+- Change: `UseAllOfForMultipleRules` typo fix
+
 # Changes in 6.0.0 - beta.1:
 - Abstracted common logic for NSwag
 - Moved from `IValidationFactory` (obsolete in FV 11.1.0) to `IValidationRegistry`

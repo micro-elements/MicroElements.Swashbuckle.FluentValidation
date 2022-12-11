@@ -21,35 +21,24 @@ namespace MicroElements.OpenApi.FluentValidation
         /// </summary>
         /// <param name="validator">Validator.</param>
         /// <returns>enumeration.</returns>
-        public static IEnumerable<ValidationRuleInfo> GetValidationRules(this IValidator validator)
+        public static IEnumerable<ValidationRuleInfo> GetValidationRules(
+            this IValidator validator,
+            ISchemaGenerationOptions schemaGenerationOptions)
         {
-            return (validator as IEnumerable<IValidationRule>)
-                .NotNull()
-                .GetPropertyRules();
-        }
-
-        /// <summary>
-        /// Returns validation rules by property name ignoring name case.
-        /// </summary>
-        /// <param name="validator">Validator</param>
-        /// <param name="name">Property name.</param>
-        /// <returns>enumeration.</returns>
-        public static IEnumerable<ValidationRuleInfo> GetValidationRulesForMemberIgnoreCase(this IValidator validator, string name)
-        {
-            return validator
-                .GetValidationRules()
-                .Where(propertyRule => propertyRule.PropertyRule.PropertyName.EqualsIgnoreAll(name));
+            var validationRules = validator.CreateDescriptor().Rules;
+            return validationRules.GetPropertyRules(schemaGenerationOptions);
         }
 
         /// <summary>
         /// Returns all IValidationRules that are PropertyRule.
         /// If rule is CollectionPropertyRule then isCollectionRule set to true.
         /// </summary>
-        internal static IEnumerable<ValidationRuleInfo> GetPropertyRules(
-            this IEnumerable<IValidationRule> validationRules)
+        public static IEnumerable<ValidationRuleInfo> GetPropertyRules(
+            this IEnumerable<IValidationRule> validationRules,
+            ISchemaGenerationOptions schemaGenerationOptions)
         {
             return validationRules
-                .Where(rule => rule.HasNoCondition())
+                .Where(rule => schemaGenerationOptions.RuleFilter.Matches(rule))
                 .Select(rule =>
                 {
                     // CollectionPropertyRule<T, TElement> is also a PropertyRule.
@@ -63,6 +52,22 @@ namespace MicroElements.OpenApi.FluentValidation
 
                     return new ValidationRuleInfo(rule, isCollectionRule, reflectionContext);
                 });
+        }
+
+        /// <summary>
+        /// Gets validators for <see cref="IValidationRule"/>.
+        /// </summary>
+        /// <param name="validationRule">Validator.</param>
+        /// <returns>enumeration.</returns>
+        public static IEnumerable<IPropertyValidator> GetValidators(
+            this IValidationRule validationRule,
+            ISchemaGenerationOptions schemaGenerationOptions)
+        {
+            return validationRule
+                .Components
+                .NotNull()
+                .Where(component => schemaGenerationOptions.RuleComponentFilter.Matches(component))
+                .Select(component => component.Validator);
         }
 
         /// <summary>
@@ -83,21 +88,7 @@ namespace MicroElements.OpenApi.FluentValidation
             return !hasCondition;
         }
 
-        /// <summary>
-        /// Gets validators for <see cref="IValidationRule"/>.
-        /// </summary>
-        /// <param name="validationRule">Validator.</param>
-        /// <returns>enumeration.</returns>
-        public static IEnumerable<IPropertyValidator> GetValidators(this IValidationRule validationRule)
-        {
-            return validationRule
-                .Components
-                .NotNull()
-                .Where(component => component.HasNoCondition())
-                .Select(component => component.Validator);
-        }
-
-        internal static bool IsMatchesRule(this ValidationRuleInfo validationRuleInfo, string schemaPropertyName, ISchemaGenerationSettings schemaGenerationSettings)
+        internal static bool IsMatchesRule(this ValidationRuleInfo validationRuleInfo, string schemaPropertyName, ISchemaGenerationOptions schemaGenerationSettings)
         {
             if (schemaGenerationSettings.NameResolver != null && validationRuleInfo.ReflectionContext?.PropertyInfo is PropertyInfo propertyInfo)
             {
@@ -149,6 +140,6 @@ namespace MicroElements.OpenApi.FluentValidation
             }
 
             return null;
-        }        
+        }
     }
 }

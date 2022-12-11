@@ -25,25 +25,29 @@ namespace MicroElements.OpenApi.FluentValidation
         {
             var schemaTypeName = schemaType.Name;
             TSchema schema = schemaGenerationContext.Schema;
-            ISchemaGenerationSettings schemaGenerationSettings = schemaGenerationContext.SchemaGenerationSettings;
+            var schemaGenerationOptions = schemaGenerationContext.SchemaGenerationOptions;
             IReadOnlyList<IFluentValidationRule<TSchema>> fluentValidationRules = schemaGenerationContext.Rules;
             schemaPropertyNames ??= schemaGenerationContext.Properties;
 
             var lazyLog = new LazyLog(logger, l => l.LogDebug($"Applying FluentValidation rules to swagger schema '{schemaTypeName}'."));
 
             var validationRules = validator
-                .GetValidationRules()
+                .GetValidationRules(schemaGenerationOptions)
                 .Where(context => context.ReflectionContext != null)
                 .ToArray();
 
             foreach (var schemaPropertyName in schemaPropertyNames)
             {
                 var validationRuleInfoList = validationRules
-                    .Where(propertyRule => propertyRule.IsMatchesRule(schemaPropertyName, schemaGenerationSettings));
+                    .Where(propertyRule => propertyRule.IsMatchesRule(schemaPropertyName, schemaGenerationOptions))
+                    .ToArrayDebug();
 
                 foreach (var validationRuleInfo in validationRuleInfoList)
                 {
-                    var propertyValidators = validationRuleInfo.PropertyRule.GetValidators();
+                    var propertyValidators = validationRuleInfo
+                        .PropertyRule
+                        .GetValidators(schemaGenerationOptions)
+                        .ToArrayDebug();
 
                     foreach (var propertyValidator in propertyValidators)
                     {
@@ -88,11 +92,17 @@ namespace MicroElements.OpenApi.FluentValidation
         {
             // Note: IValidatorDescriptor doesn't return IncludeRules so we need to get validators manually.
             var validationRules = validator
-                .GetValidationRules()
+                .GetValidationRules(schemaGenerationContext.SchemaGenerationOptions)
                 .ToArrayDebug();
 
             var propertiesWithChildAdapters = validationRules
-                .Select(context => (context.PropertyRule, context.PropertyRule.GetValidators().OfType<IChildValidatorAdaptor>().ToArray()))
+                .Select(context => (
+                    context.PropertyRule,
+                    context
+                        .PropertyRule
+                        .GetValidators(schemaGenerationContext.SchemaGenerationOptions)
+                        .OfType<IChildValidatorAdaptor>()
+                        .ToArray()))
                 .ToArrayDebug();
 
             foreach ((IValidationRule propertyRule, IChildValidatorAdaptor[] childAdapters) in propertiesWithChildAdapters)

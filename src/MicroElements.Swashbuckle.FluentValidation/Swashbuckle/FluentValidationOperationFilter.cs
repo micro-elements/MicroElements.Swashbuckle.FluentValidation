@@ -25,8 +25,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
         private readonly IValidatorRegistry? _validatorRegistry;
 
         private readonly IReadOnlyList<IFluentValidationRule<OpenApiSchema>> _rules;
-        private readonly ISchemaGenerationOptions _schemaGenerationOptions;
-        private readonly SchemaGenerationSettings _schemaGenerationSettings;
+        private readonly SchemaGenerationOptions _schemaGenerationOptions;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FluentValidationOperationFilter"/> class.
@@ -36,7 +35,6 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <param name="validatorRegistry">Gets validators for a particular type.</param>
         /// <param name="rules">External FluentValidation rules. External rule overrides default rule with the same name.</param>
         /// <param name="schemaGenerationOptions">Schema generation options.</param>
-        /// <param name="nameResolver">Optional name resolver.</param>
         /// <param name="swaggerGenOptions">SwaggerGenOptions.</param>
         public FluentValidationOperationFilter(
             /* System services */
@@ -47,7 +45,6 @@ namespace MicroElements.Swashbuckle.FluentValidation
             IValidatorRegistry? validatorRegistry = null,
             IEnumerable<FluentValidationRule>? rules = null,
             IOptions<SchemaGenerationOptions>? schemaGenerationOptions = null,
-            INameResolver? nameResolver = null,
 
             /* Swashbuckle services */
             IOptions<SwaggerGenOptions>? swaggerGenOptions = null)
@@ -56,21 +53,18 @@ namespace MicroElements.Swashbuckle.FluentValidation
             _logger = loggerFactory?.CreateLogger(typeof(FluentValidationRules)) ?? NullLogger.Instance;
 
             // FluentValidation services
-            _validatorRegistry = validatorRegistry ?? new ServiceProviderValidatorRegistry(serviceProvider);
+            _validatorRegistry = validatorRegistry ?? new ServiceProviderValidatorRegistry(serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider)));
 
             // MicroElements services
             _rules = new DefaultFluentValidationRuleProvider(schemaGenerationOptions).GetRules().ToArray().OverrideRules(rules);
             _schemaGenerationOptions = schemaGenerationOptions?.Value ?? new SchemaGenerationOptions();
-            _schemaGenerationSettings = new SchemaGenerationSettings
-            {
-                NameResolver = nameResolver,
-            };
 
             // Swashbuckle services
-            _schemaGenerationSettings = _schemaGenerationSettings with
-            {
-                SchemaIdSelector = swaggerGenOptions?.Value?.SchemaGeneratorOptions.SchemaIdSelector ?? new SchemaGeneratorOptions().SchemaIdSelector,
-            };
+            _schemaGenerationOptions.FillFromSwashbuckleOptions(swaggerGenOptions);
+
+            _schemaGenerationOptions.FillDefaultValues(serviceProvider);
+
+            _logger.LogDebug("FluentValidationOperationFilter Created");
         }
 
         /// <inheritdoc />
@@ -98,7 +92,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 return;
             }
 
-            var schemaProvider = new SwashbuckleSchemaProvider(context.SchemaRepository, context.SchemaGenerator, _schemaGenerationSettings.SchemaIdSelector);
+            var schemaProvider = new SwashbuckleSchemaProvider(context.SchemaRepository, context.SchemaGenerator, _schemaGenerationOptions.SchemaIdSelector);
 
             foreach (var operationParameter in operation.Parameters)
             {
@@ -130,9 +124,9 @@ namespace MicroElements.Swashbuckle.FluentValidation
                         else
                         {
                             var propertyInfo = parameterType.GetProperty(schemaPropertyName);
-                            if (propertyInfo != null && _schemaGenerationSettings.NameResolver != null)
+                            if (propertyInfo != null && _schemaGenerationOptions.NameResolver != null)
                             {
-                                schemaPropertyName = _schemaGenerationSettings.NameResolver?.GetPropertyName(propertyInfo);
+                                schemaPropertyName = _schemaGenerationOptions.NameResolver.GetPropertyName(propertyInfo);
                             }
                         }
 
@@ -143,7 +137,6 @@ namespace MicroElements.Swashbuckle.FluentValidation
                             schemaType: parameterType,
                             rules: _rules,
                             schemaGenerationOptions: _schemaGenerationOptions,
-                            schemaGenerationSettings: _schemaGenerationSettings,
                             schemaProvider: schemaProvider);
 
                         FluentValidationSchemaBuilder.ApplyRulesToSchema(

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using FluentValidation;
 using MicroElements.OpenApi.FluentValidation;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -17,11 +18,10 @@ namespace MicroElements.NSwag.FluentValidation
     {
         private readonly ILogger _logger;
 
-        private readonly IValidatorFactory _validatorFactory;
+        private readonly IValidatorRegistry _validatorFactory;
 
         private readonly IReadOnlyList<IFluentValidationRule<SchemaProcessorContext>> _rules;
-        private readonly ISchemaGenerationOptions _schemaGenerationOptions;
-        private readonly SchemaGenerationSettings _schemaGenerationSettings;
+        private readonly SchemaGenerationOptions _schemaGenerationOptions;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FluentValidationSchemaProcessor"/> class.
@@ -32,16 +32,16 @@ namespace MicroElements.NSwag.FluentValidation
         public FluentValidationSchemaProcessor(
             /* System services */
             ILoggerFactory? loggerFactory = null,
+            IServiceProvider? serviceProvider = null,
 
             /* FluentValidation services */
-            IValidatorFactory? validatorFactory = null,
+            IValidatorRegistry? validatorFactory = null,
 
             // MicroElements services
             IEnumerable<FluentValidationRule>? rules = null,
             IOptions<SchemaGenerationOptions>? schemaGenerationOptions = null,
-            INameResolver? nameResolver = null,
 
-            // Swashbuckle services
+            // NSwag services
             IOptions<JsonSchemaGeneratorSettings>? swaggerGenOptions = null)
         {
             // System services
@@ -55,17 +55,8 @@ namespace MicroElements.NSwag.FluentValidation
             // MicroElements services
             _rules = new NSwagFluentValidationRuleProvider().GetRules().ToArray().OverrideRules(rules);
             _schemaGenerationOptions = schemaGenerationOptions?.Value ?? new SchemaGenerationOptions();
-            _schemaGenerationSettings = new SchemaGenerationSettings
-            {
-                NameResolver = nameResolver,
-            };
-
-            // Swashbuckle services
-            // _schemaGenerationSettings = _schemaGenerationSettings with
-            // {
-            //     SchemaIdSelector = swaggerGenOptions?.Value?.SchemaGeneratorOptions.SchemaIdSelector ?? new SchemaGeneratorOptions().SchemaIdSelector,
-            // };
-            // context.Settings.SchemaNameGenerator.Generate()
+            _schemaGenerationOptions.FillDefaults(swaggerGenOptions);
+            _schemaGenerationOptions.FillDefaultValues(serviceProvider);
         }
 
         /// <inheritdoc />
@@ -100,8 +91,7 @@ namespace MicroElements.NSwag.FluentValidation
                 schemaType: context.Type,
                 rules: _rules,
                 schemaProvider: null,
-                schemaGenerationOptions: _schemaGenerationOptions,
-                schemaGenerationSettings: _schemaGenerationSettings);
+                schemaGenerationOptions: _schemaGenerationOptions);
 
             _logger.LogDebug($"Applying FluentValidation rules to swagger schema for type '{context.Type}'");
 
@@ -133,6 +123,20 @@ namespace MicroElements.NSwag.FluentValidation
                 validator: validator,
                 logger: _logger,
                 schemaGenerationContext: context);
+        }
+    }
+    
+    public static class SchemaGenerationOptionsExtensions
+    {
+        public static SchemaGenerationOptions FillDefaults(this SchemaGenerationOptions options, IOptions<JsonSchemaGeneratorSettings>? swaggerGenOptions = null)
+        {
+            // NSwag services
+            if (options.SchemaIdSelector is null)
+            {
+                options.SchemaIdSelector = type => swaggerGenOptions.Value.SchemaNameGenerator.Generate(type);
+            }
+
+            return options;
         }
     }
 }

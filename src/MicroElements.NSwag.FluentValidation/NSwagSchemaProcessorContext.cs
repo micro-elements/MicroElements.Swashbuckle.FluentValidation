@@ -44,16 +44,12 @@ namespace MicroElements.NSwag.FluentValidation
         /// <inheritdoc />
         public ISchemaGenerationOptions SchemaGenerationOptions { get; }
 
-        /// <inheritdoc />
-        public ISchemaGenerationSettings SchemaGenerationSettings { get; }
-
         public NSwagSchemaProcessorContext(
             Type schemaType,
             SchemaProcessorContext schema,
             IReadOnlyList<IFluentValidationRule<SchemaProcessorContext>> rules,
             ISchemaProvider<SchemaProcessorContext>? schemaProvider,
-            ISchemaGenerationOptions schemaGenerationOptions,
-            ISchemaGenerationSettings schemaGenerationSettings)
+            ISchemaGenerationOptions schemaGenerationOptions)
         {
             SchemaType = schemaType;
             Schema = schema;
@@ -61,7 +57,6 @@ namespace MicroElements.NSwag.FluentValidation
 
             SchemaProvider = schemaProvider ?? new SwashbuckleSchemaProvider(schema);
             SchemaGenerationOptions = schemaGenerationOptions;
-            SchemaGenerationSettings = schemaGenerationSettings;
         }
     }
 

@@ -10,7 +10,10 @@ namespace MicroElements.OpenApi.FluentValidation
         /// Gets the schema .net type.
         /// </summary>
         Type SchemaType { get; }
-        
+
+        /// <summary>
+        /// Gets 
+        /// </summary>
         IEnumerable<string> Properties { get; }
 
         /// <summary>
@@ -19,14 +22,9 @@ namespace MicroElements.OpenApi.FluentValidation
         IReadOnlyList<IFluentValidationRule> Rules { get; }
 
         /// <summary>
-        /// Gets <see cref="ISchemaGenerationOptions"/> (constant user options).
+        /// Gets <see cref="ISchemaGenerationOptions"/>.
         /// </summary>
         ISchemaGenerationOptions SchemaGenerationOptions { get; }
-
-        /// <summary>
-        /// Gets <see cref="ISchemaGenerationSettings"/> (runtime options and services).
-        /// </summary>
-        ISchemaGenerationSettings SchemaGenerationSettings { get; }
     }
 
     public interface ISchemaGenerationContext<TSchema> : ISchemaGenerationContext

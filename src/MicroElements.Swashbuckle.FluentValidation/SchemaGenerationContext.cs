@@ -28,9 +28,6 @@ namespace MicroElements.Swashbuckle.FluentValidation
         public ISchemaGenerationOptions SchemaGenerationOptions { get; }
 
         /// <inheritdoc/>
-        public ISchemaGenerationSettings SchemaGenerationSettings { get; }
-
-        /// <inheritdoc/>
         public OpenApiSchema Schema { get; init; }
 
         /// <inheritdoc/>
@@ -41,7 +38,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
         public ISchemaGenerator SchemaGenerator { get; }
 
         public SchemaRepository SchemaRepository { get; }
-        
+
         /// <inheritdoc />
         public ISchemaGenerationContext<OpenApiSchema> With(OpenApiSchema schema)
         {
@@ -52,7 +49,6 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 schemaType: SchemaType,
                 rules: Rules,
                 schemaGenerationOptions: SchemaGenerationOptions,
-                schemaGenerationSettings: SchemaGenerationSettings,
                 schemaProvider: SchemaProvider);
         }
 
@@ -71,29 +67,26 @@ namespace MicroElements.Swashbuckle.FluentValidation
         public SchemaGenerationContext(
             SchemaRepository schemaRepository,
             ISchemaGenerator schemaGenerator,
-            
+
             OpenApiSchema schema,
             Type schemaType,
-            
+
             IReadOnlyList<IFluentValidationRule<OpenApiSchema>> rules,
             ISchemaGenerationOptions schemaGenerationOptions,
-            ISchemaGenerationSettings schemaGenerationSettings,
             ISchemaProvider<OpenApiSchema>? schemaProvider = null)
         {
             SchemaRepository = schemaRepository;
             SchemaGenerator = schemaGenerator;
-      
 
             Schema = schema;
             SchemaType = schemaType;
             Rules = rules;
             SchemaGenerationOptions = schemaGenerationOptions;
-            SchemaGenerationSettings = schemaGenerationSettings;
 
             schemaProvider ??= new SwashbuckleSchemaProvider(
                 schemaRepository,
                 schemaGenerator,
-                schemaGenerationSettings.SchemaIdSelector);
+                schemaGenerationOptions.SchemaIdSelector);
             SchemaProvider = schemaProvider;
         }
     }

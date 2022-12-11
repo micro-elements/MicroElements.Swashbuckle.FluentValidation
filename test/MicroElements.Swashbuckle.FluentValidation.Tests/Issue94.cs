@@ -39,7 +39,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
                 }
             }
 
-            [UsedImplicitly]
+            //[UsedImplicitly]
             public class PersonValidator : AbstractValidator<Person>
             {
                 public PersonValidator()

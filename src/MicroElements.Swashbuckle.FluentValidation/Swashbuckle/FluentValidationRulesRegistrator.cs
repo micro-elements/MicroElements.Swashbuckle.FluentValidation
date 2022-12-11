@@ -14,6 +14,7 @@ namespace Swashbuckle.AspNetCore.Swagger
     /// </summary>
     public static class FluentValidationRulesRegistrator
     {
+        //TODO: remove FluentValidationRulesRegistrator
         /// <summary>
         /// Adds fluent validation rules to swagger.
         /// </summary>

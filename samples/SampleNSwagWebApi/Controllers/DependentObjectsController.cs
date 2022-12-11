@@ -1,8 +1,28 @@
 ﻿using FluentValidation;
+using Microsoft.AspNetCore.Mvc;
 
-namespace SampleWebApi.Contracts
+namespace SampleWebApi.Controllers
 {
-    // https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/issues/5
+    /// <summary>
+    /// https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/issues/5
+    /// </summary>
+    [Route("api/[controller]")]
+    public class DependentObjectsController : Controller
+    {
+        [HttpPost("[action]")]
+        public IActionResult AddObjectA([FromBody] ObjectA objectA)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            return Ok();
+        }
+    }
+
+    #region Model
+
     public class ObjectA
     {
         public string Key { get; set; }
@@ -20,6 +40,10 @@ namespace SampleWebApi.Contracts
         public string Key { get; set; }
         public ObjectA ObjectA { get; set; }
     }
+
+    #endregion
+
+    #region Validation
 
     public class ObjectAValidator : AbstractValidator<ObjectA>
     {
@@ -47,4 +71,6 @@ namespace SampleWebApi.Contracts
             RuleFor(sample => sample.ObjectA).NotNull();
         }
     }
+
+    #endregion
 }

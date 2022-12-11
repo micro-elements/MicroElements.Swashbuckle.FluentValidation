@@ -5,7 +5,7 @@ using System.Linq;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace MicroElements.FluentValidation
+namespace MicroElements.OpenApi.FluentValidation
 {
     public static class ServiceCollectionExtensions
     {

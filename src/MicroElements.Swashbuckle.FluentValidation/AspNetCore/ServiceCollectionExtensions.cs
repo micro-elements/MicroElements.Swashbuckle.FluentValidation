@@ -2,9 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Linq;
 using System.Text.Json;
-using FluentValidation;
 using MicroElements.OpenApi.FluentValidation;
 using MicroElements.Swashbuckle.FluentValidation.Generation;
 using Microsoft.Extensions.DependencyInjection;
@@ -76,6 +74,8 @@ namespace MicroElements.Swashbuckle.FluentValidation.AspNetCore
 
             // Adds default IValidatorRegistry
             services.TryAdd(new ServiceDescriptor(typeof(IValidatorRegistry), typeof(ServiceProviderValidatorRegistry), registrationOptions.ServiceLifetime));
+
+            services.AddTransient<IServicesContext, ServicesContext>();
 
             // Schema generation configuration.
             if (configure != null)

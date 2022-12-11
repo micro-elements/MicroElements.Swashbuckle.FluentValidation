@@ -40,5 +40,8 @@ namespace MicroElements.OpenApi.FluentValidation
             IsCollectionRule = isCollectionRule;
             ReflectionContext = reflectionContext;
         }
+
+        /// <inheritdoc />
+        public override string ToString() => $"{PropertyRule.PropertyName}, IsCollectionRule: {IsCollectionRule}";
     }
 }

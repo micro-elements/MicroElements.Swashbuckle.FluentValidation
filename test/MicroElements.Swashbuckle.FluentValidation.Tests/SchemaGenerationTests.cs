@@ -5,8 +5,7 @@ using FluentAssertions;
 using FluentValidation;
 using FluentValidation.Validators;
 using Microsoft.OpenApi.Models;
-using SampleWebApi.Contracts;
-using SampleWebApi.Validators;
+using SampleWebApi.Controllers;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Xunit;
 
