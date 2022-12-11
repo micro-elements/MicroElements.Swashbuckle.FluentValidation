@@ -4,6 +4,7 @@
 using System;
 using FluentValidation;
 using FluentValidation.Internal;
+using MicroElements.OpenApi.Core;
 
 namespace MicroElements.OpenApi.FluentValidation
 {

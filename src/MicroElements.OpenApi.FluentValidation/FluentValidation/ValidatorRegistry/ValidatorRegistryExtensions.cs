@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using FluentValidation;
+using MicroElements.OpenApi.Core;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace MicroElements.OpenApi.FluentValidation

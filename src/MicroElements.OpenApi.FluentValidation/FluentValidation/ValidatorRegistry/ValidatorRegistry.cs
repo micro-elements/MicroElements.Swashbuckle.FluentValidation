@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using FluentValidation;
-using MicroElements.Swashbuckle.FluentValidation;
 using Microsoft.Extensions.Options;
 
 namespace MicroElements.OpenApi.FluentValidation

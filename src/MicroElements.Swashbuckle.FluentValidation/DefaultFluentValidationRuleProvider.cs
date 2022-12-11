@@ -4,6 +4,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using FluentValidation.Validators;
+using MicroElements.OpenApi;
 using MicroElements.OpenApi.Core;
 using MicroElements.OpenApi.FluentValidation;
 using Microsoft.Extensions.Options;

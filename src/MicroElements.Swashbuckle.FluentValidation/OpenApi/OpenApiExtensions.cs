@@ -6,7 +6,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Microsoft.OpenApi.Models;
 
-namespace MicroElements.Swashbuckle.FluentValidation
+namespace MicroElements.OpenApi
 {
     /// <summary>
     /// Extensions for <see cref="OpenApiSchema"/>.

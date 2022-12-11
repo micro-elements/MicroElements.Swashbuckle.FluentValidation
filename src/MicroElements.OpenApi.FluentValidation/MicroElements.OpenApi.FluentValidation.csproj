@@ -17,7 +17,6 @@
         <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.1.0" />
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" />
         <PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />
-        <PackageReference Include="Microsoft.OpenApi" Version="1.2.3" />
     </ItemGroup>
     
 </Project>

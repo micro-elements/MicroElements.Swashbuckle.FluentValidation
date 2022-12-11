@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using FluentAssertions;
 using FluentValidation;
 using FluentValidation.Validators;
+using MicroElements.OpenApi;
 using Microsoft.OpenApi.Models;
 using SampleWebApi.Controllers;
 using Swashbuckle.AspNetCore.SwaggerGen;

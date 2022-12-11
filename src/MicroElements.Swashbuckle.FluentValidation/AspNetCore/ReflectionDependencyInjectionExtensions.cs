@@ -15,7 +15,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.AspNetCore
     /// </summary>
     internal static class ReflectionDependencyInjectionExtensions
     {
-        public static Type? GetByFullName(string typeName)
+        private static Type? GetByFullName(string typeName)
         {
             Type type = AppDomain
                 .CurrentDomain

@@ -44,7 +44,6 @@ namespace MicroElements.Swashbuckle.FluentValidation
             /* MicroElements services */
             IValidatorRegistry? validatorRegistry = null,
             IEnumerable<FluentValidationRule>? rules = null,
-            IServicesContext? servicesContext = null,
             IOptions<SchemaGenerationOptions>? schemaGenerationOptions = null,
 
             /* Swashbuckle services */

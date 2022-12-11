@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using FluentValidation;
 using MicroElements.CodeContracts;
-using MicroElements.Swashbuckle.FluentValidation;
 using Microsoft.Extensions.Options;
 
 namespace MicroElements.OpenApi.FluentValidation

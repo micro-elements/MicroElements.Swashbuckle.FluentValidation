@@ -33,6 +33,9 @@ namespace MicroElements.OpenApi.Core
         /// </summary>
         internal static bool IsPrimitiveType(this Type type) => type.IsPrimitive || type == typeof(string) || type == typeof(decimal);
 
+        /// <summary>
+        /// Returns array in debug mode and the same collection in release.
+        /// </summary>
         internal static IEnumerable<TValue> ToArrayDebug<TValue>(this IEnumerable<TValue>? collection)
         {
 #if DEBUG

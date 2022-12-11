@@ -3,10 +3,12 @@
 
 using System;
 using System.Text.Json;
+using MicroElements.OpenApi.AspNetCore;
 using MicroElements.OpenApi.FluentValidation;
 using MicroElements.Swashbuckle.FluentValidation.Generation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace MicroElements.Swashbuckle.FluentValidation.AspNetCore
@@ -75,11 +77,14 @@ namespace MicroElements.Swashbuckle.FluentValidation.AspNetCore
             // Adds default IValidatorRegistry
             services.TryAdd(new ServiceDescriptor(typeof(IValidatorRegistry), typeof(ServiceProviderValidatorRegistry), registrationOptions.ServiceLifetime));
 
+            // DI injected services
             services.AddTransient<IServicesContext, ServicesContext>();
 
-            // Schema generation configuration.
+            // Schema generation configuration
             if (configure != null)
                 services.Configure<SchemaGenerationOptions>(configure);
+
+            services.AddTransient<IPostConfigureOptions<SchemaGenerationOptions>, PostConfigureSchemaGenerationOptions>();
 
             return services;
         }

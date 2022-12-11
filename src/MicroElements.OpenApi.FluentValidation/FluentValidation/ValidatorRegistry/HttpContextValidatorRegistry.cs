@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using FluentValidation;
-using MicroElements.Swashbuckle.FluentValidation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 
