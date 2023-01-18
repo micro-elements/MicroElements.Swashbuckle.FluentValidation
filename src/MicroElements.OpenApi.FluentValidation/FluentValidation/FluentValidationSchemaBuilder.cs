@@ -1,13 +1,16 @@
 ﻿// Copyright (c) MicroElements. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using FluentValidation;
+using FluentValidation.Validators;
+
+using MicroElements.OpenApi.Core;
+
+using Microsoft.Extensions.Logging;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using FluentValidation;
-using FluentValidation.Validators;
-using MicroElements.OpenApi.Core;
-using Microsoft.Extensions.Logging;
 
 namespace MicroElements.OpenApi.FluentValidation
 {
@@ -110,11 +113,19 @@ namespace MicroElements.OpenApi.FluentValidation
                 foreach (var childAdapter in childAdapters)
                 {
                     IValidator? childValidator = childAdapter.GetValidatorFromChildValidatorAdapter();
+
                     if (childValidator != null)
                     {
                         var canValidateInstancesOfType = childValidator.CanValidateInstancesOfType(schemaGenerationContext.SchemaType);
 
-                        if (canValidateInstancesOfType)
+                        if (childValidator == validator)
+                        {
+                            // Recursive validation works when using 'this' from SetValidator()
+                            // https://github.com/FluentValidation/FluentValidation/issues/1568
+                            // using a 'no-op' catch here seems safe and prevents the stack overflow exception
+                            // I'm not sure if there is a more "optimal" action that could be taken instead of no-op though.
+                        }
+                        else if (canValidateInstancesOfType)
                         {
                             // It's a validator for current type (Include for example) so apply changes to current schema.
                             ApplyRulesToSchema(
