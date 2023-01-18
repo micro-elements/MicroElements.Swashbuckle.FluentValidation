@@ -1,18 +1,15 @@
 ﻿// Copyright (c) MicroElements. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using FluentValidation;
-using FluentValidation.Validators;
-
-using MicroElements.OpenApi.Core;
-
-using Microsoft.Extensions.Logging;
-#pragma warning disable SA1611
-#pragma warning disable SA1618
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using FluentValidation;
+using FluentValidation.Validators;
+using MicroElements.OpenApi.Core;
+using Microsoft.Extensions.Logging;
+#pragma warning disable SA1611
+#pragma warning disable SA1618
 
 namespace MicroElements.OpenApi.FluentValidation
 {
