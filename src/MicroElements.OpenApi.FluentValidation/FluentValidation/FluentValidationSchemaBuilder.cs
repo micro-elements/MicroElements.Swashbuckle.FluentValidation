@@ -25,15 +25,18 @@ namespace MicroElements.OpenApi.FluentValidation
         {
             var schemaTypeName = schemaType.Name;
             TSchema schema = schemaGenerationContext.Schema;
-            var schemaGenerationOptions = schemaGenerationContext.SchemaGenerationOptions;
+            ISchemaGenerationOptions schemaGenerationOptions = schemaGenerationContext.SchemaGenerationOptions;
             IReadOnlyList<IFluentValidationRule<TSchema>> fluentValidationRules = schemaGenerationContext.Rules;
             schemaPropertyNames ??= schemaGenerationContext.Properties;
 
+            TypeContext typeContext = new TypeContext(schemaType, schemaGenerationOptions);
+            ValidatorContext validatorContext = new ValidatorContext(typeContext, validator);
+
             var lazyLog = new LazyLog(logger, l => l.LogDebug($"Applying FluentValidation rules to swagger schema '{schemaTypeName}'."));
 
-            var validationRules = validator
-                .GetValidationRules(schemaGenerationOptions)
-                .Where(context => context.ReflectionContext != null)
+            var validationRules = validatorContext
+                .GetValidationRules()
+                .Where(context => context.GetReflectionContext() != null)
                 .ToArray();
 
             foreach (var schemaPropertyName in schemaPropertyNames)
@@ -42,11 +45,10 @@ namespace MicroElements.OpenApi.FluentValidation
                     .Where(propertyRule => propertyRule.IsMatchesRule(schemaPropertyName, schemaGenerationOptions))
                     .ToArrayDebug();
 
-                foreach (var validationRuleInfo in validationRuleInfoList)
+                foreach (var validationRuleContext in validationRuleInfoList)
                 {
-                    var propertyValidators = validationRuleInfo
-                        .PropertyRule
-                        .GetValidators(schemaGenerationOptions)
+                    var propertyValidators = validationRuleContext
+                        .GetValidators()
                         .ToArrayDebug();
 
                     foreach (var propertyValidator in propertyValidators)
@@ -62,7 +64,7 @@ namespace MicroElements.OpenApi.FluentValidation
                                     {
                                         lazyLog.LogOnce();
 
-                                        IRuleContext<TSchema> ruleContext = schemaGenerationContext.Create(schemaPropertyName, validationRuleInfo, propertyValidator);
+                                        IRuleContext<TSchema> ruleContext = schemaGenerationContext.Create(schemaPropertyName, validationRuleContext, propertyValidator);
 
                                         rule.Apply(ruleContext);
 
@@ -86,21 +88,20 @@ namespace MicroElements.OpenApi.FluentValidation
         }
 
         public static void AddRulesFromIncludedValidators<TSchema>(
-            IValidator validator,
+            ValidatorContext validatorContext,
             ILogger logger,
             ISchemaGenerationContext<TSchema> schemaGenerationContext)
         {
             // Note: IValidatorDescriptor doesn't return IncludeRules so we need to get validators manually.
-            var validationRules = validator
-                .GetValidationRules(schemaGenerationContext.SchemaGenerationOptions)
+            var validationRules = validatorContext
+                .GetValidationRules()
                 .ToArrayDebug();
 
             var propertiesWithChildAdapters = validationRules
                 .Select(context => (
-                    context.PropertyRule,
+                    context.ValidationRule,
                     context
-                        .PropertyRule
-                        .GetValidators(schemaGenerationContext.SchemaGenerationOptions)
+                        .GetValidators()
                         .OfType<IChildValidatorAdaptor>()
                         .ToArray()))
                 .ToArrayDebug();
@@ -125,7 +126,7 @@ namespace MicroElements.OpenApi.FluentValidation
                                 schemaGenerationContext: schemaGenerationContext);
 
                             AddRulesFromIncludedValidators(
-                                validator: childValidator,
+                                validatorContext: new ValidatorContext(validatorContext.TypeContext, childValidator),
                                 logger: logger,
                                 schemaGenerationContext: schemaGenerationContext);
                         }
@@ -144,7 +145,7 @@ namespace MicroElements.OpenApi.FluentValidation
                                 schemaGenerationContext: childSchemaContext);
 
                             AddRulesFromIncludedValidators(
-                                validator: childValidator,
+                                validatorContext: new ValidatorContext(validatorContext.TypeContext, childValidator),
                                 logger: logger,
                                 schemaGenerationContext: childSchemaContext);
                         }

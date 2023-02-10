@@ -29,13 +29,13 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             {
                 new ApiDescription()
                 {
-                    
+
                 }
             })};
-            
+
             var apiDescriptionsProvider = new ApiDescriptionGroupCollectionProvider(
                 new ApiDescriptionGroupCollection(apiDescriptionGroups, 1));
-            
+
             return new SwaggerGenerator(swaggerGeneratorOptions, apiDescriptionsProvider, schemaGenerator);
         }
 
@@ -99,7 +99,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             Action<SchemaGenerationOptions> configureSchemaGenerationOptions)
         {
             configureSchemaGenerationOptions(_schemaGenerationOptions);
-            
+
             return this;
         }
 
@@ -161,7 +161,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
                 configureGenerator: options =>
                 {
                     var generationOptions = serviceProvider.GetService<IOptions<SchemaGenerationOptions>>();
-                    
+
                     IValidatorRegistry validatorRegistry = new ValidatorRegistry(validators, generationOptions);
 
                     FluentValidationRules fluentValidationRules = new FluentValidationRules(
@@ -170,7 +170,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
                         validatorRegistry: validatorRegistry,
                         rules: null,
                         schemaGenerationOptions: generationOptions);
-                    
+
                     options.SchemaFilters.Add(fluentValidationRules);
                 },
                 configureSerializer: configureSerializer);

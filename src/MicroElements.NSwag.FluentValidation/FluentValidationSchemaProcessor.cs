@@ -83,6 +83,9 @@ namespace MicroElements.NSwag.FluentValidation
                 return;
             }
 
+            var typeContext = new TypeContext(context.Type, _schemaGenerationOptions);
+            ValidatorContext validatorContext = new ValidatorContext(typeContext, validator);
+
             var processorContext = new NSwagSchemaProcessorContext(
                 schema: context,
                 schemaType: context.Type,
@@ -96,7 +99,7 @@ namespace MicroElements.NSwag.FluentValidation
 
             try
             {
-                AddRulesFromIncludedValidators(processorContext, validator);
+                AddRulesFromIncludedValidators(processorContext, validatorContext);
             }
             catch (Exception e)
             {
@@ -114,15 +117,15 @@ namespace MicroElements.NSwag.FluentValidation
                 schemaGenerationContext: context);
         }
 
-        private void AddRulesFromIncludedValidators(NSwagSchemaProcessorContext context, IValidator validator)
+        private void AddRulesFromIncludedValidators(NSwagSchemaProcessorContext context, ValidatorContext validatorContext)
         {
             FluentValidationSchemaBuilder.AddRulesFromIncludedValidators(
-                validator: validator,
+                validatorContext: validatorContext,
                 logger: _logger,
                 schemaGenerationContext: context);
         }
     }
-    
+
     public static class SchemaGenerationOptionsExtensions
     {
         public static SchemaGenerationOptions FillDefaults(this SchemaGenerationOptions options, IOptions<JsonSchemaGeneratorSettings>? swaggerGenOptions = null)

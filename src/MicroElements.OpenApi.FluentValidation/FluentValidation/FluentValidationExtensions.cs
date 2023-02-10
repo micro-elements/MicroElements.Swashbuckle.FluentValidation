@@ -19,54 +19,34 @@ namespace MicroElements.OpenApi.FluentValidation
         /// <summary>
         /// Gets validation rules for validator.
         /// </summary>
-        /// <param name="validator">Validator.</param>
+        /// <param name="validatorContext">Validator.</param>
         /// <returns>enumeration.</returns>
-        public static IEnumerable<ValidationRuleInfo> GetValidationRules(
-            this IValidator validator,
-            ISchemaGenerationOptions schemaGenerationOptions)
+        public static IEnumerable<ValidationRuleContext> GetValidationRules(this ValidatorContext validatorContext)
         {
-            var validationRules = validator.CreateDescriptor().Rules;
-            return validationRules.GetPropertyRules(schemaGenerationOptions);
-        }
+            var ruleFilter = validatorContext.TypeContext.SchemaGenerationOptions.RuleFilter.NotNull();
 
-        /// <summary>
-        /// Returns all IValidationRules that are PropertyRule.
-        /// If rule is CollectionPropertyRule then isCollectionRule set to true.
-        /// </summary>
-        public static IEnumerable<ValidationRuleInfo> GetPropertyRules(
-            this IEnumerable<IValidationRule> validationRules,
-            ISchemaGenerationOptions schemaGenerationOptions)
-        {
-            return validationRules
-                .Where(rule => schemaGenerationOptions.RuleFilter.Matches(rule))
-                .Select(rule =>
-                {
-                    // CollectionPropertyRule<T, TElement> is also a PropertyRule.
-                    var isCollectionRule = rule.GetType().Name.StartsWith("CollectionPropertyRule");
+            var validationRules = validatorContext
+                .Validator
+                .CreateDescriptor()
+                .Rules
+                .Select(rule => new ValidationRuleContext(validatorContext, rule))
+                .Where(ruleContext => ruleFilter.Matches(ruleContext));
 
-                    ReflectionContext? reflectionContext = null;
-                    if (rule.Member != null)
-                    {
-                        reflectionContext = ReflectionContext.CreateFromProperty(propertyInfo: rule.Member);
-                    }
-
-                    return new ValidationRuleInfo(rule, isCollectionRule, reflectionContext);
-                });
+            return validationRules;
         }
 
         /// <summary>
         /// Gets validators for <see cref="IValidationRule"/>.
         /// </summary>
-        /// <param name="validationRule">Validator.</param>
+        /// <param name="validationRuleContext">Validator.</param>
         /// <returns>enumeration.</returns>
-        public static IEnumerable<IPropertyValidator> GetValidators(
-            this IValidationRule validationRule,
-            ISchemaGenerationOptions schemaGenerationOptions)
+        public static IEnumerable<IPropertyValidator> GetValidators(this ValidationRuleContext validationRuleContext)
         {
-            return validationRule
+            return validationRuleContext
+                .ValidationRule
                 .Components
                 .NotNull()
-                .Where(component => schemaGenerationOptions.RuleComponentFilter.Matches(component))
+                .Where(component => validationRuleContext.SchemaGenerationOptions.RuleComponentFilter.NotNull().Matches(new RuleComponentContext(validationRuleContext.ValidatorContext, component)))
                 .Select(component => component.Validator);
         }
 
@@ -88,16 +68,17 @@ namespace MicroElements.OpenApi.FluentValidation
             return !hasCondition;
         }
 
-        internal static bool IsMatchesRule(this ValidationRuleInfo validationRuleInfo, string schemaPropertyName, ISchemaGenerationOptions schemaGenerationSettings)
+        internal static bool IsMatchesRule(this ValidationRuleContext validationRuleInfo, string schemaPropertyName, ISchemaGenerationOptions schemaGenerationOptions)
         {
-            if (schemaGenerationSettings.NameResolver != null && validationRuleInfo.ReflectionContext?.PropertyInfo is PropertyInfo propertyInfo)
+            if (schemaGenerationOptions.NameResolver is { } nameResolver
+                && validationRuleInfo.GetReflectionContext()?.PropertyInfo is PropertyInfo propertyInfo)
             {
-                var rulePropertyName = schemaGenerationSettings.NameResolver.GetPropertyName(propertyInfo);
+                var rulePropertyName = nameResolver.GetPropertyName(propertyInfo);
                 return rulePropertyName.EqualsIgnoreAll(schemaPropertyName);
             }
             else
             {
-                var rulePropertyName = validationRuleInfo.PropertyRule.PropertyName;
+                var rulePropertyName = validationRuleInfo.ValidationRule.PropertyName;
                 return rulePropertyName.EqualsIgnoreAll(schemaPropertyName);
             }
         }
@@ -116,7 +97,7 @@ namespace MicroElements.OpenApi.FluentValidation
 
             if (getValidatorGeneric != null)
             {
-                var validator = (IValidator)getValidatorGeneric.Invoke(null, new []{ childValidatorAdapter });
+                var validator = (IValidator)getValidatorGeneric.Invoke(null, new [] { childValidatorAdapter });
                 return validator;
             }
 

@@ -12,7 +12,7 @@ namespace MicroElements.OpenApi.FluentValidation
         Type SchemaType { get; }
 
         /// <summary>
-        /// Gets 
+        /// Gets the schema properties.
         /// </summary>
         IEnumerable<string> Properties { get; }
 
@@ -46,6 +46,6 @@ namespace MicroElements.OpenApi.FluentValidation
 
         ISchemaGenerationContext<TSchema> With(TSchema schema);
 
-        IRuleContext<TSchema> Create(string schemaPropertyName, ValidationRuleInfo validationRuleInfo, IPropertyValidator propertyValidator);
+        IRuleContext<TSchema> Create(string schemaPropertyName, ValidationRuleContext validationRuleContext, IPropertyValidator propertyValidator);
     }
 }

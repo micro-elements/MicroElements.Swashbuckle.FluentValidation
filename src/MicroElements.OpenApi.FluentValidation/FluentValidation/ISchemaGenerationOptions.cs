@@ -25,7 +25,7 @@ namespace MicroElements.OpenApi.FluentValidation
 
         /// <summary>
         /// Gets the validator search strategy.
-        /// Default: OneForType. (One model -> One validator)
+        /// Default: OneForType. (One model -> One validator).
         /// </summary>
         ValidatorSearch ValidatorSearch { get; }
 
@@ -47,12 +47,12 @@ namespace MicroElements.OpenApi.FluentValidation
         /// <summary>
         /// Gets <see cref="IValidationRule"/> filter.
         /// </summary>
-        ICondition<IValidationRule>? RuleFilter { get; }
+        ICondition<ValidationRuleContext>? RuleFilter { get; }
 
         /// <summary>
         /// Gets <see cref="IRuleComponent"/> filter.
         /// </summary>
-        ICondition<IRuleComponent>? RuleComponentFilter { get; }
+        ICondition<RuleComponentContext>? RuleComponentFilter { get; }
     }
 
     /// <summary>
@@ -88,10 +88,10 @@ namespace MicroElements.OpenApi.FluentValidation
         public ICondition<ValidatorContext>? ValidatorFilter { get; set; }
 
         /// <inheritdoc />
-        public ICondition<IValidationRule>? RuleFilter { get; set; }
+        public ICondition<ValidationRuleContext>? RuleFilter { get; set; }
 
         /// <inheritdoc />
-        public ICondition<IRuleComponent>? RuleComponentFilter { get; set; }
+        public ICondition<RuleComponentContext>? RuleComponentFilter { get; set; }
 
         /// <summary>
         /// Sets values that compatible with FluentValidation.
@@ -123,57 +123,33 @@ namespace MicroElements.OpenApi.FluentValidation
     }
 
     /// <summary>
-    /// Context for validation filter.
+    /// Type context for filters.
     /// </summary>
     /// <param name="TypeToValidate">Type to validate.</param>
+    /// <param name="SchemaGenerationOptions">Schema generation options.</param>
+    public record TypeContext(Type TypeToValidate, ISchemaGenerationOptions SchemaGenerationOptions);
+
+    /// <summary>
+    /// Context for validation filter.
+    /// </summary>
+    /// <param name="TypeContext">Type context.</param>
     /// <param name="Validator">Validator.</param>
-    public record ValidatorContext(Type TypeToValidate, IValidator Validator);
+    public record ValidatorContext(TypeContext TypeContext, IValidator Validator) :
+        TypeContext(TypeContext.TypeToValidate, TypeContext.SchemaGenerationOptions);
 
     /// <summary>
-    /// Services that can be injected with DI.
+    /// Context for <see cref="IValidationRule"/> filters.
     /// </summary>
-    public interface IServicesContext
-    {
-        INameResolver? NameResolver { get; }
-    }
+    /// <param name="ValidatorContext">Validator context.</param>
+    /// <param name="ValidationRule">Validation rule.</param>
+    public record ValidationRuleContext(ValidatorContext ValidatorContext, IValidationRule ValidationRule)
+        : ValidatorContext(ValidatorContext.TypeContext, ValidatorContext.Validator);
 
     /// <summary>
-    /// Services that can be injected with DI.
+    /// Context for <see cref="IRuleComponent"/> filters.
     /// </summary>
-    public class ServicesContext : IServicesContext
-    {
-        public INameResolver? NameResolver { get; set; }
-
-        public ServicesContext(INameResolver? nameResolver = null)
-        {
-            NameResolver = nameResolver;
-        }
-    }
-
-    public static class SchemaGenerationOptionsExtensions
-    {
-        public static SchemaGenerationOptions FillDefaultValues(this SchemaGenerationOptions options, IServiceProvider serviceProvider)
-        {
-            options.NameResolver ??= (INameResolver)serviceProvider.GetService(typeof(INameResolver));
-
-            options.ValidatorFilter ??= new Condition<ValidatorContext>(context => context.Validator.CanValidateInstancesOfType(context.TypeToValidate));
-            options.RuleFilter ??= new Condition<IValidationRule>(rule => rule.HasNoCondition());
-            options.RuleComponentFilter ??= new Condition<IRuleComponent>(rule => rule.HasNoCondition());
-
-            return options;
-        }
-
-        public static SchemaGenerationOptions SetFrom(this SchemaGenerationOptions options, ISchemaGenerationOptions other)
-        {
-            options.SetNotNullableIfMinLengthGreaterThenZero = other.SetNotNullableIfMinLengthGreaterThenZero;
-            options.UseAllOfForMultipleRules = other.UseAllOfForMultipleRules;
-            options.ValidatorSearch = other.ValidatorSearch;
-            options.NameResolver = other.NameResolver;
-            options.SchemaIdSelector = other.SchemaIdSelector;
-            options.ValidatorFilter = other.ValidatorFilter;
-            options.RuleFilter = other.RuleFilter;
-            options.RuleComponentFilter = other.RuleComponentFilter;
-            return options;
-        }
-    }
+    /// <param name="ValidatorContext">Validator context.</param>
+    /// <param name="RuleComponent">Rule component.</param>
+    public record RuleComponentContext(ValidatorContext ValidatorContext, IRuleComponent RuleComponent)
+        : ValidatorContext(ValidatorContext.TypeContext, ValidatorContext.Validator);
 }

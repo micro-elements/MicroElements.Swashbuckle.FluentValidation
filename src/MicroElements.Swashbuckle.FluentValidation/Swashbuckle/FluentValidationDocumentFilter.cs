@@ -163,6 +163,9 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 if (validator == null)
                     continue;
 
+                var typeContext = new TypeContext(item.ModelType, _schemaGenerationOptions);
+                ValidatorContext validatorContext = new ValidatorContext(typeContext, validator);
+
                 var schemaContext = new SchemaGenerationContext(
                     schemaRepository: context.SchemaRepository,
                     schemaGenerator: context.SchemaGenerator,
@@ -175,10 +178,11 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
                 try
                 {
-                    AddRulesFromIncludedValidators(schemaContext, validator);
+                    AddRulesFromIncludedValidators(schemaContext, validatorContext);
                 }
                 catch (Exception e)
                 {
+                    //TODO: functional
                     _logger.LogWarning(0, e, $"Applying IncludeRules for type '{item.ModelType}' fails.");
                 }
             }
@@ -208,7 +212,6 @@ namespace MicroElements.Swashbuckle.FluentValidation
             }
         }
 
-        
         private void ApplyRulesToSchema(SchemaGenerationContext schemaGenerationContext, IValidator validator)
         {
             FluentValidationSchemaBuilder.ApplyRulesToSchema(
@@ -219,10 +222,11 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 schemaGenerationContext: schemaGenerationContext);
         }
 
-        private void AddRulesFromIncludedValidators(SchemaGenerationContext schemaGenerationContext, IValidator validator)
+        [Obsolete("Есть повтор")]
+        private void AddRulesFromIncludedValidators(SchemaGenerationContext schemaGenerationContext, ValidatorContext validatorContext)
         {
             FluentValidationSchemaBuilder.AddRulesFromIncludedValidators(
-                validator: validator,
+                validatorContext: validatorContext,
                 logger: _logger,
                 schemaGenerationContext: schemaGenerationContext);
         }

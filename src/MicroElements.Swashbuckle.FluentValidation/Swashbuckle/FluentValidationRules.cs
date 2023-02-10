@@ -78,6 +78,8 @@ namespace MicroElements.Swashbuckle.FluentValidation
             if (context.Type.IsPrimitiveType())
                 return;
 
+            var typeContext = new TypeContext(context.Type, _schemaGenerationOptions);
+
             var (validators, _) = Functional
                 .Try(() => _validatorRegistry.GetValidators(context.Type).ToArray())
                 .OnError(e => _logger.LogWarning(0, e, "GetValidators for type '{ModelType}' failed", context.Type));
@@ -93,6 +95,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
             foreach (var validator in validators)
             {
+                var validatorContext = new ValidatorContext(typeContext, validator);
                 var schemaContext = new SchemaGenerationContext(
                     schemaRepository: context.SchemaRepository,
                     schemaGenerator: context.SchemaGenerator,
@@ -105,7 +108,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
                 try
                 {
-                    AddRulesFromIncludedValidators(schemaContext, validator);
+                    AddRulesFromIncludedValidators(schemaContext, validatorContext);
                 }
                 catch (Exception e)
                 {
@@ -124,10 +127,10 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 schemaGenerationContext: schemaGenerationContext);
         }
 
-        private void AddRulesFromIncludedValidators(SchemaGenerationContext schemaGenerationContext, IValidator validator)
+        private void AddRulesFromIncludedValidators(SchemaGenerationContext schemaGenerationContext, ValidatorContext validatorContext)
         {
             FluentValidationSchemaBuilder.AddRulesFromIncludedValidators(
-                validator: validator,
+                validatorContext: validatorContext,
                 logger: _logger,
                 schemaGenerationContext: schemaGenerationContext);
         }

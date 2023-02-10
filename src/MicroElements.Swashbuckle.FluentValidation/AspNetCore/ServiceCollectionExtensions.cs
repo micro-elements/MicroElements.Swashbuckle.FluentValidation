@@ -78,13 +78,13 @@ namespace MicroElements.Swashbuckle.FluentValidation.AspNetCore
             services.TryAdd(new ServiceDescriptor(typeof(IValidatorRegistry), typeof(ServiceProviderValidatorRegistry), registrationOptions.ServiceLifetime));
 
             // DI injected services
-            services.AddTransient<IServicesContext, ServicesContext>();
+            services.TryAddTransient<IServicesContext, ServicesContext>();
 
             // Schema generation configuration
             if (configure != null)
                 services.Configure<SchemaGenerationOptions>(configure);
 
-            services.AddTransient<IPostConfigureOptions<SchemaGenerationOptions>, PostConfigureSchemaGenerationOptions>();
+            services.AddTransient<IPostConfigureOptions<SchemaGenerationOptions>, FillDefaultValuesPostConfigureOptions>();
 
             return services;
         }

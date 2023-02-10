@@ -20,9 +20,11 @@ namespace MicroElements.OpenApi.FluentValidation
             Type modelType,
             ISchemaGenerationOptions options)
         {
+            var typeContext = new TypeContext(modelType, options);
+
             foreach (var validator in validators)
             {
-                if (options.ValidatorFilter.NotNull().Matches(new ValidatorContext(modelType, validator)))
+                if (options.ValidatorFilter.NotNull().Matches(new ValidatorContext(typeContext, validator)))
                 {
                     yield return validator;
 
@@ -45,6 +47,7 @@ namespace MicroElements.OpenApi.FluentValidation
             //TODO: to options
             bool searchBaseTypeValidators = true)
         {
+            var typeContext = new TypeContext(modelType, options);
             ICondition<ValidatorContext> validatorFilter = options.ValidatorFilter.NotNull();
 
             Type validatorType = typeof(IValidator<>).MakeGenericType(modelType);
@@ -55,7 +58,7 @@ namespace MicroElements.OpenApi.FluentValidation
 
             foreach (var validator in validators)
             {
-                if (validatorFilter is null || validatorFilter.Matches(new ValidatorContext(modelType, validator)))
+                if (validatorFilter is null || validatorFilter.Matches(new ValidatorContext(typeContext, validator)))
                 {
                     yield return validator;
 

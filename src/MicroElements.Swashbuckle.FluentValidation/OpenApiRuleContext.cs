@@ -38,19 +38,19 @@ namespace MicroElements.Swashbuckle.FluentValidation
             {
                 if (!Schema.Properties.ContainsKey(PropertyKey))
                 {
-                    Type? schemaType = ValidationRuleInfo.ReflectionContext?.Type;
+                    Type? schemaType = ValidationRuleInfo.GetReflectionContext()?.Type;
                     throw new ApplicationException($"Schema for type '{schemaType}' does not contain property '{PropertyKey}'.\nRegister {typeof(INameResolver)} if name in type differs from name in json.");
                 }
 
                 var schemaProperty = Schema.Properties[PropertyKey];
-                return !ValidationRuleInfo.IsCollectionRule ? schemaProperty : schemaProperty.Items;
+                return !ValidationRuleInfo.IsCollectionRule() ? schemaProperty : schemaProperty.Items;
             }
         }
 
         /// <summary>
         /// Gets <see cref="IValidationRule"/> with extended information.
         /// </summary>
-        private ValidationRuleInfo ValidationRuleInfo { get; }
+        private ValidationRuleContext ValidationRuleInfo { get; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="OpenApiRuleContext"/> class.
@@ -62,7 +62,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
         public OpenApiRuleContext(
             OpenApiSchema schema,
             string propertyKey,
-            ValidationRuleInfo validationRuleInfo,
+            ValidationRuleContext validationRuleInfo,
             IPropertyValidator propertyValidator)
         {
             Schema = schema;

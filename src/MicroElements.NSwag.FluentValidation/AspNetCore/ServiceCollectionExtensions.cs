@@ -42,7 +42,7 @@ namespace MicroElements.NSwag.FluentValidation.AspNetCore
             if (configure != null)
                 services.Configure<SchemaGenerationOptions>(configure);
 
-            services.AddTransient<IPostConfigureOptions<SchemaGenerationOptions>, PostConfigureSchemaGenerationOptions>();
+            services.AddTransient<IPostConfigureOptions<SchemaGenerationOptions>, FillDefaultValuesPostConfigureOptions>();
 
             return services;
         }

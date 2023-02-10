@@ -55,10 +55,10 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <inheritdoc />
         public IRuleContext<OpenApiSchema> Create(
             string schemaPropertyName,
-            ValidationRuleInfo validationRuleInfo,
+            ValidationRuleContext validationRuleContext,
             IPropertyValidator propertyValidator)
         {
-            return new OpenApiRuleContext(Schema, schemaPropertyName, validationRuleInfo, propertyValidator);
+            return new OpenApiRuleContext(Schema, schemaPropertyName, validationRuleContext, propertyValidator);
         }
 
         /// <summary>

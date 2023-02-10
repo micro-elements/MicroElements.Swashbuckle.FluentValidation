@@ -26,7 +26,7 @@ namespace MicroElements.NSwag.FluentValidation
         /// <inheritdoc />
         public IRuleContext<SchemaProcessorContext> Create(
             string schemaPropertyName,
-            ValidationRuleInfo validationRuleInfo,
+            ValidationRuleContext validationRuleContext,
             IPropertyValidator propertyValidator)
         {
             return new NSwagRuleContext(Schema, schemaPropertyName, propertyValidator);

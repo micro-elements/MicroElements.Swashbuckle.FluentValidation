@@ -30,12 +30,5 @@ namespace MicroElements.OpenApi.FluentValidation
             Type = type;
             PropertyInfo = propertyInfo;
         }
-
-        public static ReflectionContext CreateFromProperty(MemberInfo propertyInfo)
-        {
-            return new ReflectionContext(
-                type: propertyInfo.ReflectedType,
-                propertyInfo: propertyInfo);
-        }
     }
 }
