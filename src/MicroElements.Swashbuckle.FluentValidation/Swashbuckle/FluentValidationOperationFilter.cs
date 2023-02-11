@@ -15,7 +15,7 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 namespace MicroElements.Swashbuckle.FluentValidation
 {
     /// <summary>
-    /// Swagger <see cref="IOperationFilter"/> that applies FluentValidation rules 
+    /// Swagger <see cref="IOperationFilter"/> that applies FluentValidation rules
     /// for GET parameters bounded from validatable models.
     /// </summary>
     public class FluentValidationOperationFilter : IOperationFilter
@@ -61,8 +61,6 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
             // Swashbuckle services
             _schemaGenerationOptions.FillFromSwashbuckleOptions(swaggerGenOptions);
-
-            _schemaGenerationOptions.FillDefaultValues(serviceProvider);
 
             _logger.LogDebug("FluentValidationOperationFilter Created");
         }

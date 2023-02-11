@@ -53,8 +53,6 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
             // Swashbuckle services
             _schemaGenerationOptions.FillFromSwashbuckleOptions(swaggerGenOptions);
-
-            _schemaGenerationOptions.FillDefaultValues(serviceProvider);
         }
 
         record SchemaItem
