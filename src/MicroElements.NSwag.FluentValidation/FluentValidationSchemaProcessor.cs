@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) MicroElements. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using FluentValidation;
@@ -61,7 +64,7 @@ namespace MicroElements.NSwag.FluentValidation
         {
             if (!context.Schema.IsObject || context.Schema.Properties.Count == 0)
             {
-                // Ignore other 
+                // Ignore other
                 // Ignore objects with no properties
                 return;
             }

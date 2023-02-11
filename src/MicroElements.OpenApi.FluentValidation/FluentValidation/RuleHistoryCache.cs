@@ -1,4 +1,7 @@
-﻿using System.Collections.Generic;
+﻿// Copyright (c) MicroElements. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using FluentValidation.Validators;
@@ -7,7 +10,7 @@ namespace MicroElements.OpenApi.FluentValidation
 {
     internal static class RuleHistoryCache
     {
-        private static ConditionalWeakTable<object, List<RuleCacheItem>> SchemaRuleHistory { get; } = new ConditionalWeakTable<object, List<RuleCacheItem>>();
+        private static ConditionalWeakTable<object, List<RuleCacheItem>> SchemaRuleHistory { get; } = new();
 
         internal record RuleCacheItem(
             string SchemaTypeName,
