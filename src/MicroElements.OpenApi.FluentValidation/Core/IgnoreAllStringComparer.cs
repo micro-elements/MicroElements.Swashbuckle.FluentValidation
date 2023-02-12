@@ -11,14 +11,20 @@ namespace MicroElements.OpenApi.Core
     /// </summary>
     public class IgnoreAllStringComparer : StringComparer
     {
+        /// <summary>
+        /// Gets global static instance of string comparer that compares only by symbols ignore case.
+        /// </summary>
         public static readonly StringComparer Instance = new IgnoreAllStringComparer();
 
         /// <inheritdoc />
-        public override int Compare(string left, string right)
+        public override int Compare(string? left, string? right)
         {
+            if (ReferenceEquals(left, right)) return 0;
+            if (left == null || right == null) return InvariantCultureIgnoreCase.Compare(left, right);
+
             int leftIndex = 0;
             int rightIndex = 0;
-            int compare = 0;
+            int compare;
             while (true)
             {
                 GetNextSymbol(left, ref leftIndex, out char leftSymbol);
@@ -35,10 +41,10 @@ namespace MicroElements.OpenApi.Core
         }
 
         /// <inheritdoc />
-        public override bool Equals(string left, string right)
+        public override bool Equals(string? left, string? right)
         {
-            if (left == null || right == null)
-                return false;
+            if (ReferenceEquals(left, right)) return true;
+            if (left == null || right == null) return false;
 
             int leftIndex = 0;
             int rightIndex = 0;
@@ -67,14 +73,14 @@ namespace MicroElements.OpenApi.Core
                 int hash = 0;
                 while (GetNextSymbol(obj, ref index, out char symbol))
                 {
-                    hash = 31 * hash + char.ToUpperInvariant(symbol).GetHashCode();
+                    hash = (31 * hash) + char.ToUpperInvariant(symbol).GetHashCode();
                 }
 
                 return hash;
             }
         }
 
-        internal static bool GetNextSymbol(string value, ref int startIndex, out char symbol)
+        private static bool GetNextSymbol(string value, ref int startIndex, out char symbol)
         {
             while (startIndex >= 0 && startIndex < value.Length)
             {

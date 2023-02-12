@@ -60,7 +60,7 @@ namespace MicroElements.OpenApi.FluentValidation
         }
 
         /// <summary>
-        /// Returns a <see cref="bool"/> indicating if the <paramref name="propertyRule"/> is conditional.
+        /// Returns a <see cref="bool"/> indicating if the <paramref name="ruleComponent"/> is conditional.
         /// </summary>
         internal static bool HasNoCondition(this IRuleComponent ruleComponent)
         {
@@ -97,7 +97,7 @@ namespace MicroElements.OpenApi.FluentValidation
 
             if (getValidatorGeneric != null)
             {
-                var validator = (IValidator)getValidatorGeneric.Invoke(null, new [] { childValidatorAdapter });
+                var validator = (IValidator)getValidatorGeneric.Invoke(null, new object[] { childValidatorAdapter });
                 return validator;
             }
 
@@ -113,7 +113,7 @@ namespace MicroElements.OpenApi.FluentValidation
             if (getValidatorMethod != null)
             {
                 // Fake context. We have not got real context because no validation yet.
-                var fakeContext = new ValidationContext<T>(default);
+                var fakeContext = new ValidationContext<T>(default!);
                 object? value = null;
 
                 var validator = (IValidator)getValidatorMethod.Invoke(childValidatorAdapter, new[] { fakeContext, value });

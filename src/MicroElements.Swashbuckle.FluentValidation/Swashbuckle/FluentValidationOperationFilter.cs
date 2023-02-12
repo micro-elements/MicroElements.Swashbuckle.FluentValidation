@@ -59,9 +59,6 @@ namespace MicroElements.Swashbuckle.FluentValidation
             _rules = new DefaultFluentValidationRuleProvider(schemaGenerationOptions).GetRules().ToArray().OverrideRules(rules);
             _schemaGenerationOptions = schemaGenerationOptions?.Value ?? new SchemaGenerationOptions();
 
-            // Swashbuckle services
-            _schemaGenerationOptions.FillFromSwashbuckleOptions(swaggerGenOptions);
-
             _logger.LogDebug("FluentValidationOperationFilter Created");
         }
 

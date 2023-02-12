@@ -53,9 +53,6 @@ namespace MicroElements.Swashbuckle.FluentValidation
             // MicroElements services
             _rules = new DefaultFluentValidationRuleProvider(schemaGenerationOptions).GetRules().ToArray().OverrideRules(rules);
             _schemaGenerationOptions = schemaGenerationOptions?.Value ?? new SchemaGenerationOptions();
-
-            // Swashbuckle services
-            _schemaGenerationOptions.FillFromSwashbuckleOptions(swaggerGenOptions);
         }
 
         record SchemaItem
@@ -63,7 +60,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             public Type ModelType { get; init; }
             public string SchemaName { get; init; }
             public OpenApiSchema Schema { get; init; }
-        };
+        }
 
         record ParameterItem
         {
@@ -73,7 +70,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             public string SchemaName { get; init; }
             public OpenApiSchema Schema { get; init; }
             public OpenApiSchema ParameterSchema { get; init; }
-        };
+        }
 
         /// <inheritdoc />
         public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)

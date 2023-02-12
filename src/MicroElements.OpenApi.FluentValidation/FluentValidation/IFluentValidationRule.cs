@@ -23,6 +23,10 @@ namespace MicroElements.OpenApi.FluentValidation
         IReadOnlyCollection<Func<IPropertyValidator, bool>> Conditions { get; }
     }
 
+    /// <summary>
+    /// Generic FluentValidationRule. Knows how to modify OpenApi schema.
+    /// </summary>
+    /// <typeparam name="TSchema">OpenApi implementation.</typeparam>
     public interface IFluentValidationRule<in TSchema> : IFluentValidationRule
     {
         /// <summary>

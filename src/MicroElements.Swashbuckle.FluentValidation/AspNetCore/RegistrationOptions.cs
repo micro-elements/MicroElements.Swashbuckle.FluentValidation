@@ -32,7 +32,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.AspNetCore
         public bool RegisterSystemTextJsonNameResolver { get; set; } = true;
 
         /// <summary>
-        /// ServiceLifetime to use for service registration.
+        /// Gets or sets a ServiceLifetime to use for services registration.
         /// </summary>
         public ServiceLifetime ServiceLifetime { get; set; } = ServiceLifetime.Scoped;
 

@@ -14,7 +14,7 @@ namespace MicroElements.OpenApi.Core
     internal class LazyLog
     {
         private readonly Lazy<object> _lazyLog;
-        
+
         public LazyLog(ILogger logger, Action<ILogger> logAction)
         {
             _lazyLog = new Lazy<object>(() =>
@@ -23,12 +23,12 @@ namespace MicroElements.OpenApi.Core
                 return new object();
             });
         }
-        
+
         /// <summary>
         /// Executes log action only once.
         /// </summary>
         public void LogOnce() => IgnoreResult(_lazyLog.Value);
-        
+
         [MethodImpl(MethodImplOptions.NoInlining)]
         [SuppressMessage("ReSharper", "UnusedParameter.Local", Justification = "Ok.")]
         [SuppressMessage("Style", "IDE0060:Remove unused parameter", Justification = "Ok.")]

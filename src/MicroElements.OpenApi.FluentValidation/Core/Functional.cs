@@ -4,8 +4,12 @@
 using System;
 using System.Collections.Generic;
 
+// ReSharper disable UnusedTupleComponentInReturnValue
 namespace MicroElements.OpenApi.Core
 {
+    /// <summary>
+    /// Very light functional extensions.
+    /// </summary>
     internal static class Functional
     {
         public static (T? Result, Exception? Exception) Try<T>(Func<T> func)
@@ -21,11 +25,11 @@ namespace MicroElements.OpenApi.Core
             }
         }
 
-        public static bool IsSuccess<T>(this in (T? Result, Exception? Exception) result) => result.Exception == null;
+        internal static bool IsSuccess<T>(this in (T? Result, Exception? Exception) result) => result.Exception == null;
 
-        public static bool IsError<T>(this in (T? Result, Exception? Exception) result) => !result.IsSuccess();
+        internal static bool IsError<T>(this in (T? Result, Exception? Exception) result) => !result.IsSuccess();
 
-        public static (T? Result, Exception? Exception) OnError<T>(this in (T? Result, Exception? Exception) result, Action<Exception> onError)
+        internal static (T? Result, Exception? Exception) OnError<T>(this in (T? Result, Exception? Exception) result, Action<Exception> onError)
         {
             if (result.Exception != null)
             {
@@ -35,7 +39,7 @@ namespace MicroElements.OpenApi.Core
             return result;
         }
 
-        public static (T? Result, Exception? Exception) OnSuccess<T>(this in (T? Result, Exception? Exception) result, Action<T> onSuccess)
+        internal static (T? Result, Exception? Exception) OnSuccess<T>(this in (T? Result, Exception? Exception) result, Action<T?> onSuccess)
         {
             if (result.Exception == null)
             {
@@ -45,7 +49,7 @@ namespace MicroElements.OpenApi.Core
             return result;
         }
 
-        public static IEnumerable<T> EnumOneOrMany<T>(this IEnumerable<T> values, bool onlyOne)
+        internal static IEnumerable<T> EnumOneOrMany<T>(this IEnumerable<T> values, bool onlyOne)
         {
             foreach (var value in values)
             {

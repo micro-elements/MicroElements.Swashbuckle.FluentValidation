@@ -7,11 +7,15 @@ using FluentValidation.Validators;
 
 namespace MicroElements.OpenApi.FluentValidation
 {
+    /// <summary>
+    /// Extensions for FluentValidationRules.
+    /// </summary>
     public static class FluentValidationRuleExtensions
     {
         /// <summary>
         /// Overrides source rules with <paramref name="overrides"/> by name.
         /// </summary>
+        /// <typeparam name="TSchema">Schema implementation.</typeparam>
         /// <param name="source">Source rules.</param>
         /// <param name="overrides">Overrides list.</param>
         /// <returns>New rule list.</returns>
@@ -36,6 +40,7 @@ namespace MicroElements.OpenApi.FluentValidation
         /// <summary>
         /// Checks that validator is matches rule.
         /// </summary>
+        /// <param name="rule">The rule.</param>
         /// <param name="validator">Validator.</param>
         /// <returns>True if validator matches rule.</returns>
         public static bool IsMatches(this IFluentValidationRule rule, IPropertyValidator validator)

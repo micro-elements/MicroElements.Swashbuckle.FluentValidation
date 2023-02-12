@@ -33,6 +33,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <param name="loggerFactory"><see cref="ILoggerFactory"/> for logging. Can be null.</param>
         /// <param name="serviceProvider">Validator factory.</param>
         /// <param name="validatorRegistry">Gets validators for a particular type.</param>
+        /// <param name="fluentValidationRuleProvider">Rules provider.</param>
         /// <param name="rules">External FluentValidation rules. External rule overrides default rule with the same name.</param>
         /// <param name="schemaGenerationOptions">Schema generation options.</param>
         /// <param name="swaggerGenOptions">SwaggerGenOptions.</param>
@@ -43,6 +44,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
             /* MicroElements services */
             IValidatorRegistry? validatorRegistry = null,
+            IFluentValidationRuleProvider<OpenApiSchema>? fluentValidationRuleProvider = null,
             IEnumerable<FluentValidationRule>? rules = null,
             IOptions<SchemaGenerationOptions>? schemaGenerationOptions = null,
 
@@ -56,12 +58,9 @@ namespace MicroElements.Swashbuckle.FluentValidation
             _validatorRegistry = validatorRegistry ?? new ServiceProviderValidatorRegistry(serviceProvider, schemaGenerationOptions);
 
             // MicroElements services
-            //TODO: Inject IFluentValidationRuleProvider
-            _rules = new DefaultFluentValidationRuleProvider(schemaGenerationOptions).GetRules().ToArray().OverrideRules(rules);
+            fluentValidationRuleProvider ??= new DefaultFluentValidationRuleProvider(schemaGenerationOptions);
+            _rules = fluentValidationRuleProvider.GetRules().ToArray().OverrideRules(rules);
             _schemaGenerationOptions = schemaGenerationOptions?.Value ?? new SchemaGenerationOptions();
-
-            // Swashbuckle services
-            _schemaGenerationOptions.FillFromSwashbuckleOptions(swaggerGenOptions);
 
             _logger.LogDebug("FluentValidationRules Created");
         }
@@ -84,12 +83,6 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
             if (validators == null)
                 return;
-
-            if (validators.Length > 1)
-            {
-                //TODO: remove debug
-                int i = 0;
-            }
 
             foreach (var validator in validators)
             {

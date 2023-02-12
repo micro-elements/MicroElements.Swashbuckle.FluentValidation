@@ -65,7 +65,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
         }
 
         /// <summary>
-        /// Sets <see cref="Apply"/> action.
+        /// Sets <see cref="FluentValidationRule.Apply"/> action.
         /// </summary>
         /// <param name="rule">Source rule.</param>
         /// <param name="applyAction">New apply action.</param>

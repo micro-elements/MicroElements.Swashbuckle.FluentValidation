@@ -2,13 +2,14 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
-using MicroElements.OpenApi.AspNetCore;
 using MicroElements.OpenApi.FluentValidation;
 using MicroElements.Swashbuckle.FluentValidation.Generation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
+using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace MicroElements.Swashbuckle.FluentValidation.AspNetCore
@@ -16,6 +17,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.AspNetCore
     /// <summary>
     /// ServiceCollection extensions.
     /// </summary>
+    [SuppressMessage("ReSharper", "RedundantTypeArgumentsOfMethod", Justification = "More obvious")]
     public static class ServiceCollectionExtensions
     {
         /// <summary>
@@ -38,12 +40,12 @@ namespace MicroElements.Swashbuckle.FluentValidation.AspNetCore
             {
                 if (registrationOptions.ExperimentalUseDocumentFilter)
                 {
-                    services.Add(new ServiceDescriptor(typeof(FluentValidationDocumentFilter), typeof(FluentValidationDocumentFilter), registrationOptions.ServiceLifetime));
+                    services.TryAdd(new ServiceDescriptor(typeof(FluentValidationDocumentFilter), typeof(FluentValidationDocumentFilter), registrationOptions.ServiceLifetime));
                 }
                 else
                 {
-                    services.Add(new ServiceDescriptor(typeof(FluentValidationRules), typeof(FluentValidationRules), registrationOptions.ServiceLifetime));
-                    services.Add(new ServiceDescriptor(typeof(FluentValidationOperationFilter), typeof(FluentValidationOperationFilter), registrationOptions.ServiceLifetime));
+                    services.TryAdd(new ServiceDescriptor(typeof(FluentValidationRules), typeof(FluentValidationRules), registrationOptions.ServiceLifetime));
+                    services.TryAdd(new ServiceDescriptor(typeof(FluentValidationOperationFilter), typeof(FluentValidationOperationFilter), registrationOptions.ServiceLifetime));
                 }
 
                 services.Configure<SwaggerGenOptions>(options =>
@@ -64,8 +66,8 @@ namespace MicroElements.Swashbuckle.FluentValidation.AspNetCore
             // Register JsonSerializerOptions (reference to Microsoft.AspNetCore.Mvc.JsonOptions.Value)
             if (registrationOptions.RegisterJsonSerializerOptions)
             {
-                services.AddTransient<AspNetJsonSerializerOptions>(provider => new AspNetJsonSerializerOptions(provider.GetJsonSerializerOptionsOrDefault()));
-                services.AddTransient<JsonSerializerOptions>(provider => provider.GetService<AspNetJsonSerializerOptions>().Value);
+                services.TryAddTransient<AspNetJsonSerializerOptions>(provider => new AspNetJsonSerializerOptions(provider.GetJsonSerializerOptionsOrDefault()));
+                services.TryAddTransient<JsonSerializerOptions>(provider => provider.GetService<AspNetJsonSerializerOptions>()?.Value!);
             }
 
             // Adds name resolver. For example when property name in schema differs from property name in dotnet class.
@@ -77,6 +79,9 @@ namespace MicroElements.Swashbuckle.FluentValidation.AspNetCore
             // Adds default IValidatorRegistry
             services.TryAdd(new ServiceDescriptor(typeof(IValidatorRegistry), typeof(ServiceProviderValidatorRegistry), registrationOptions.ServiceLifetime));
 
+            // Adds IFluentValidationRuleProvider
+            services.TryAddSingleton<IFluentValidationRuleProvider<OpenApiSchema>, DefaultFluentValidationRuleProvider>();
+
             // DI injected services
             services.TryAddTransient<IServicesContext, ServicesContext>();
 
@@ -84,7 +89,9 @@ namespace MicroElements.Swashbuckle.FluentValidation.AspNetCore
             if (configure != null)
                 services.Configure<SchemaGenerationOptions>(configure);
 
-            services.AddTransient<IPostConfigureOptions<SchemaGenerationOptions>, FillDefaultValuesPostConfigureOptions>();
+            // PostConfigure SchemaGenerationOptions
+            services.TryAddEnumerable(
+                ServiceDescriptor.Transient<IPostConfigureOptions<SchemaGenerationOptions>, FillSchemaGenerationOptions>());
 
             return services;
         }

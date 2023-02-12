@@ -11,11 +11,20 @@ using Microsoft.Extensions.Logging;
 
 namespace MicroElements.OpenApi.FluentValidation
 {
+    /// <summary>
+    /// Schema builder extensions.
+    /// </summary>
     public static class FluentValidationSchemaBuilder
     {
         /// <summary>
         /// Applies rules from validator.
         /// </summary>
+        /// <param name="schemaType">Schema type.</param>
+        /// <param name="schemaPropertyNames"></param>
+        /// <param name="validator"></param>
+        /// <param name="logger"></param>
+        /// <param name="schemaGenerationContext"></param>
+        /// <typeparam name="TSchema"></typeparam>
         public static void ApplyRulesToSchema<TSchema>(
             Type schemaType,
             IEnumerable<string>? schemaPropertyNames,

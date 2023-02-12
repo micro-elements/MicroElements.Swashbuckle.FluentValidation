@@ -3,6 +3,8 @@ using FluentValidation;
 using FluentValidation.Validators;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Mvc;
+// ReSharper disable All
+#pragma warning disable CS8618
 
 namespace SampleWebApi.Controllers
 {
@@ -41,7 +43,7 @@ namespace SampleWebApi.Controllers
 
             return Ok();
         }
-        
+
         [HttpPost("[action]")]
         public IActionResult AddSampleWithNoRequired([FromBody] SampleWithNoRequired customer)
         {
@@ -72,7 +74,7 @@ namespace SampleWebApi.Controllers
             }
         }
     }
-    
+
     public class Sample
     {
         public string PropertyWithNoRules { get; set; }

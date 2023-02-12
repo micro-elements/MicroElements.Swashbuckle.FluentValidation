@@ -17,11 +17,6 @@ namespace MicroElements.Swashbuckle.FluentValidation
     /// </summary>
     public class DefaultFluentValidationRuleProvider : IFluentValidationRuleProvider<OpenApiSchema>
     {
-        /// <summary>
-        /// Gets global static default <see cref="DefaultFluentValidationRuleProvider"/>.
-        /// </summary>
-        public static DefaultFluentValidationRuleProvider Instance { get; } = new DefaultFluentValidationRuleProvider();
-
         private readonly IOptions<SchemaGenerationOptions> _options;
 
         /// <summary>
