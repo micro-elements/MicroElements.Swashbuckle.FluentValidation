@@ -33,6 +33,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <param name="loggerFactory"><see cref="ILoggerFactory"/> for logging. Can be null.</param>
         /// <param name="serviceProvider">Validator factory.</param>
         /// <param name="validatorRegistry">Gets validators for a particular type.</param>
+        /// <param name="fluentValidationRuleProvider">Rules provider.</param>
         /// <param name="rules">External FluentValidation rules. External rule overrides default rule with the same name.</param>
         /// <param name="schemaGenerationOptions">Schema generation options.</param>
         public FluentValidationOperationFilter(
@@ -42,6 +43,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
             /* MicroElements services */
             IValidatorRegistry? validatorRegistry = null,
+            IFluentValidationRuleProvider<OpenApiSchema>? fluentValidationRuleProvider = null,
             IEnumerable<FluentValidationRule>? rules = null,
             IOptions<SchemaGenerationOptions>? schemaGenerationOptions = null)
         {
@@ -52,7 +54,8 @@ namespace MicroElements.Swashbuckle.FluentValidation
             _validatorRegistry = validatorRegistry ?? new ServiceProviderValidatorRegistry(serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider)));
 
             // MicroElements services
-            _rules = new DefaultFluentValidationRuleProvider(schemaGenerationOptions).GetRules().ToArray().OverrideRules(rules);
+            fluentValidationRuleProvider ??= new DefaultFluentValidationRuleProvider(schemaGenerationOptions);
+            _rules = fluentValidationRuleProvider.GetRules().ToArray().OverrideRules(rules);
             _schemaGenerationOptions = schemaGenerationOptions?.Value ?? new SchemaGenerationOptions();
 
             _logger.LogDebug("FluentValidationOperationFilter Created");

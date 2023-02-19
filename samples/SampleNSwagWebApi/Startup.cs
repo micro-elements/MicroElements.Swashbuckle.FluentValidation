@@ -12,7 +12,7 @@ namespace SampleNSwagWebApi
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            // HttpContextServiceProviderValidatorFactory requires access to HttpContext
+            // HttpContextValidatorRegistry requires access to HttpContext
             services.AddHttpContextAccessor();
 
             services
@@ -30,7 +30,7 @@ namespace SampleNSwagWebApi
                 // Add the fluent validations schema processor
                 settings.SchemaProcessors.Add(fluentValidationSchemaProcessor);
             });
-            
+
             // Register FV validators
             services.AddValidatorsFromAssemblyContaining<Startup>(lifetime: ServiceLifetime.Scoped);
 

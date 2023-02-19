@@ -1,4 +1,5 @@
 # Changes in 6.0.0 - beta.3:
+- Added: `IFluentValidationRuleProvider` can be replaced with DI
 - Added: `ISchemaGenerationOptions.ValidatorSearch`
   - `IsOneValidatorForType`: bool; Value `true`: Gets only one validator (default), `false`: Gets all suitable validators (new)
   - `SearchBaseTypeValidators`: allows to search base type validators

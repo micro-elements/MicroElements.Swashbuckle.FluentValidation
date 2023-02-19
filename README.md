@@ -22,33 +22,97 @@ If you find MicroElements.Swashbuckle.FluentValidation useful, please consider f
 
 ## Usage
 
-### 1. Reference packages in your web project:
+### 1. Minimal API
+
+#### MinimalApi.csproj
 
 ```xml
-<PackageReference Include="FluentValidation.AspNetCore" Version="10.1.0" />
-<PackageReference Include="MicroElements.Swashbuckle.FluentValidation" Version="5.5.0" />
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net7.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="FluentValidation.AspNetCore" Version="11.2.2" />
+        <PackageReference Include="MicroElements.Swashbuckle.FluentValidation" Version="6.0.0-beta.3" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="7.0.2" />
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
+    </ItemGroup>
+    
+</Project>
+
+```
+
+#### Program.cs
+
+```csharp
+using FluentValidation;
+using FluentValidation.AspNetCore;
+using MicroElements.Swashbuckle.FluentValidation.AspNetCore;
+
+var builder = WebApplication.CreateBuilder(args);
+var services = builder.Services;
+
+// Asp.Net stuff
+services.AddControllers();
+services.AddEndpointsApiExplorer();
+
+// Add Swagger
+services.AddSwaggerGen();
+
+// Add FV
+services.AddFluentValidationAutoValidation();
+services.AddFluentValidationClientsideAdapters();
+
+// Add FV validators
+services.AddValidatorsFromAssemblyContaining<Program>();
+
+// Add FV Rules to swagger
+services.AddFluentValidationRulesToSwagger();
+
+var app = builder.Build();
+
+// Use Swagger
+app.UseSwagger();
+app.UseSwaggerUI();
+
+app.MapControllers();
+
+app.Run();
+```
+
+### 2. AspNetCore WebApi
+
+#### Reference packages in your web project
+
+```xml
+<PackageReference Include="FluentValidation.AspNetCore" Version="11.1.0" />
+<PackageReference Include="MicroElements.Swashbuckle.FluentValidation" Version="6.0.0" />
 <PackageReference Include="Swashbuckle.AspNetCore" Version="6.3.0" />
 ```
 
-### 2. Change Startup.cs
+#### Change Startup.cs
 
 ```csharp
 // This method gets called by the runtime. Use this method to add services to the container.
 public void ConfigureServices(IServiceCollection services)
 {
-    // HttpContextServiceProviderValidatorFactory requires access to HttpContext
+    // Asp.net stuff
+    services.AddControllers();
+    
+    // HttpContextValidatorRegistry requires access to HttpContext
     services.AddHttpContextAccessor();
 
-    services
-        .AddControllers()
-        // Adds fluent validators to Asp.net
-        .AddFluentValidation(c =>
-        {
-            c.RegisterValidatorsFromAssemblyContaining<Startup>();
-            // Optionally set validator factory if you have problems with scope resolve inside validators.
-            c.ValidatorFactoryType = typeof(HttpContextServiceProviderValidatorFactory);
-        })
+    // Register FV validators
+    services.AddValidatorsFromAssemblyContaining<Startup>(lifetime: ServiceLifetime.Scoped);
 
+    // Add FV to Asp.net
+    services.AddFluentValidationAutoValidation();
+
+    // Add swagger
     services.AddSwaggerGen(c =>
     {
         c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });

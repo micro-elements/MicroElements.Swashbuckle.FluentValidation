@@ -24,9 +24,6 @@ namespace SampleWebApi
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            // HttpContextValidatorRegistry requires access to HttpContext
-            services.AddHttpContextAccessor();
-
             services
                 .AddControllers()
                 .AddJsonOptions(options =>
@@ -36,6 +33,9 @@ namespace SampleWebApi
                     // options.JsonSerializerOptions.DictionaryKeyPolicy = new NewtonsoftJsonNamingPolicy(new SnakeCaseNamingStrategy());
                 })
                 .AddNewtonsoftJson();
+
+            // HttpContextValidatorRegistry requires access to HttpContext
+            services.AddHttpContextAccessor();
 
             // Register FV validators
             services.AddValidatorsFromAssemblyContaining<Startup>(lifetime: ServiceLifetime.Scoped);
@@ -50,6 +50,7 @@ namespace SampleWebApi
             // One more way to set custom factory.
             //services = services.Replace(ServiceDescriptor.Scoped<IValidatorFactory, ScopedServiceProviderValidatorFactory>());
 
+            // Add swagger
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo(){ Title = "My API", Version = "v1" });
