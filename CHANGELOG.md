@@ -1,16 +1,14 @@
 # Changes in 6.0.0 - beta.3:
-
 - Added: `ISchemaGenerationOptions.ValidatorSearch`
   - `IsOneValidatorForType`: bool; Value `true`: Gets only one validator (default), `false`: Gets all suitable validators (new)
   - `SearchBaseTypeValidators`: allows to search base type validators
 - Fixed: Stack Overflow Exception when using recursive validator type (PR#122 by @rachelpetitto)
+- Deleted: `FluentValidationRulesRegistrator`
+- Deleted: `SwaggerGenOptions` from filters
+- Many minor code cleanups
 
 # Changes in 6.0.0 - beta.2:
-
-Default ValidatorFilter checks that validator CanValidateInstancesOfType
-Default Rule and RuleComponent filters checks that rule or component has no conditions.
-Codebase unified with NSwag
-
+- Codebase unified with NSwag
 - Added: MicroElements.NSwag.FluentValidation package. Early version
 - Change: `INameResolver` removed from FluentValidationRules ctor. Set it from `SchemaGenerationOptions`
 - Change: `ISchemaGenerationSettings` merged to `ISchemaGenerationOptions`
@@ -18,6 +16,8 @@ Codebase unified with NSwag
 - Change: `IValidatorRegistry` can return more than one validator with method `GetValidators`
 - Added: `ValidatorSearch` strategy OneForType, ManyForType
 - Added: `ISchemaGenerationOptions.ValidatorFilter`, `ISchemaGenerationOptions.RuleFilter`, `ISchemaGenerationOptions.RuleComponentFilter`
+  - Default Rule and RuleComponent filters checks that rule or component has no conditions.
+  - Default ValidatorFilter checks that validator CanValidateInstancesOfType
 - Change: `UseAllOfForMultipleRules` typo fix
 
 # Changes in 6.0.0 - beta.1:
