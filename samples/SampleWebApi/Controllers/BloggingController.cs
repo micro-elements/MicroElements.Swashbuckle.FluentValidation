@@ -3,6 +3,8 @@ using System.Linq;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+// ReSharper disable All
+#pragma warning disable CS8618
 
 namespace SampleWebApi.Controllers
 {
@@ -128,7 +130,7 @@ namespace SampleWebApi.Controllers
     }
 
     #endregion
-    
+
     #region Validation
 
     /// <summary>

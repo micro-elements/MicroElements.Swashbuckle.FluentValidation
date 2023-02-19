@@ -59,10 +59,13 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
 
         private void ConfigureGenerator(SchemaGeneratorOptions swaggerOptions, IValidator[] validators)
         {
-            var schemaGenerationOptions = new OptionsWrapper<SchemaGenerationOptions>(new SchemaGenerationOptions()
+            SchemaGenerationOptions generationOptions = new SchemaGenerationOptions
             {
                 NameResolver = new SystemTextJsonNameResolver()
-            });
+            };
+            generationOptions = generationOptions.FillDefaultValues(null);
+
+            var schemaGenerationOptions = new OptionsWrapper<SchemaGenerationOptions>(generationOptions);
 
             IValidatorRegistry validatorRegistry = new ValidatorRegistry(validators, schemaGenerationOptions);
             swaggerOptions.SchemaFilters.Add(new FluentValidationRules(

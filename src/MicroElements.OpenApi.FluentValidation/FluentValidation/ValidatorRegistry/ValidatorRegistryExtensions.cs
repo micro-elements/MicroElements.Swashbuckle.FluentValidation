@@ -10,28 +10,46 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace MicroElements.OpenApi.FluentValidation
 {
+    /// <summary>
+    /// Extensions for validator registry.
+    /// </summary>
     public static class ValidatorRegistryExtensions
     {
+        /// <summary>
+        /// Tries to get validator from the service provider.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider.</param>
+        /// <param name="modelType">Model type.</param>
+        /// <returns>Validator or null.</returns>
         public static IValidator? GetValidator(this IServiceProvider serviceProvider, Type modelType)
         {
             Type validatorType = typeof(IValidator<>).MakeGenericType(modelType);
             return serviceProvider.GetService(validatorType) as IValidator;
         }
 
+        /// <summary>
+        /// Enumerates validators according provided options.
+        /// </summary>
+        /// <param name="validators">Source validators.</param>
+        /// <param name="modelType">Model type.</param>
+        /// <param name="options">Schema generation options.</param>
+        /// <returns>Filtered validators.</returns>
         public static IEnumerable<IValidator> GetValidators(
             this IEnumerable<IValidator> validators,
             Type modelType,
             ISchemaGenerationOptions options)
         {
             var typeContext = new TypeContext(modelType, options);
+            var validatorFilter = options.ValidatorFilter.NotNull();
 
             foreach (var validator in validators)
             {
-                if (options.ValidatorFilter.NotNull().Matches(new ValidatorContext(typeContext, validator)))
+                var validatorContext = new ValidatorContext(typeContext, validator);
+                if (validatorFilter.Matches(validatorContext))
                 {
                     yield return validator;
 
-                    if (options.ValidatorSearch == ValidatorSearch.OneForType)
+                    if (options.ValidatorSearch.IsOneValidatorForType)
                         break;
                 }
             }
@@ -42,13 +60,12 @@ namespace MicroElements.OpenApi.FluentValidation
         /// </summary>
         /// <param name="serviceProvider">The source service provider.</param>
         /// <param name="modelType">Type to validate.</param>
+        /// <param name="options">Schema generation options.</param>
         /// <returns>Enumeration of validators.</returns>
         public static IEnumerable<IValidator> GetValidators(
             this IServiceProvider serviceProvider,
             Type modelType,
-            ISchemaGenerationOptions options,
-            //TODO: to options
-            bool searchBaseTypeValidators = true)
+            ISchemaGenerationOptions options)
         {
             var typeContext = new TypeContext(modelType, options);
             ICondition<ValidatorContext> validatorFilter = options.ValidatorFilter.NotNull();
@@ -65,24 +82,24 @@ namespace MicroElements.OpenApi.FluentValidation
                 {
                     yield return validator;
 
-                    if (options.ValidatorSearch == ValidatorSearch.OneForType)
+                    if (options.ValidatorSearch.IsOneValidatorForType)
                     {
                         yield break;
                     }
                 }
             }
 
-            if (searchBaseTypeValidators)
+            if (options.ValidatorSearch.SearchBaseTypeValidators)
             {
                 Type? baseType = modelType.BaseType;
                 if (baseType != null)
                 {
-                    var baseValidators = serviceProvider.GetValidators(baseType, options, searchBaseTypeValidators);
+                    var baseValidators = serviceProvider.GetValidators(baseType, options);
                     foreach (var validator in baseValidators)
                     {
                         yield return validator;
 
-                        if (options.ValidatorSearch == ValidatorSearch.OneForType)
+                        if (options.ValidatorSearch.IsOneValidatorForType)
                         {
                             yield break;
                         }

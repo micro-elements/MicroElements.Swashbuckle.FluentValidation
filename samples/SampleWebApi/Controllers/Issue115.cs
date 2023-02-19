@@ -9,13 +9,13 @@ namespace SampleWebApi.Controllers
     {
         [HttpGet("[action]")]
         public IActionResult AddA([FromBody] ItemA query) => Ok();
-        
+
         [HttpGet("[action]")]
         public IActionResult AddB([FromBody] ItemB query) => Ok();
-        
+
         [HttpGet("[action]")]
         public IActionResult AddItem([FromBody] Item query) => Ok();
-        
+
         [HttpGet("[action]")]
         public IActionResult AddChild([FromBody] Child query) => Ok();
 
@@ -24,7 +24,7 @@ namespace SampleWebApi.Controllers
             public int Id { get; set; }
             public string Name { get; set; }
         }
-        
+
         public class ItemA : Item
         {
             public class ItemAValidator : AbstractValidator<ItemA>
@@ -39,9 +39,9 @@ namespace SampleWebApi.Controllers
         }
         public class ItemB : Item
         {
-          
+
         }
-        
+
         public abstract class Person
         {
             public string FirstName { get; set; }
@@ -53,7 +53,7 @@ namespace SampleWebApi.Controllers
         {
             public List<string> Parents { get; set; }
         }
-        
+
         public class PersonValidator : AbstractValidator<Person>
         {
             public PersonValidator ()

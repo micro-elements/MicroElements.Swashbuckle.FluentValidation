@@ -4,6 +4,8 @@ using FluentValidation;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Mvc;
 using SampleWebApi.Validators;
+// ReSharper disable All
+#pragma warning disable CS8618
 
 namespace SampleWebApi.Controllers
 {
@@ -18,7 +20,7 @@ namespace SampleWebApi.Controllers
             {
                 return BadRequest(ModelState);
             }
-            
+
             var customers = new[] { new Customer
             {
                 Surname = "Bill",
@@ -46,7 +48,7 @@ namespace SampleWebApi.Controllers
             return Ok(customers);
         }
     }
-    
+
     /// <summary>
     /// Sample GET request with headers mapped from nested class.
     /// </summary>
@@ -60,7 +62,7 @@ namespace SampleWebApi.Controllers
         [FromQuery]
         public string ValueFromQuery { get; set; }
     }
-    
+
     /// <summary>
     /// Standard headers.
     /// </summary>
@@ -84,7 +86,7 @@ namespace SampleWebApi.Controllers
             RuleFor(x => x.ValueFromHeader).NotEmpty().WithMessage("Missing value from header");
             RuleFor(x => x.ValueFromQuery).NotEmpty().WithMessage("Missing value from query");
         }
-    } 
+    }
 
     public class RequestWithAnnotations
     {
@@ -112,7 +114,7 @@ namespace SampleWebApi.Controllers
         [FromHeader(Name = "RequestId")]
         public string RequestId { get; set; }
     }
-    
+
     public class StandardHeadersValidator : AbstractValidator<StandardHeaders>
     {
         public StandardHeadersValidator()

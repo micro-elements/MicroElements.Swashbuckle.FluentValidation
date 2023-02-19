@@ -42,7 +42,7 @@ namespace SampleWebApi
 
             // Add FV to Asp.net
             services.AddFluentValidationAutoValidation();
-            
+
             // Register all validators as IValidator?
             //var serviceDescriptors = services.Where(descriptor => descriptor.ServiceType.GetInterfaces().Contains(typeof(IValidator))).ToList();
             //serviceDescriptors.ForEach(descriptor => services.Add(ServiceDescriptor.Describe(typeof(IValidator), descriptor.ImplementationType, descriptor.Lifetime)));

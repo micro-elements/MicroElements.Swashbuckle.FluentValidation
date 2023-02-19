@@ -1,5 +1,11 @@
+# Changes in 6.0.0 - beta.3:
+
+- Added: `ISchemaGenerationOptions.ValidatorSearch`
+  - `IsOneValidatorForType`: bool; Value `true`: Gets only one validator (default), `false`: Gets all suitable validators (new)
+  - `SearchBaseTypeValidators`: allows to search base type validators
+
 # Changes in 6.0.0 - beta.2:
-Support for ManyForType validators strategy, support for custom Validator, Rule and RuleComponent filters.
+
 Default ValidatorFilter checks that validator CanValidateInstancesOfType
 Default Rule and RuleComponent filters checks that rule or component has no conditions.
 Codebase unified with NSwag

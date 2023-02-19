@@ -24,12 +24,6 @@ namespace MicroElements.OpenApi.FluentValidation
         bool UseAllOfForMultipleRules { get; }
 
         /// <summary>
-        /// Gets the validator search strategy.
-        /// Default: OneForType. (One model -> One validator).
-        /// </summary>
-        ValidatorSearch ValidatorSearch { get; }
-
-        /// <summary>
         /// Gets <see cref="INameResolver"/>.
         /// </summary>
         INameResolver? NameResolver { get; }
@@ -38,6 +32,12 @@ namespace MicroElements.OpenApi.FluentValidation
         /// Gets schemaId by type.
         /// </summary>
         Func<Type, string>? SchemaIdSelector { get; }
+
+        /// <summary>
+        /// Gets the validator search strategy.
+        /// Default: OneForType. (One model -> One validator).
+        /// </summary>
+        ValidatorSearchSettings ValidatorSearch { get; }
 
         /// <summary>
         /// Gets validator filter.
@@ -74,9 +74,9 @@ namespace MicroElements.OpenApi.FluentValidation
 
         /// <summary>
         /// Gets or sets the validator search strategy.
-        /// Default: OneForType. (One model -> One validator)
+        /// Default: <see cref="ValidatorSearchSettings.Default"/>.
         /// </summary>
-        public ValidatorSearch ValidatorSearch { get; set; } = ValidatorSearch.OneForType;
+        public ValidatorSearchSettings ValidatorSearch { get; set; } = ValidatorSearchSettings.Default;
 
         /// <inheritdoc />
         public INameResolver? NameResolver { get; set; }
@@ -100,26 +100,31 @@ namespace MicroElements.OpenApi.FluentValidation
         public SchemaGenerationOptions SetFluentValidationCompatibility()
         {
             SetNotNullableIfMinLengthGreaterThenZero = false;
-            ValidatorSearch = ValidatorSearch.OneForType;
+            ValidatorSearch = ValidatorSearch with { IsOneValidatorForType = true };
 
             return this;
         }
     }
 
     /// <summary>
-    /// Validators search strategy.
+    /// Search settings.
     /// </summary>
-    public enum ValidatorSearch
+    public record ValidatorSearchSettings
     {
         /// <summary>
-        /// One type has only one validator.
+        /// Gets default validator search settings.
         /// </summary>
-        OneForType,
+        public static ValidatorSearchSettings Default { get; } = new() { IsOneValidatorForType = true, SearchBaseTypeValidators = true };
 
         /// <summary>
-        /// Type can have many validators.
+        /// Gets a value indicating whether the model type can have only one validator (default in FluentValidation).
         /// </summary>
-        ManyForType,
+        public bool IsOneValidatorForType { get; init; }
+
+        /// <summary>
+        /// Gets a value indicating whether the search should use base type validators.
+        /// </summary>
+        public bool SearchBaseTypeValidators { get; init; }
     }
 
     /// <summary>

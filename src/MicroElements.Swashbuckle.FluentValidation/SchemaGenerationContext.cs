@@ -28,16 +28,23 @@ namespace MicroElements.Swashbuckle.FluentValidation
         public ISchemaGenerationOptions SchemaGenerationOptions { get; }
 
         /// <inheritdoc/>
-        public OpenApiSchema Schema { get; init; }
+        public OpenApiSchema Schema { get; }
 
         /// <inheritdoc/>
         public ISchemaProvider<OpenApiSchema> SchemaProvider { get; }
 
+        /// <inheritdoc/>
         public IEnumerable<string> Properties => Schema.Properties?.Keys ?? Array.Empty<string>();
 
-        public ISchemaGenerator SchemaGenerator { get; }
+        /// <summary>
+        /// Gets Swashbuckle <see cref="ISchemaGenerator"/>.
+        /// </summary>
+        internal ISchemaGenerator SchemaGenerator { get; }
 
-        public SchemaRepository SchemaRepository { get; }
+        /// <summary>
+        /// Gets Swashbuckle <see cref="SchemaRepository"/>.
+        /// </summary>
+        internal SchemaRepository SchemaRepository { get; }
 
         /// <inheritdoc />
         public ISchemaGenerationContext<OpenApiSchema> With(OpenApiSchema schema)
@@ -83,11 +90,10 @@ namespace MicroElements.Swashbuckle.FluentValidation
             Rules = rules;
             SchemaGenerationOptions = schemaGenerationOptions;
 
-            schemaProvider ??= new SwashbuckleSchemaProvider(
+            SchemaProvider = schemaProvider ?? new SwashbuckleSchemaProvider(
                 schemaRepository,
                 schemaGenerator,
                 schemaGenerationOptions.SchemaIdSelector);
-            SchemaProvider = schemaProvider;
         }
     }
 }

@@ -7,21 +7,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace MicroElements.OpenApi.FluentValidation
 {
-    public static class ValidationRuleContextExtensions
-    {
-        public static bool IsCollectionRule(this ValidationRuleContext ruleContext)
-        {
-            // CollectionPropertyRule<T, TElement> is also a PropertyRule.
-            return ruleContext.ValidationRule.GetType().Name.StartsWith("CollectionPropertyRule");
-        }
-
-        public static ReflectionContext? GetReflectionContext(this ValidationRuleContext ruleContext)
-        {
-            var ruleMember = ruleContext.ValidationRule.Member;
-            return ruleMember != null ? new ReflectionContext(type: ruleMember.ReflectedType, propertyInfo: ruleMember) : null;
-        }
-    }
-
+    /// <summary>
+    /// Options extensions.
+    /// </summary>
     public static class SchemaGenerationOptionsExtensions
     {
         /// <summary>
@@ -30,10 +18,12 @@ namespace MicroElements.OpenApi.FluentValidation
         /// <param name="options">Options to fill.</param>
         /// <param name="serviceProvider">The service provider for getting some services.</param>
         /// <returns>The same instance.</returns>
-        public static SchemaGenerationOptions FillDefaultValues(this SchemaGenerationOptions options, IServiceProvider serviceProvider)
+        public static SchemaGenerationOptions FillDefaultValues(this SchemaGenerationOptions options, IServiceProvider? serviceProvider)
         {
-            options.NameResolver ??= serviceProvider.GetService<IServicesContext>()?.NameResolver;
+            options.NameResolver ??= serviceProvider?.GetService<IServicesContext>()?.NameResolver;
 
+            // ReSharper disable once NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
+            options.ValidatorSearch ??= ValidatorSearchSettings.Default;
             options.ValidatorFilter ??= new Condition<ValidatorContext>(context => context.Validator.CanValidateInstancesOfType(context.TypeContext.TypeToValidate));
             options.RuleFilter ??= new Condition<ValidationRuleContext>(context => context.ValidationRule.HasNoCondition());
             options.RuleComponentFilter ??= new Condition<RuleComponentContext>(context => context.RuleComponent.HasNoCondition());

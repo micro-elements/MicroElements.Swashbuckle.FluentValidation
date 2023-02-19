@@ -7,6 +7,9 @@ using FluentValidation.Validators;
 
 namespace MicroElements.OpenApi.FluentValidation
 {
+    /// <summary>
+    /// Represents context for schema generation.
+    /// </summary>
     public interface ISchemaGenerationContext
     {
         /// <summary>
@@ -30,6 +33,9 @@ namespace MicroElements.OpenApi.FluentValidation
         ISchemaGenerationOptions SchemaGenerationOptions { get; }
     }
 
+    /// <summary>
+    /// Represents context typed with schema implementation for schema generation.
+    /// </summary>
     public interface ISchemaGenerationContext<TSchema> : ISchemaGenerationContext
     {
         /// <summary>
@@ -47,8 +53,20 @@ namespace MicroElements.OpenApi.FluentValidation
         /// </summary>
         IReadOnlyList<IFluentValidationRule<TSchema>> Rules { get; }
 
+        /// <summary>
+        /// Gets the context copy with other schema.
+        /// </summary>
+        /// <param name="schema">The new schema.</param>
+        /// <returns>The context copy.</returns>
         ISchemaGenerationContext<TSchema> With(TSchema schema);
 
+        /// <summary>
+        /// Creates concrete rule context.
+        /// </summary>
+        /// <param name="schemaPropertyName">The property name.</param>
+        /// <param name="validationRuleContext">Validation rule context.</param>
+        /// <param name="propertyValidator">Validator.</param>
+        /// <returns>New rule context.</returns>
         IRuleContext<TSchema> Create(string schemaPropertyName, ValidationRuleContext validationRuleContext, IPropertyValidator propertyValidator);
     }
 }

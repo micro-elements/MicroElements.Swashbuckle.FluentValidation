@@ -12,7 +12,7 @@ using Xunit;
 
 namespace MicroElements.Swashbuckle.FluentValidation.Tests
 {
-    public class SchemaGenerationTests : UnitTestBase
+    public partial class SchemaGenerationTests : UnitTestBase
     {
         public class ComplexObject
         {
@@ -67,7 +67,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             var referenceSchema = SchemaGenerator(new Validator2()).GenerateSchema(typeof(ComplexObject), schemaRepository);
 
             var schema = schemaRepository.Schemas[referenceSchema.Reference.Id];
-    
+
             schema.Properties[TextProperty1].MinLength.Should().Be(1);
             schema.Properties[TextProperty1].MaxLength.Should().Be(64);
             schema.Properties[TextProperty1].Nullable.Should().BeFalse();

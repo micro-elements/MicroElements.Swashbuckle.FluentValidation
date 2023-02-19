@@ -17,6 +17,11 @@ namespace MicroElements.OpenApi.FluentValidation
         private readonly ISchemaGenerationOptions _options;
         private readonly List<IValidator> _validators;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ValidatorRegistry"/> class.
+        /// </summary>
+        /// <param name="validators">Validators.</param>
+        /// <param name="options">Generation options.</param>
         public ValidatorRegistry(
             IEnumerable<IValidator> validators,
             IOptions<SchemaGenerationOptions>? options = null)

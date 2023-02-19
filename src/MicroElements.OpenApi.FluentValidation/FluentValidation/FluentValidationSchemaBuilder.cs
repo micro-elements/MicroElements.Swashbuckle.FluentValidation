@@ -8,6 +8,8 @@ using FluentValidation;
 using FluentValidation.Validators;
 using MicroElements.OpenApi.Core;
 using Microsoft.Extensions.Logging;
+#pragma warning disable SA1611
+#pragma warning disable SA1618
 
 namespace MicroElements.OpenApi.FluentValidation
 {
@@ -19,12 +21,6 @@ namespace MicroElements.OpenApi.FluentValidation
         /// <summary>
         /// Applies rules from validator.
         /// </summary>
-        /// <param name="schemaType">Schema type.</param>
-        /// <param name="schemaPropertyNames"></param>
-        /// <param name="validator"></param>
-        /// <param name="logger"></param>
-        /// <param name="schemaGenerationContext"></param>
-        /// <typeparam name="TSchema"></typeparam>
         public static void ApplyRulesToSchema<TSchema>(
             Type schemaType,
             IEnumerable<string>? schemaPropertyNames,
@@ -41,7 +37,7 @@ namespace MicroElements.OpenApi.FluentValidation
             TypeContext typeContext = new TypeContext(schemaType, schemaGenerationOptions);
             ValidatorContext validatorContext = new ValidatorContext(typeContext, validator);
 
-            var lazyLog = new LazyLog(logger, l => l.LogDebug($"Applying FluentValidation rules to swagger schema '{schemaTypeName}'."));
+            var lazyLog = new LazyLog(logger, l => l.LogDebug("Applying FluentValidation rules to swagger schema '{SchemaTypeName}'", schemaTypeName));
 
             var validationRules = validatorContext
                 .GetValidationRules()
@@ -69,7 +65,7 @@ namespace MicroElements.OpenApi.FluentValidation
                                 try
                                 {
                                     var ruleHistoryItem = new RuleHistoryCache.RuleCacheItem(schemaTypeName, schemaPropertyName, propertyValidator, rule.Name);
-                                    if (!schema.ContainsRuleHistoryItem(ruleHistoryItem))
+                                    if (!schema!.ContainsRuleHistoryItem(ruleHistoryItem))
                                     {
                                         lazyLog.LogOnce();
 
@@ -77,17 +73,17 @@ namespace MicroElements.OpenApi.FluentValidation
 
                                         rule.Apply(ruleContext);
 
-                                        logger.LogDebug($"Rule '{rule.Name}' applied for property '{schemaTypeName}.{schemaPropertyName}'.");
-                                        schema.AddRuleHistoryItem(ruleHistoryItem);
+                                        logger.LogDebug("Rule '{RuleName}' applied for property '{SchemaTypeName}.{SchemaPropertyName}'", rule.Name, schemaTypeName, schemaPropertyName);
+                                        schema!.AddRuleHistoryItem(ruleHistoryItem);
                                     }
                                     else
                                     {
-                                        logger.LogDebug($"Rule '{rule.Name}' already applied for property '{schemaTypeName}.{schemaPropertyName}'.");
+                                        logger.LogDebug("Rule '{RuleName}' already applied for property '{SchemaTypeName}.{SchemaPropertyName}'", rule.Name, schemaTypeName, schemaPropertyName);
                                     }
                                 }
                                 catch (Exception e)
                                 {
-                                    logger.LogWarning(0, e, $"Error on apply rule '{rule.Name}' for property '{schemaTypeName}.{schemaPropertyName}'.");
+                                    logger.LogWarning(0, e, "Error on apply rule '{RuleName}' for property '{SchemaTypeName}.{SchemaPropertyName}'", rule.Name, schemaTypeName, schemaPropertyName);
                                 }
                             }
                         }
@@ -96,6 +92,9 @@ namespace MicroElements.OpenApi.FluentValidation
             }
         }
 
+        /// <summary>
+        /// Adds rules from included validators.
+        /// </summary>
         public static void AddRulesFromIncludedValidators<TSchema>(
             ValidatorContext validatorContext,
             ILogger logger,
