@@ -37,10 +37,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             IValidatorRegistry? validatorRegistry = null,
             IEnumerable<FluentValidationRule>? rules = null,
             IOptions<SchemaGenerationOptions>? schemaGenerationOptions = null,
-            INameResolver? nameResolver = null,
-
-            /* Swashbuckle services */
-            IOptions<SwaggerGenOptions>? swaggerGenOptions = null)
+            INameResolver? nameResolver = null)
         {
             // System services
             _logger = loggerFactory?.CreateLogger(typeof(FluentValidationRules)) ?? NullLogger.Instance;

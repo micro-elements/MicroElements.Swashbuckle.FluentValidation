@@ -36,7 +36,6 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <param name="fluentValidationRuleProvider">Rules provider.</param>
         /// <param name="rules">External FluentValidation rules. External rule overrides default rule with the same name.</param>
         /// <param name="schemaGenerationOptions">Schema generation options.</param>
-        /// <param name="swaggerGenOptions">SwaggerGenOptions.</param>
         public FluentValidationRules(
             /* System services */
             ILoggerFactory? loggerFactory = null,
@@ -46,10 +45,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             IValidatorRegistry? validatorRegistry = null,
             IFluentValidationRuleProvider<OpenApiSchema>? fluentValidationRuleProvider = null,
             IEnumerable<FluentValidationRule>? rules = null,
-            IOptions<SchemaGenerationOptions>? schemaGenerationOptions = null,
-
-            /* Swashbuckle services */
-            IOptions<SwaggerGenOptions>? swaggerGenOptions = null)
+            IOptions<SchemaGenerationOptions>? schemaGenerationOptions = null)
         {
             // System services
             _logger = loggerFactory?.CreateLogger(typeof(FluentValidationRules)) ?? NullLogger.Instance;
