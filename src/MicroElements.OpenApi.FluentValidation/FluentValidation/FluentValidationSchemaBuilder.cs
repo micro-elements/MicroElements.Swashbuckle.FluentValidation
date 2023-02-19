@@ -124,14 +124,16 @@ namespace MicroElements.OpenApi.FluentValidation
                     {
                         var canValidateInstancesOfType = childValidator.CanValidateInstancesOfType(schemaGenerationContext.SchemaType);
 
-                        if (childValidator == validator)
+                        if (childValidator == validatorContext.Validator)
                         {
+                            // Issue: https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/issues/121
                             // Recursive validation works when using 'this' from SetValidator()
                             // https://github.com/FluentValidation/FluentValidation/issues/1568
-                            // using a 'no-op' catch here seems safe and prevents the stack overflow exception
-                            // I'm not sure if there is a more "optimal" action that could be taken instead of no-op though.
+                            // using skipping prevents the stack overflow exception
+                            continue;
                         }
-                        else if (canValidateInstancesOfType)
+
+                        if (canValidateInstancesOfType)
                         {
                             // It's a validator for current type (Include for example) so apply changes to current schema.
                             ApplyRulesToSchema(

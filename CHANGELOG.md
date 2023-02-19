@@ -3,6 +3,7 @@
 - Added: `ISchemaGenerationOptions.ValidatorSearch`
   - `IsOneValidatorForType`: bool; Value `true`: Gets only one validator (default), `false`: Gets all suitable validators (new)
   - `SearchBaseTypeValidators`: allows to search base type validators
+- Fixed: Stack Overflow Exception when using recursive validator type (PR#122 by @rachelpetitto)
 
 # Changes in 6.0.0 - beta.2:
 
