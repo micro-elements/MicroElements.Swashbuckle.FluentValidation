@@ -35,17 +35,20 @@ namespace MicroElements.Swashbuckle.FluentValidation.AspNetCore
             var registrationOptions = new RegistrationOptions();
             configureRegistration?.Invoke(registrationOptions);
 
+            var serviceLifetime = registrationOptions.ServiceLifetime;
+
             // Adds fluent validation rules to swagger
             if (registrationOptions.RegisterFluentValidationRules)
             {
                 if (registrationOptions.ExperimentalUseDocumentFilter)
                 {
-                    services.TryAdd(new ServiceDescriptor(typeof(FluentValidationDocumentFilter), typeof(FluentValidationDocumentFilter), registrationOptions.ServiceLifetime));
+                    services.TryAdd(new ServiceDescriptor(typeof(FluentValidationDocumentFilter), typeof(FluentValidationDocumentFilter), serviceLifetime));
                 }
                 else
                 {
-                    services.TryAdd(new ServiceDescriptor(typeof(FluentValidationRules), typeof(FluentValidationRules), registrationOptions.ServiceLifetime));
-                    services.TryAdd(new ServiceDescriptor(typeof(FluentValidationOperationFilter), typeof(FluentValidationOperationFilter), registrationOptions.ServiceLifetime));
+                    services.TryAdd(new ServiceDescriptor(typeof(FluentValidationRules), typeof(FluentValidationRules), serviceLifetime));
+                    services.TryAdd(new ServiceDescriptor(typeof(FluentValidationOperationFilter), typeof(FluentValidationOperationFilter), serviceLifetime));
+                    services.TryAdd(new ServiceDescriptor(typeof(FluentValidationRequestBodyFilter), typeof(FluentValidationRequestBodyFilter), serviceLifetime));
                 }
 
                 services.Configure<SwaggerGenOptions>(options =>
@@ -53,12 +56,13 @@ namespace MicroElements.Swashbuckle.FluentValidation.AspNetCore
                     // Registers Swashbuckle filters
                     if (registrationOptions.ExperimentalUseDocumentFilter)
                     {
-                        options.DocumentFilter<DocumentFilterScopeAdapter<FluentValidationDocumentFilter>>(registrationOptions.ServiceLifetime);
+                        options.DocumentFilter<DocumentFilterScopeAdapter<FluentValidationDocumentFilter>>(serviceLifetime);
                     }
                     else
                     {
-                        options.SchemaFilter<FluentValidationRulesScopeAdapter>(registrationOptions.ServiceLifetime);
-                        options.OperationFilter<FluentValidationOperationFilterScopeAdapter>(registrationOptions.ServiceLifetime);
+                        options.SchemaFilter<SchemaFilterScopeAdapter<FluentValidationRules>>(serviceLifetime);
+                        options.OperationFilter<OperationFilterScopeAdapter<FluentValidationOperationFilter>>(serviceLifetime);
+                        options.RequestBodyFilter<RequestBodyFilterScopeAdapter<FluentValidationRequestBodyFilter>>(serviceLifetime);
                     }
                 });
             }
@@ -77,7 +81,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.AspNetCore
             }
 
             // Adds default IValidatorRegistry
-            services.TryAdd(new ServiceDescriptor(typeof(IValidatorRegistry), typeof(ServiceProviderValidatorRegistry), registrationOptions.ServiceLifetime));
+            services.TryAdd(new ServiceDescriptor(typeof(IValidatorRegistry), typeof(ServiceProviderValidatorRegistry), serviceLifetime));
 
             // Adds IFluentValidationRuleProvider
             services.TryAddSingleton<IFluentValidationRuleProvider<OpenApiSchema>, DefaultFluentValidationRuleProvider>();

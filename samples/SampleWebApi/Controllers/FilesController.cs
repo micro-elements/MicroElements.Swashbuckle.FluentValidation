@@ -3,7 +3,7 @@ using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace SampleNSwagWebApi.Controllers
+namespace SampleWebApi.Controllers
 {
     [Route("api/[controller]")]
     public class FilesController : Controller

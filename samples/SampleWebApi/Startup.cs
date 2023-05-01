@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using MicroElements.OpenApi.FluentValidation;
 using MicroElements.Swashbuckle.FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
@@ -66,8 +67,11 @@ namespace SampleWebApi
             // [Optional] Configure generation options for your needs. Also can be done with services.Configure<SchemaGenerationOptions>
             // services.AddFluentValidationRulesToSwagger(configure: options =>
             // {
-            //     options.SetNotNullableIfMinLengthGreaterThenZero = true;
-            //     options.UseAllOffForMultipleRules = true;
+            //     options.ValidatorSearch = new ValidatorSearchSettings()
+            //     {
+            //         IsOneValidatorForType = false,
+            //         SearchBaseTypeValidators = true
+            //     };
             // });
 
             // Adds logging

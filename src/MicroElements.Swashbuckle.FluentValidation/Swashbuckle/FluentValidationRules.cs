@@ -73,11 +73,16 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
             var typeContext = new TypeContext(context.Type, _schemaGenerationOptions);
 
+            if (context.Type.Name.Contains("File"))
+            {
+                int i = 0;
+            }
+
             var (validators, _) = Functional
                 .Try(() => _validatorRegistry.GetValidators(context.Type).ToArray())
                 .OnError(e => _logger.LogWarning(0, e, "GetValidators for type '{ModelType}' failed", context.Type));
 
-            if (validators == null)
+            if (validators == null || validators.Length == 0)
                 return;
 
             foreach (var validator in validators)

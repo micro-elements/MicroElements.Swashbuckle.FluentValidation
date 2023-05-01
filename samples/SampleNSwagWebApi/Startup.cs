@@ -25,10 +25,12 @@ namespace SampleNSwagWebApi
 
             services.AddOpenApiDocument((settings, serviceProvider) =>
             {
-                var fluentValidationSchemaProcessor = serviceProvider.CreateScope().ServiceProvider.GetService<FluentValidationSchemaProcessor>();
+                var scopedProvider = serviceProvider.CreateScope().ServiceProvider;
 
                 // Add the fluent validations schema processor
-                settings.SchemaProcessors.Add(fluentValidationSchemaProcessor);
+                settings.SchemaProcessors.Add(scopedProvider.GetService<FluentValidationSchemaProcessor>());
+
+                settings.OperationProcessors.Add(scopedProvider.GetService<NSwagOperationProcessor>());
             });
 
             // Register FV validators

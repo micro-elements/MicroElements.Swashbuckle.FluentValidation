@@ -62,14 +62,21 @@ namespace MicroElements.NSwag.FluentValidation
         /// <inheritdoc />
         public void Process(SchemaProcessorContext context)
         {
-            if (!context.Schema.IsObject || context.Schema.Properties.Count == 0)
-            {
-                // Ignore other
-                // Ignore objects with no properties
-                return;
-            }
+            // if (!context.Schema.IsObject || context.Schema.Properties.Count == 0)
+            // {
+            //     // Ignore other
+            //     // Ignore objects with no properties
+            //     return;
+            // }
 
             IValidator? validator = null;
+
+            if (context.Type.Name.Contains("File"))
+            {
+                //OperationParameterProcessor.CreateFormDataProperty looses Api context
+                //context has no ApiDescription
+                int i = 0;
+            }
 
             try
             {
