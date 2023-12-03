@@ -1,3 +1,6 @@
+# Changes in 6.0.0
+- see changelog for betas
+
 # Changes in 6.0.0 - beta.3:
 - Added: `IFluentValidationRuleProvider` can be replaced with DI
 - Added: `ISchemaGenerationOptions.ValidatorSearch`
