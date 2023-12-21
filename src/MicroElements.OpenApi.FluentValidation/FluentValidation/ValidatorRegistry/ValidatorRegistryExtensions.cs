@@ -67,6 +67,11 @@ namespace MicroElements.OpenApi.FluentValidation
             Type modelType,
             ISchemaGenerationOptions options)
         {
+            if (typeof(void) == modelType)
+            {
+                yield break;
+            }
+
             var typeContext = new TypeContext(modelType, options);
             ICondition<ValidatorContext> validatorFilter = options.ValidatorFilter.NotNull();
 
