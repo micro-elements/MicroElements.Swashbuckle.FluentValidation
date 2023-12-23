@@ -67,6 +67,7 @@ namespace MicroElements.OpenApi.FluentValidation
             Type modelType,
             ISchemaGenerationOptions options)
         {
+            // Fix for https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/issues/140
             if (typeof(void) == modelType)
             {
                 yield break;
