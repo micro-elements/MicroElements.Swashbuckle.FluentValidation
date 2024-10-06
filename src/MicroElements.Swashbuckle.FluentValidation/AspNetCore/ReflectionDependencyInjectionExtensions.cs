@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json;
@@ -17,14 +18,29 @@ namespace MicroElements.Swashbuckle.FluentValidation.AspNetCore
     {
         private static Type? GetByFullName(string typeName)
         {
-            Type type = AppDomain
+            Type? type = AppDomain
                 .CurrentDomain
                 .GetAssemblies()
                 .Where(assembly => assembly.FullName.Contains("Microsoft"))
-                .SelectMany(assembly => assembly.GetTypes())
+                .SelectMany(GetLoadableTypes)
                 .FirstOrDefault(type => type.FullName == typeName);
 
             return type;
+        }
+
+        /// <summary>
+        /// Gets loadable Types from an Assembly, not throwing when some Types can't be loaded.
+        /// </summary>
+        private static IEnumerable<Type> GetLoadableTypes(Assembly assembly)
+        {
+            try
+            {
+                return assembly.GetTypes();
+            }
+            catch (ReflectionTypeLoadException e)
+            {
+                return e.Types.Where(t => t != null);
+            }
         }
 
         /// <summary>
