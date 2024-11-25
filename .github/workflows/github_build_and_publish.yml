@@ -1,23 +1,29 @@
 name: Build and publish
 
 on:
+  workflow_dispatch:  # Ручной запуск
   push:
-    branches: [ master ]
+    branches: [ master ]  # Запуск при пуше в master
   pull_request:
-    branches: [ master ]
+    branches: [ master ]  # Запуск для pull_request в master
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
+    # Шаг 1: Клонируем репозиторий
     - uses: actions/checkout@v3
+
+    # Шаг 2: Устанавливаем .NET SDK
     - name: Setup .NET SDK
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: |
           8.0.x
           9.0.x
+
+    # Шаг 3: Сборка проекта
     - name: Build
       env:
         UPLOAD_NUGET: ${{ secrets.UPLOAD_NUGET }}
@@ -25,3 +31,15 @@ jobs:
       run: |
         chmod a+x ./build.sh
         ./build.sh --target=Travis --verbosity=normal --ForceUploadPackages=false
+
+    # Шаг 4: Публикация пакета на NuGet
+    - name: Publish to NuGet
+      if: success()  # Публиковать только при успешной сборке
+      run: |
+        if ls ./bin/Release/*.nupkg 1> /dev/null 2>&1; then
+          dotnet nuget push ./bin/Release/*.nupkg \
+            -s https://api.nuget.org/v3/index.json \
+            -k ${{ secrets.UPLOAD_NUGET_API_KEY }}
+        else
+          echo "No .nupkg files found for publishing."
+        fi
