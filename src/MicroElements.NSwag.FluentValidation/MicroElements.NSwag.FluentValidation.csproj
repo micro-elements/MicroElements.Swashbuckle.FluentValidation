@@ -1,20 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-    <Import Project="..\common.props" />
-
+    
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
         <Nullable>enable</Nullable>
-        <LangVersion>9.0</LangVersion>
+        <LangVersion>latest</LangVersion>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <OpenApiGenerateDocuments>false</OpenApiGenerateDocuments>
         <Description>Adds FluentValidation rules to swagger schema.</Description>
         <PackageTags>Swagger NSwag OpenApi FluentValidation</PackageTags>
     </PropertyGroup>
+    
+    <Import Project="..\common.props" />
 
     <ItemGroup>
         <PackageReference Include="FluentValidation" Version="[10.0.0, 12)" />
-        <PackageReference Include="NJsonSchema" Version="10.4.4" />
+        <PackageReference Include="NJsonSchema" Version="10.6.10" />
     </ItemGroup>
 
     <ItemGroup>
