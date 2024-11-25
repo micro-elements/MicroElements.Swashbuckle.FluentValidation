@@ -30,16 +30,6 @@ jobs:
         UPLOAD_NUGET_API_KEY: ${{ secrets.UPLOAD_NUGET_API_KEY }}
       run: |
         chmod a+x ./build.sh
-        ./build.sh --target=Travis --verbosity=normal --ForceUploadPackages=false
+        ./build.sh --target=Travis --verbosity=normal --ForceUploadPackages=true
 
-    # Шаг 4: Публикация пакета на NuGet
-    - name: Publish to NuGet
-      if: success()  # Публиковать только при успешной сборке
-      run: |
-        if ls ./bin/Release/*.nupkg 1> /dev/null 2>&1; then
-          dotnet nuget push ./bin/Release/*.nupkg \
-            -s https://api.nuget.org/v3/index.json \
-            -k ${{ secrets.UPLOAD_NUGET_API_KEY }}
-        else
-          echo "No .nupkg files found for publishing."
-        fi
+   
