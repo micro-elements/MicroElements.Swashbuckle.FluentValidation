@@ -1,3 +1,8 @@
+# Changes in 6.1.0
+- Added support for .NET 8 and .NET 9 to MicroElements.Swashbuckle.FluentValidation.AspNetCore
+- Dropped support for .NET 6.0 
+- Updated NJsonSchema to version 10.6.10
+
 # Changes in 6.0.0
 - see changelog for betas
 

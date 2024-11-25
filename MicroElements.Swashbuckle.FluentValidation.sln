@@ -32,6 +32,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{9ED7
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinimalApi", "samples\MinimalApi\MinimalApi.csproj", "{6F4B88CA-B550-4C5E-981A-4608EC254976}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MicroElements.Swashbuckle.FluentValidation.AspNetCore", "src\MicroElements.Swashbuckle.FluentValidation.AspNetCore\MicroElements.Swashbuckle.FluentValidation.AspNetCore.csproj", "{C80E2EF6-6408-4BF3-8245-9F9DD1FD8F50}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -66,6 +68,10 @@ Global
 		{6F4B88CA-B550-4C5E-981A-4608EC254976}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6F4B88CA-B550-4C5E-981A-4608EC254976}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6F4B88CA-B550-4C5E-981A-4608EC254976}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C80E2EF6-6408-4BF3-8245-9F9DD1FD8F50}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C80E2EF6-6408-4BF3-8245-9F9DD1FD8F50}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C80E2EF6-6408-4BF3-8245-9F9DD1FD8F50}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C80E2EF6-6408-4BF3-8245-9F9DD1FD8F50}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
