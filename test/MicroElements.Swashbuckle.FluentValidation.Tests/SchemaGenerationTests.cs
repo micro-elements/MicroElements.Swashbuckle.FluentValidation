@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json.Serialization;
 using FluentAssertions;
 using FluentValidation;
@@ -430,6 +431,56 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
                 schema.Properties[nameof(MinMaxLength.Qualities)].MaxItems.Should().Be(max);
             else
                 schema.Properties[nameof(MinMaxLength.Qualities)].MaxItems.Should().BeNull();
+        }
+
+        [Fact]
+        // See the issue https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/issues/156
+        public void DerivedSample_ShouldHave_ValidationRulesApplied()
+        {
+            var schemaRepository = new SchemaRepository();
+            var schemaGenerator = SchemaGenerator(options =>
+            {
+                options.UseAllOfForInheritance = true;
+                ConfigureGenerator(options, [new DervidedSampleValidator()]);
+            });
+
+            schemaGenerator.GenerateSchema(typeof(BaseSample), schemaRepository);
+            var referenceSchema = schemaGenerator.GenerateSchema(typeof(DerivedSample), schemaRepository);
+            var schema = schemaRepository.Schemas[referenceSchema.Reference.Id];
+
+            // Should be empty after the change made because of the issue https://github.com/domaindrivendev/Swashbuckle.AspNetCore/issues/3021
+            schema.Properties.Should().BeEmpty();
+            schema.AllOf.Should().HaveCount(2);
+
+            var derivedSampleSchema = schema.AllOf.FirstOrDefault(s => s.Type == "object");
+
+            Assert.NotNull(derivedSampleSchema);
+
+            derivedSampleSchema.Properties.Should().HaveCount(1);
+            var propertySchema = derivedSampleSchema.Properties.First().Value;
+            propertySchema.MaxLength.Should().Be(255);
+            propertySchema.MinLength.Should().Be(1);
+
+            derivedSampleSchema.Required.Should().HaveCount(1);
+            derivedSampleSchema.Required.First().Should().Be("Name");
+        }
+    }
+
+    public class BaseSample
+    {
+        public int Id { get; set; }
+    }
+
+    public class DerivedSample : BaseSample
+    {
+        public string? Name { get; set; }
+    }
+
+    public class DervidedSampleValidator : AbstractValidator<DerivedSample>
+    {
+        public DervidedSampleValidator()
+        {
+            RuleFor(p => p.Name).NotEmpty().MaximumLength(255);
         }
     }
 

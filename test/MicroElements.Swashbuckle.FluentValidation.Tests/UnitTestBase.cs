@@ -57,7 +57,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             return new SchemaGenerator(generatorOptions, new JsonSerializerDataContractResolver(serializerOptions));
         }
 
-        private void ConfigureGenerator(SchemaGeneratorOptions swaggerOptions, IValidator[] validators)
+        protected void ConfigureGenerator(SchemaGeneratorOptions swaggerOptions, IValidator[] validators)
         {
             SchemaGenerationOptions generationOptions = new SchemaGenerationOptions
             {
