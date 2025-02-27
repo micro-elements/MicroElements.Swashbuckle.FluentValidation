@@ -80,26 +80,32 @@ namespace MicroElements.Swashbuckle.FluentValidation
             if (validators == null)
                 return;
 
+            var allSchemas = new List<OpenApiSchema>();
+            ProcessAllSchemas(schema, allSchemas);
+
             foreach (var validator in validators)
             {
-                var validatorContext = new ValidatorContext(typeContext, validator);
-                var schemaContext = new SchemaGenerationContext(
-                    schemaRepository: context.SchemaRepository,
-                    schemaGenerator: context.SchemaGenerator,
-                    schemaType: context.Type,
-                    schema: schema,
-                    rules: _rules,
-                    schemaGenerationOptions: _schemaGenerationOptions);
-
-                ApplyRulesToSchema(schemaContext, validator);
-
-                try
+                foreach (var oneOfSchemas in allSchemas)
                 {
-                    AddRulesFromIncludedValidators(schemaContext, validatorContext);
-                }
-                catch (Exception e)
-                {
-                    _logger.LogWarning(0, e, "Applying IncludeRules for type '{ModelType}' failed", context.Type);
+                    var validatorContext = new ValidatorContext(typeContext, validator);
+                    var schemaContext = new SchemaGenerationContext(
+                        schemaRepository: context.SchemaRepository,
+                        schemaGenerator: context.SchemaGenerator,
+                        schemaType: context.Type,
+                        schema: oneOfSchemas,
+                        rules: _rules,
+                        schemaGenerationOptions: _schemaGenerationOptions);
+
+                    ApplyRulesToSchema(schemaContext, validator);
+
+                    try
+                    {
+                        AddRulesFromIncludedValidators(schemaContext, validatorContext);
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogWarning(0, e, "Applying IncludeRules for type '{ModelType}' failed", context.Type);
+                    }
                 }
             }
         }
@@ -120,6 +126,26 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 validatorContext: validatorContext,
                 logger: _logger,
                 schemaGenerationContext: schemaGenerationContext);
+        }
+
+        private void ProcessAllSchemas(OpenApiSchema schema, List<OpenApiSchema> schemas)
+        {
+            schemas.Add(schema);
+
+            var collectionsOfSchemas = new IList<OpenApiSchema>[] { schema.AllOf, schema.OneOf, schema.AnyOf };
+
+            foreach (var collectionOfSchemas in collectionsOfSchemas)
+            {
+                foreach (var embededSchema in collectionOfSchemas)
+                {
+                    if (!embededSchema.Properties.Any())
+                    {
+                        continue;
+                    }
+
+                    schemas.Add(embededSchema);
+                }
+            }
         }
     }
 }
