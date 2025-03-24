@@ -15,20 +15,17 @@ namespace SampleNSwagWebApi
             // HttpContextValidatorRegistry requires access to HttpContext
             services.AddHttpContextAccessor();
 
-            services
-                .AddControllers()
-                // Adds fluent validators to Asp.net
-                .AddFluentValidation(c =>
-                {
-                    c.RegisterValidatorsFromAssemblyContaining<Startup>(includeInternalTypes: true);
-                });
+            services.AddControllers();
+                
+            // Adds fluent validators to Asp.net
+            services.AddFluentValidationAutoValidation().AddFluentValidationClientsideAdapters();
 
             services.AddOpenApiDocument((settings, serviceProvider) =>
             {
                 var fluentValidationSchemaProcessor = serviceProvider.CreateScope().ServiceProvider.GetService<FluentValidationSchemaProcessor>();
 
                 // Add the fluent validations schema processor
-                settings.SchemaProcessors.Add(fluentValidationSchemaProcessor);
+                settings.SchemaSettings.SchemaProcessors.Add(fluentValidationSchemaProcessor);
             });
 
             // Register FV validators
@@ -49,7 +46,7 @@ namespace SampleNSwagWebApi
             });
 
             app.UseOpenApi(); // serve OpenAPI/Swagger documents
-            app.UseSwaggerUi3(); // serve Swagger UI
+            app.UseSwaggerUi(); // serve Swagger UI
         }
     }
 }

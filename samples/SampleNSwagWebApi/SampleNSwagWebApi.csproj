@@ -7,11 +7,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="FluentValidation.AspNetCore" Version="11.2.2" />
+        <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0" />
         <PackageReference Include="JetBrains.Annotations" Version="2024.3.0" />
         <PackageReference Include="MicroElements.IsExternalInit" Version="1.1.0" PrivateAssets="all" />
-        <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.32" />
-        <PackageReference Include="NSwag.AspNetCore" Version="13.20.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="9.0.3" />
+        <PackageReference Include="NSwag.AspNetCore" Version="14.2.0" />
     </ItemGroup>
 
     <ItemGroup>

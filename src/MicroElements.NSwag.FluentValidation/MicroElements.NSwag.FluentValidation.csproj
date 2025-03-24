@@ -1,24 +1,29 @@
 <Project Sdk="Microsoft.NET.Sdk">
-    
-    <PropertyGroup>
-        <TargetFramework>netstandard2.0</TargetFramework>
-        <Nullable>enable</Nullable>
-        <LangVersion>latest</LangVersion>
-        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <OpenApiGenerateDocuments>false</OpenApiGenerateDocuments>
-        <Description>Adds FluentValidation rules to swagger schema.</Description>
-        <PackageTags>Swagger NSwag OpenApi FluentValidation</PackageTags>
-    </PropertyGroup>
-    
-    <Import Project="..\common.props" />
 
-    <ItemGroup>
-        <PackageReference Include="FluentValidation" Version="[10.0.0, 12)" />
-        <PackageReference Include="NJsonSchema" Version="10.6.10" />
-    </ItemGroup>
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <OpenApiGenerateDocuments>false</OpenApiGenerateDocuments>
+    <Description>Adds FluentValidation rules to swagger schema.</Description>
+    <PackageTags>Swagger NSwag OpenApi FluentValidation</PackageTags>
+  </PropertyGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\MicroElements.OpenApi.FluentValidation\MicroElements.OpenApi.FluentValidation.csproj" />
-    </ItemGroup>
+  <Import Project="..\common.props" />
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" Version="11.11.0" />
+    <PackageReference Include="NJsonSchema" Version="11.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MicroElements.OpenApi.FluentValidation\MicroElements.OpenApi.FluentValidation.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="Microsoft.SourceLink.GitHub" Version="8.0.0" />
+  </ItemGroup>
 
 </Project>

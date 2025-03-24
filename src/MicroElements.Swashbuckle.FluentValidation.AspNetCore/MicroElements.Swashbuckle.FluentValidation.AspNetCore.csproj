@@ -1,13 +1,14 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-    </PropertyGroup>
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\MicroElements.Swashbuckle.FluentValidation\MicroElements.Swashbuckle.FluentValidation.csproj" />
-    </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MicroElements.Swashbuckle.FluentValidation\MicroElements.Swashbuckle.FluentValidation.csproj" />
+  </ItemGroup>
 
 </Project>
