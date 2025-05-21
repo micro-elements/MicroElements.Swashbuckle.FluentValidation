@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using FluentValidation.Validators;
 using MicroElements.OpenApi.FluentValidation;
+using Namotion.Reflection;
 using NJsonSchema.Generation;
 
 namespace MicroElements.NSwag.FluentValidation
@@ -77,7 +78,7 @@ namespace MicroElements.NSwag.FluentValidation
         {
             var schemaForType = _processorContext.Resolver.GetSchema(type, isIntegerEnumeration: false);
             return new SchemaProcessorContext(
-                type,
+                type.ToContextualType(),
                 schemaForType,
                 _processorContext.Resolver,
                 _processorContext.Generator,

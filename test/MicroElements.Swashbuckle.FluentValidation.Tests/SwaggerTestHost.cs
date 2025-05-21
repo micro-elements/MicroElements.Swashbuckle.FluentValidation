@@ -1,6 +1,5 @@
 ﻿using System;
 using FluentValidation;
-using FluentValidation.AspNetCore;
 using MicroElements.OpenApi.FluentValidation;
 using MicroElements.Swashbuckle.FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Mvc;
@@ -30,9 +29,6 @@ public class SwaggerTestHost
         Action<SchemaGenerationOptions>? configureSchemaGenerationOptions = null,
         Action<RegistrationOptions>? configureRegistration = null)
     {
-        // Add FV
-        Services.AddFluentValidation();
-
         // Json options by default no name policy.
         Services.Configure<JsonOptions>(options => options.JsonSerializerOptions.PropertyNamingPolicy = null);
 

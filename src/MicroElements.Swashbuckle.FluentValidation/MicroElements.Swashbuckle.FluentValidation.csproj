@@ -1,7 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -13,13 +14,16 @@
   <Import Project="..\common.props" />
 
   <ItemGroup>
-    <PackageReference Include="FluentValidation" Version="[10.0.0, 12)" />
-    <PackageReference Include="MicroElements.IsExternalInit" Version="1.1.0" PrivateAssets="all" />
-    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="[6.3.0, 8)" />
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="8.1.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\MicroElements.OpenApi.FluentValidation\MicroElements.OpenApi.FluentValidation.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <IgnoresAccessChecksTo Include="Swashbuckle.AspNetCore.Swagger" />
+    <PackageReference Include="IgnoresAccessChecksToGenerator" Version="0.8.0" PrivateAssets="All" />
   </ItemGroup>
 
 </Project>

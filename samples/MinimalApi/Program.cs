@@ -1,5 +1,4 @@
 using FluentValidation;
-using FluentValidation.AspNetCore;
 using MicroElements.Swashbuckle.FluentValidation.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,10 +10,6 @@ services.AddEndpointsApiExplorer();
 
 // Add Swagger
 services.AddSwaggerGen();
-
-// Add FV
-services.AddFluentValidationAutoValidation();
-services.AddFluentValidationClientsideAdapters();
 
 // Add FV validators
 services.AddValidatorsFromAssemblyContaining<Program>();
