@@ -14,13 +14,15 @@
   <Import Project="..\common.props" />
 
   <ItemGroup>
-    <PackageReference Include="FluentValidation" Version="11.11.0" />
-    <PackageReference Include="MicroElements.IsExternalInit" Version="1.1.0" PrivateAssets="all" />
-    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="8.0.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="8.1.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\MicroElements.OpenApi.FluentValidation\MicroElements.OpenApi.FluentValidation.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="Microsoft.SourceLink.GitHub" Version="8.0.0" />
   </ItemGroup>
 
 </Project>

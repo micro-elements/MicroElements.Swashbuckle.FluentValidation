@@ -1,5 +1,4 @@
 ﻿using FluentValidation;
-using FluentValidation.AspNetCore;
 using MicroElements.NSwag.FluentValidation;
 using MicroElements.NSwag.FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Builder;
@@ -17,9 +16,6 @@ namespace SampleNSwagWebApi
 
             services.AddControllers();
                 
-            // Adds fluent validators to Asp.net
-            services.AddFluentValidationAutoValidation().AddFluentValidationClientsideAdapters();
-
             services.AddOpenApiDocument((settings, serviceProvider) =>
             {
                 var fluentValidationSchemaProcessor = serviceProvider.CreateScope().ServiceProvider.GetService<FluentValidationSchemaProcessor>();

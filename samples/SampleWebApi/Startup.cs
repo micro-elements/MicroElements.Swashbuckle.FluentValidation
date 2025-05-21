@@ -1,6 +1,5 @@
 ﻿using System.Linq;
 using FluentValidation;
-using FluentValidation.AspNetCore;
 using MicroElements.Swashbuckle.FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
@@ -39,9 +38,6 @@ namespace SampleWebApi
 
             // Register FV validators
             services.AddValidatorsFromAssemblyContaining<Startup>(lifetime: ServiceLifetime.Scoped);
-
-            // Add FV to Asp.net
-            services.AddFluentValidationAutoValidation();
 
             // Register all validators as IValidator?
             //var serviceDescriptors = services.Where(descriptor => descriptor.ServiceType.GetInterfaces().Contains(typeof(IValidator))).ToList();

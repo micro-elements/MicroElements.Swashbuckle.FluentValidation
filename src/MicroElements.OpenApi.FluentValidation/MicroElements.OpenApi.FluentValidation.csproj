@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
@@ -17,11 +17,10 @@
   <Import Project="..\common.props" />
 
   <ItemGroup>
-    <PackageReference Include="FluentValidation" Version="11.11.0" />
+    <PackageReference Include="FluentValidation" Version="12.0.0" />
     <PackageReference Include="MicroElements.CodeContracts.Sources" Version="1.4.0" PrivateAssets="all" />
-    <PackageReference Include="MicroElements.IsExternalInit" Version="1.1.0" PrivateAssets="all" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.3" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.5" />
   </ItemGroup>
 
   <ItemGroup>
