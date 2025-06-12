@@ -68,7 +68,7 @@ namespace SampleWebApi.Controllers
         [SwaggerDiscriminator("discriminator")]
         [SwaggerSubType(typeof(Person100A), DiscriminatorValue = Person100A.DiscriminatorValue)]
         [SwaggerSubType(typeof(Person100B), DiscriminatorValue = Person100B.DiscriminatorValue)]
-        [JsonConverter(typeof(JsonInheritanceConverter), "discriminator")]
+        [JsonConverter(typeof(JsonInheritanceConverter<BasePerson100>), "discriminator")]
         [JsonInheritance(Person100A.DiscriminatorValue, typeof(Person100A))]
         [JsonInheritance(Person100B.DiscriminatorValue, typeof(Person100B))]
         public abstract class BasePerson100

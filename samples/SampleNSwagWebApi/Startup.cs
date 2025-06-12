@@ -28,11 +28,11 @@ namespace SampleNSwagWebApi
                 var fluentValidationSchemaProcessor = serviceProvider.CreateScope().ServiceProvider.GetService<FluentValidationSchemaProcessor>();
 
                 // Add the fluent validations schema processor
-                settings.SchemaProcessors.Add(fluentValidationSchemaProcessor);
+                settings.SchemaSettings.SchemaProcessors.Add(fluentValidationSchemaProcessor);
             });
 
             // Register FV validators
-            services.AddValidatorsFromAssemblyContaining<Startup>(lifetime: ServiceLifetime.Scoped);
+            services.AddValidatorsFromAssemblyContaining<Startup>();
 
             // Adds FV rules to NSwag
             services.AddFluentValidationRulesToSwagger();
@@ -49,7 +49,7 @@ namespace SampleNSwagWebApi
             });
 
             app.UseOpenApi(); // serve OpenAPI/Swagger documents
-            app.UseSwaggerUi3(); // serve Swagger UI
+            app.UseSwaggerUi(); // serve Swagger UI
         }
     }
 }

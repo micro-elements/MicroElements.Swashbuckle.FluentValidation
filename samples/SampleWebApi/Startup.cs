@@ -38,7 +38,7 @@ namespace SampleWebApi
             services.AddHttpContextAccessor();
 
             // Register FV validators
-            services.AddValidatorsFromAssemblyContaining<Startup>(lifetime: ServiceLifetime.Scoped);
+            services.AddValidatorsFromAssemblyContaining<Startup>();
 
             // Add FV to Asp.net
             services.AddFluentValidationAutoValidation();
@@ -53,7 +53,7 @@ namespace SampleWebApi
             // Add swagger
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new OpenApiInfo(){ Title = "My API", Version = "v1" });
+                c.SwaggerDoc("v1", new OpenApiInfo() { Title = "My API", Version = "v1" });
                 c.EnableAnnotations(enableAnnotationsForInheritance: true, enableAnnotationsForPolymorphism: true);
             });
 

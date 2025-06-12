@@ -1,9 +1,11 @@
 ﻿using System;
 using FluentValidation;
+#if NET8_0_OR_GREATER
 using FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.Mvc;
+#endif
 using MicroElements.OpenApi.FluentValidation;
 using MicroElements.Swashbuckle.FluentValidation.AspNetCore;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
@@ -30,16 +32,18 @@ public class SwaggerTestHost
         Action<SchemaGenerationOptions>? configureSchemaGenerationOptions = null,
         Action<RegistrationOptions>? configureRegistration = null)
     {
+#if NET8_0_OR_GREATER
         // Add FV
         Services.AddFluentValidation();
 
         // Json options by default no name policy.
         Services.Configure<JsonOptions>(options => options.JsonSerializerOptions.PropertyNamingPolicy = null);
+#endif
 
         // Add Swagger
         Services.AddSwaggerGen(c =>
         {
-            c.SwaggerDoc("v1", new OpenApiInfo{ Title = "API", Version = "v1" });
+            c.SwaggerDoc("v1", new OpenApiInfo { Title = "API", Version = "v1" });
             c.EnableAnnotations(enableAnnotationsForInheritance: true, enableAnnotationsForPolymorphism: true);
         });
 
