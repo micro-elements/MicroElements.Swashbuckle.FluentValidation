@@ -1,22 +1,23 @@
-<Project Sdk="Microsoft.NET.Sdk">
-    
-    <PropertyGroup>
-        <TargetFramework>netstandard2.0</TargetFramework>
-        <Nullable>enable</Nullable>
-        <LangVersion>latest</LangVersion>
-        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <RootNamespace>MicroElements.OpenApi</RootNamespace>
-    </PropertyGroup>
-    
-    <Import Project="..\common.props" />
-    
-    <ItemGroup>
-        <PackageReference Include="FluentValidation" Version="[10.0.0, 12)" />
-        <PackageReference Include="MicroElements.CodeContracts.Sources" Version="1.4.0" PrivateAssets="all" />
-        <PackageReference Include="MicroElements.IsExternalInit" Version="1.1.0" PrivateAssets="all" />
-        <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />
-    </ItemGroup>
-    
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net8.0;net9.0</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <RootNamespace>MicroElements.OpenApi</RootNamespace>
+  </PropertyGroup>
+
+  <Import Project="..\common.props" />
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="[10.0.0, 12)" Condition="'$(TargetFramework)' == 'netstandard2.0'"/>
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="[12.0.0, 13)" Condition="'$(TargetFramework)' == 'net8.0' or '$(TargetFramework)' == 'net9.0'"/>
+    <PackageReference Include="MicroElements.CodeContracts.Sources" Version="1.4.0" PrivateAssets="all" />
+    <PackageReference Include="MicroElements.IsExternalInit" Version="1.1.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.6" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.6" />
+  </ItemGroup>
+
 </Project>

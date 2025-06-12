@@ -1,14 +1,14 @@
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.Json.Serialization;
 using FluentAssertions;
 using FluentValidation;
 using FluentValidation.Validators;
 using MicroElements.OpenApi;
+using MicroElements.Swashbuckle.FluentValidation.Tests.Samples;
 using Microsoft.OpenApi.Models;
-using SampleWebApi.Controllers;
 using Swashbuckle.AspNetCore.SwaggerGen;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json.Serialization;
 using Xunit;
 
 namespace MicroElements.Swashbuckle.FluentValidation.Tests
@@ -97,7 +97,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
         public void SampleValidator_FromSampleApi_Test()
         {
             var schemaRepository = new SchemaRepository();
-            var referenceSchema = SchemaGenerator(new SampleValidator()).GenerateSchema(typeof(Sample), schemaRepository);
+            var referenceSchema = SchemaGenerator(new RuleHistoryCacheTest.SampleValidator()).GenerateSchema(typeof(RuleHistoryCacheTest.Sample), schemaRepository);
             var schema = schemaRepository.Schemas[referenceSchema.Reference.Id];
 
             schema.Type.Should().Be("object");
