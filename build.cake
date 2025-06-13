@@ -76,7 +76,7 @@ Task("Travis")
     .IsDependentOn("CopyPackagesToArtifacts")
     .IsDependentOn("Test")
     .IsDependentOn("CodeCoverage")
-    .IsDependentOn("UploadCoverageReportsToCoveralls")
+    // .IsDependentOn("UploadCoverageReportsToCoveralls")
     // .IsDependentOn("UploadPackages")
     ;
 
