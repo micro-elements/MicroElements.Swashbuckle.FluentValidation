@@ -52,8 +52,8 @@ Task("CopyPackagesToArtifacts")
     .IsDependentOn("Build")
     .Does(() => CopyPackagesToArtifacts(args));
 
-Task("UploadPackages")
-    .Does(() => UploadPackagesIfNeeded(args));
+// Task("UploadPackages")
+//     .Does(() => UploadPackagesIfNeeded(args));
 
 Task("DoVersioning")
     .Does(() => DoVersioning(args));
