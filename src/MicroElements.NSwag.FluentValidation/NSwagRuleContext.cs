@@ -27,7 +27,7 @@ namespace MicroElements.NSwag.FluentValidation
             get
             {
                 return new SchemaProcessorContext(
-                    Schema.Type,
+                    Schema.ContextualType,
                     Schema.Schema.Properties[PropertyKey],
                     Schema.Resolver,
                     Schema.Generator,
