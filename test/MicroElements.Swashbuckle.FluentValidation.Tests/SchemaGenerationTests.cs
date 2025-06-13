@@ -97,7 +97,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
         public void SampleValidator_FromSampleApi_Test()
         {
             var schemaRepository = new SchemaRepository();
-            var referenceSchema = SchemaGenerator(new RuleHistoryCacheTest.SampleValidator()).GenerateSchema(typeof(RuleHistoryCacheTest.Sample), schemaRepository);
+            var referenceSchema = SchemaGenerator(new SampleValidator()).GenerateSchema(typeof(Sample), schemaRepository);
             var schema = schemaRepository.Schemas[referenceSchema.Reference.Id];
 
             schema.Type.Should().Be("object");
