@@ -52,8 +52,8 @@ Task("CopyPackagesToArtifacts")
     .IsDependentOn("Build")
     .Does(() => CopyPackagesToArtifacts(args));
 
-// Task("UploadPackages")
-//     .Does(() => UploadPackagesIfNeeded(args));
+Task("UploadPackages")
+    .Does(() => UploadPackagesIfNeeded(args));
 
 Task("DoVersioning")
     .Does(() => DoVersioning(args));
@@ -76,8 +76,8 @@ Task("Travis")
     .IsDependentOn("CopyPackagesToArtifacts")
     .IsDependentOn("Test")
     .IsDependentOn("CodeCoverage")
-    // .IsDependentOn("UploadCoverageReportsToCoveralls")
-    // .IsDependentOn("UploadPackages")
+    .IsDependentOn("UploadCoverageReportsToCoveralls")
+    .IsDependentOn("UploadPackages")
     ;
 
 Task("AppVeyor")
