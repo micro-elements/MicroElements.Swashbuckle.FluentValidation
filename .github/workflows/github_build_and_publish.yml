@@ -15,6 +15,10 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
 
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
     steps:
     # Шаг 1: Клонируем репозиторий
     - uses: actions/checkout@v3
@@ -27,8 +31,15 @@ jobs:
           8.0.x
           9.0.x
 
+    - name: Build Windows
+      if: runner.os == 'Windows'
+      run: |
+        ./build.ps1 --target=Travis --verbosity=normal --ForceUploadPackages=false
+      shell: powershell
+
     # Шаг 3: Сборка проекта
     - name: Build
+      if: runner.os == 'Linux'
       env:
         UPLOAD_NUGET: ${{ secrets.UPLOAD_NUGET }}
         UPLOAD_NUGET_API_KEY: ${{ secrets.UPLOAD_NUGET_API_KEY }}
