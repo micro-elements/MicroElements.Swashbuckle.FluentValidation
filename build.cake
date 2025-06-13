@@ -77,7 +77,7 @@ Task("Travis")
     .IsDependentOn("Test")
     .IsDependentOn("CodeCoverage")
     .IsDependentOn("UploadCoverageReportsToCoveralls")
-    .IsDependentOn("UploadPackages")
+    // .IsDependentOn("UploadPackages")
     ;
 
 Task("AppVeyor")
