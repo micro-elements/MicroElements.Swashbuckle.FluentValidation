@@ -30,7 +30,7 @@ jobs:
     - name: Run build script (Windows)
       if: runner.os == 'Windows'
       run: |
-        ./build.ps1 --target=Travis --verbosity=normal --ForceUploadPackages=true
+        ./build.ps1 --target=Travis --verbosity=normal --ForceUploadPackages=false
       shell: powershell
 
     # Шаг 3: Сборка проекта
@@ -41,4 +41,4 @@ jobs:
         UPLOAD_NUGET_API_KEY: ${{ secrets.UPLOAD_NUGET_API_KEY }}
       run: |
         chmod a+x ./build.sh
-        ./build.sh --target=Travis --verbosity=normal --ForceUploadPackages=true
+        ./build.sh --target=Travis --verbosity=normal --ForceUploadPackages=false
