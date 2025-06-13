@@ -9,7 +9,11 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
 
     steps:
     # Шаг 1: Клонируем репозиторий
@@ -31,5 +35,3 @@ jobs:
       run: |
         chmod a+x ./build.sh
         ./build.sh --target=Travis --verbosity=normal --ForceUploadPackages=true
-
-   
