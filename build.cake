@@ -21,9 +21,28 @@ ScriptArgs args = new ScriptArgs(Context)
 Task("Build")
     .Does(() => args.Build().BuildSamples());
 
-Task("Test")
-    .WithCriteria(()=>args.RunTests)
-    .Does(() => RunTests(args));
+var isWindows = Environment.Platform.Family == PlatformFamily.Windows;
+Task("Tests")
+    .Does(() =>
+    {
+        var solution = "MicroElements.Swashbuckle.FluentValidation.sln";
+
+        if (isWindows)
+        {
+            Information("Executing tests net481, net8.0, net9.0 on Windows");
+
+            DotNetTest(solution, new DotNetTestSettings { Framework = "net481" });
+            DotNetTest(solution, new DotNetTestSettings { Framework = "net8.0" });
+            DotNetTest(solution, new DotNetTestSettings { Framework = "net9.0" });
+        }
+        else
+        {
+            Information("Executing tests net8.0 y net9.0 on Linux/macOS");
+
+            DotNetTest(solution, new DotNetTestSettings { Framework = "net8.0" });
+            DotNetTest(solution, new DotNetTestSettings { Framework = "net9.0" });
+        }
+    });
 
 Task("UploadTestResultsToAppVeyor")
     .WithCriteria(()=>args.RunTests)
