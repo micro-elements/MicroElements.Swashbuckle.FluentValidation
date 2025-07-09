@@ -1,11 +1,11 @@
 ﻿// Copyright (c) MicroElements. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using System;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Swashbuckle.AspNetCore.Swagger;
+using System;
+using System.Threading.Tasks;
 
 namespace MicroElements.Swashbuckle.FluentValidation
 {
