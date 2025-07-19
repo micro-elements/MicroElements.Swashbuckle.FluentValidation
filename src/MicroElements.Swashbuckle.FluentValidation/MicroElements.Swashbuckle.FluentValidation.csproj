@@ -13,7 +13,9 @@
   <Import Project="..\common.props" />
 
   <ItemGroup>
-    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="[6.3.0, 9)" />
+    <PackageReference Include="MicroElements.IsExternalInit" Version="1.1.0" PrivateAssets="all" />
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="8.1.*-*" Condition="'$(TargetFramework)' == 'netstandard2.0'"/>
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="9.0.*-*" Condition="'$(TargetFramework)' == 'net8.0' or '$(TargetFramework)' == 'net9.0'"/>
   </ItemGroup>
 
   <ItemGroup>

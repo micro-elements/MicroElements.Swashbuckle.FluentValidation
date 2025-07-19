@@ -20,7 +20,7 @@ if(!$PSScriptRoot){
     $PSScriptRoot = Split-Path $MyInvocation.MyCommand.Path -Parent
 }
 
-$CAKE_VERSION = "0.38.0"
+$CAKE_VERSION = "1.3.0"
 $DEVOPS_VERSION = "1.11.0"
 $NUGET_URL = "https://api.nuget.org/v3/index.json"
 $NUGET_BETA_URL = "https://www.myget.org/F/micro-elements/api/v3/index.json"
@@ -63,6 +63,7 @@ if ($Verbosity) { $cakeArguments += "-verbosity=$Verbosity" }
 $cakeArguments += ("--rootDir="+@("$PSScriptRoot"));
 $cakeArguments += ("--devOpsVersion=$DEVOPS_VERSION");
 $cakeArguments += ("--devOpsRoot=""$TOOLS_DIR/microelements.devops/$DEVOPS_VERSION""");
+$cakeArguments += ("--ForceUploadPackages=false")
 $cakeArguments += $ScriptArgs
 
 # Start Cake

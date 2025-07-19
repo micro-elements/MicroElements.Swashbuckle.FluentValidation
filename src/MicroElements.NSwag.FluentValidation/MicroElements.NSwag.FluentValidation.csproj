@@ -13,6 +13,7 @@
   <Import Project="..\common.props" />
 
   <ItemGroup>
+    <PackageReference Include="MicroElements.IsExternalInit" Version="1.1.0" PrivateAssets="all" />
     <PackageReference Include="NJsonSchema" Version="11.3.2" />
   </ItemGroup>
 

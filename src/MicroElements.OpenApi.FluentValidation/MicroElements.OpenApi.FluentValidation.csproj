@@ -16,8 +16,8 @@
     <PackageReference Include="MicroElements.CodeContracts.Sources" Version="1.4.0" PrivateAssets="all" />
     <PackageReference Include="MicroElements.IsExternalInit" Version="1.1.0" PrivateAssets="all" />
     <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.6" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.6" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.*-*" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.*-*" />
   </ItemGroup>
 
 </Project>

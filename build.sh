@@ -18,7 +18,7 @@ TOOLS_DIR=$SCRIPT_DIR/tools
 SCRIPT=$TOOLS_DIR/microelements.devops/$DEVOPS_VERSION/scripts/main.cake
 
 CAKE_PROPS_PATH=$TOOLS_DIR/cake.props
-CAKE_VERSION="0.38.0"
+CAKE_VERSION="1.3.0"
 CAKE_ARGUMENTS=()
 
 # Parse arguments.
@@ -26,6 +26,7 @@ for i in "$@"; do
     case $1 in
         -s|--script) SCRIPT="$2"; shift ;;
         --cake-version) CAKE_VERSION="--version=$2"; shift ;;
+        --ForceUploadPackages=*|--ForceUploadPackages) ;;
         --) shift; CAKE_ARGUMENTS+=("$@"); break ;;
         *) CAKE_ARGUMENTS+=("$1") ;;
     esac
@@ -35,6 +36,7 @@ done
 CAKE_ARGUMENTS+=("--rootDir=$SCRIPT_DIR");
 CAKE_ARGUMENTS+=("--devOpsVersion=$DEVOPS_VERSION");
 CAKE_ARGUMENTS+=("--devOpsRoot=$TOOLS_DIR/microelements.devops/$DEVOPS_VERSION");
+CAKE_ARGUMENTS+=("--ForceUploadPackages=false")
 
 echo "===========VARIABLES============"
 echo "SCRIPT_DIR: $SCRIPT_DIR"
