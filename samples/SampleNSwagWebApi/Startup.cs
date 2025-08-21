@@ -1,5 +1,4 @@
 ﻿using FluentValidation;
-using FluentValidation.AspNetCore;
 using MicroElements.NSwag.FluentValidation;
 using MicroElements.NSwag.FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Builder;
@@ -15,14 +14,8 @@ namespace SampleNSwagWebApi
             // HttpContextValidatorRegistry requires access to HttpContext
             services.AddHttpContextAccessor();
 
-            services
-                .AddControllers()
-                // Adds fluent validators to Asp.net
-                .AddFluentValidation(c =>
-                {
-                    c.RegisterValidatorsFromAssemblyContaining<Startup>(includeInternalTypes: true);
-                });
-
+            services.AddControllers();
+                
             services.AddOpenApiDocument((settings, serviceProvider) =>
             {
                 var fluentValidationSchemaProcessor = serviceProvider.CreateScope().ServiceProvider.GetService<FluentValidationSchemaProcessor>();
