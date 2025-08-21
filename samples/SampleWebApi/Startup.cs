@@ -37,7 +37,7 @@ namespace SampleWebApi
             services.AddHttpContextAccessor();
 
             // Register FV validators
-            services.AddValidatorsFromAssemblyContaining<Startup>(lifetime: ServiceLifetime.Scoped);
+            services.AddValidatorsFromAssemblyContaining<Startup>();
 
             // Register all validators as IValidator?
             //var serviceDescriptors = services.Where(descriptor => descriptor.ServiceType.GetInterfaces().Contains(typeof(IValidator))).ToList();
@@ -49,7 +49,7 @@ namespace SampleWebApi
             // Add swagger
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new OpenApiInfo(){ Title = "My API", Version = "v1" });
+                c.SwaggerDoc("v1", new OpenApiInfo() { Title = "My API", Version = "v1" });
                 c.EnableAnnotations(enableAnnotationsForInheritance: true, enableAnnotationsForPolymorphism: true);
             });
 

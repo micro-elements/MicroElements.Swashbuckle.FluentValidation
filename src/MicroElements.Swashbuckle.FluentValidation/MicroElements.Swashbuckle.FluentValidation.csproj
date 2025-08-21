@@ -1,5 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  
+
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
@@ -10,7 +10,7 @@
     <Description>Swagger ISchemaFilter that uses FluentValidation validators instead System.ComponentModel based attributes.</Description>
     <PackageTags>swagger swashbuckle FluentValidation aspnetcore</PackageTags>
   </PropertyGroup>
-  
+
   <Import Project="..\common.props" />
 
   <ItemGroup>
@@ -19,11 +19,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MicroElements.OpenApi.FluentValidation\MicroElements.OpenApi.FluentValidation.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <IgnoresAccessChecksTo Include="Swashbuckle.AspNetCore.Swagger" />
-    <PackageReference Include="IgnoresAccessChecksToGenerator" Version="0.8.0" PrivateAssets="All" />
   </ItemGroup>
 
 </Project>

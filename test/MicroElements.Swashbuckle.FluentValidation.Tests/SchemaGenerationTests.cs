@@ -1,14 +1,14 @@
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.Json.Serialization;
 using FluentAssertions;
 using FluentValidation;
 using FluentValidation.Validators;
 using MicroElements.OpenApi;
+using MicroElements.Swashbuckle.FluentValidation.Tests.Samples;
 using Microsoft.OpenApi.Models;
-using SampleWebApi.Controllers;
 using Swashbuckle.AspNetCore.SwaggerGen;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json.Serialization;
 using Xunit;
 
 namespace MicroElements.Swashbuckle.FluentValidation.Tests

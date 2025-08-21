@@ -25,7 +25,7 @@ namespace SampleNSwagWebApi
             });
 
             // Register FV validators
-            services.AddValidatorsFromAssemblyContaining<Startup>(lifetime: ServiceLifetime.Scoped);
+            services.AddValidatorsFromAssemblyContaining<Startup>();
 
             // Adds FV rules to NSwag
             services.AddFluentValidationRulesToSwagger();

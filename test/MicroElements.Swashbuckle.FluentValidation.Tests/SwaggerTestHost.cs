@@ -1,8 +1,9 @@
 ﻿using System;
 using FluentValidation;
+using Microsoft.AspNetCore.Mvc;
+#endif
 using MicroElements.OpenApi.FluentValidation;
 using MicroElements.Swashbuckle.FluentValidation.AspNetCore;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
