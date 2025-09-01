@@ -1,7 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net8.0;net9.0</TargetFrameworks>
+    <OutputType>Library</OutputType>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -13,9 +14,7 @@
   <Import Project="..\common.props" />
 
   <ItemGroup>
-    <PackageReference Include="MicroElements.IsExternalInit" Version="1.1.0" PrivateAssets="all" />
-    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="8.1.*-*" Condition="'$(TargetFramework)' == 'netstandard2.0'"/>
-    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="9.0.*-*" Condition="'$(TargetFramework)' == 'net8.0' or '$(TargetFramework)' == 'net9.0'"/>
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="8.1.1" />
   </ItemGroup>
 
   <ItemGroup>
