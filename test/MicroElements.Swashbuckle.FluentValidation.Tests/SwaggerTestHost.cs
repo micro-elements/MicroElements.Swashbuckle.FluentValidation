@@ -1,12 +1,13 @@
 ﻿using System;
 using FluentValidation;
+
 using Microsoft.AspNetCore.Mvc;
-#endif
 using MicroElements.OpenApi.FluentValidation;
 using MicroElements.Swashbuckle.FluentValidation.AspNetCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace MicroElements.Swashbuckle.FluentValidation.Tests;
 
@@ -60,6 +61,9 @@ public class SwaggerTestHost
     public SwaggerTestHost GenerateSchema<TModel>(out OpenApiSchema schema)
     {
         var schemaGenerator = ServiceProvider.GetService<ISchemaGenerator>();
+        if (schemaGenerator == null)
+            throw new InvalidOperationException("ISchemaGenerator service not found. Make sure to call Configure() first.");
+        
         var openApiSchema = schemaGenerator.GenerateSchema(typeof(TModel), SchemaRepository);
         schema = SchemaRepository.Schemas[openApiSchema.Reference.Id];
         return this;
