@@ -2,6 +2,11 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+#if OPENAPI_V2
+using Microsoft.OpenApi;
+#else
+using Microsoft.OpenApi.Models;
+#endif
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Xunit;
 
@@ -31,11 +36,11 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             var schemaRepository = new SchemaRepository();
             var referenceSchema = SchemaGenerator(new UploadFileRequestValidator()).GenerateSchema(typeof(UploadFileRequest), schemaRepository);
 
-            var schema = schemaRepository.Schemas[referenceSchema.Reference.Id];
-            var fileProperty = schema.Properties[nameof(UploadFileRequest.File)];
-            fileProperty.Type.Should().Be("string");
+            var schema = schemaRepository.GetSchema(referenceSchema.GetRefId()!);
+            var fileProperty = schema.GetProperty(nameof(UploadFileRequest.File))!;
+            fileProperty.GetTypeString().Should().Be("string");
             fileProperty.Format.Should().Be("binary");
-            fileProperty.Nullable.Should().Be(false);
+            fileProperty.IsNullable().Should().Be(false);
         }
     }
 }

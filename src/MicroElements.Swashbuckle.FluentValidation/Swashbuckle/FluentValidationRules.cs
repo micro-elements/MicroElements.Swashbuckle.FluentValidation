@@ -5,13 +5,20 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using FluentValidation;
+using MicroElements.OpenApi;
 using MicroElements.OpenApi.Core;
 using MicroElements.OpenApi.FluentValidation;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+#if !OPENAPI_V2
 using Microsoft.OpenApi.Models;
+#endif
 using Swashbuckle.AspNetCore.SwaggerGen;
+
+#if OPENAPI_V2
+using Microsoft.OpenApi;
+#endif
 
 namespace MicroElements.Swashbuckle.FluentValidation
 {
@@ -61,8 +68,21 @@ namespace MicroElements.Swashbuckle.FluentValidation
             _logger.LogDebug("FluentValidationRules Created");
         }
 
+#if OPENAPI_V2
+        /// <inheritdoc />
+        public void Apply(IOpenApiSchema schema, SchemaFilterContext context)
+        {
+            if (schema is not OpenApiSchema openApiSchema)
+                return;
+
+            ApplyInternal(openApiSchema, context);
+        }
+
+        private void ApplyInternal(OpenApiSchema? schema, SchemaFilterContext context)
+#else
         /// <inheritdoc />
         public void Apply(OpenApiSchema? schema, SchemaFilterContext context)
+#endif
         {
             if (schema is null)
                 return;
@@ -132,13 +152,18 @@ namespace MicroElements.Swashbuckle.FluentValidation
         {
             schemas.Add(schema);
 
-            var collectionsOfSchemas = new IList<OpenApiSchema>[] { schema.AllOf, schema.OneOf, schema.AnyOf };
+            var collectionsOfSchemas = new IEnumerable<OpenApiSchema>[]
+            {
+                OpenApiSchemaCompatibility.GetAllOf(schema),
+                OpenApiSchemaCompatibility.GetOneOf(schema),
+                OpenApiSchemaCompatibility.GetAnyOf(schema)
+            };
 
             foreach (var collectionOfSchemas in collectionsOfSchemas)
             {
                 foreach (var embededSchema in collectionOfSchemas)
                 {
-                    if (!embededSchema.Properties.Any())
+                    if (embededSchema.Properties == null || !embededSchema.Properties.Any())
                     {
                         continue;
                     }

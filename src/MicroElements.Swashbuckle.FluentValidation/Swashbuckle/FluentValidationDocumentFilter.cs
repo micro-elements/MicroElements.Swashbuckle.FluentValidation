@@ -5,13 +5,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using FluentValidation;
+using MicroElements.OpenApi;
 using MicroElements.OpenApi.Core;
 using MicroElements.OpenApi.FluentValidation;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+#if !OPENAPI_V2
 using Microsoft.OpenApi.Models;
+#endif
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace MicroElements.Swashbuckle.FluentValidation
@@ -135,12 +138,16 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
             schemasForParameters = GetParameters().ToArray();
 
-            OpenApiSchema FindParam(ParameterItem item)
+            OpenApiSchema? FindParam(ParameterItem item)
             {
                 //return many?
-                var path = swaggerDoc.Paths.FirstOrDefault(pair => pair.Key.TrimStart('/') == item.ApiDescription.RelativePath);
-                var openApiParameter = path.Value.Operations.Values.FirstOrDefault().Parameters.FirstOrDefault(parameter => parameter.Name == item.ParameterDescription.Name);
+                var path = swaggerDoc.Paths.FirstOrDefault(pair => pair.Key.TrimStart('/') == item.ApiDescription?.RelativePath);
+                var openApiParameter = path.Value?.Operations?.Values?.FirstOrDefault()?.Parameters?.FirstOrDefault(parameter => parameter.Name == item.ParameterDescription?.Name);
+#if OPENAPI_V2
+                return openApiParameter?.Schema as OpenApiSchema;
+#else
                 return openApiParameter?.Schema;
+#endif
             }
 
             foreach (var item in schemasForTypes)
@@ -185,24 +192,30 @@ namespace MicroElements.Swashbuckle.FluentValidation
             foreach (var item in schemasForParameters)
             {
                 var itemParameterDescription = item.ParameterDescription;
-                var schemaPropertyName = itemParameterDescription.ModelMetadata.BinderModelName ?? itemParameterDescription.Name;
+                var schemaPropertyName = itemParameterDescription?.ModelMetadata?.BinderModelName ?? itemParameterDescription?.Name;
                 var parameterSchema = item.ParameterSchema;
                 var schema = item.Schema;
-                if (schema.Properties.TryGetValue(schemaPropertyName.ToLowerCamelCase(), out var property)
-                    || schema.Properties.TryGetValue(schemaPropertyName, out property))
+                if (schema != null && parameterSchema != null && schemaPropertyName != null)
                 {
-                    // Copy from property schema to parameter schema.
-                    parameterSchema.Description = property.Description;
-                    parameterSchema.MinLength = property.MinLength;
-                    parameterSchema.Nullable = property.Nullable;
-                    parameterSchema.MaxLength = property.MaxLength;
-                    parameterSchema.Pattern = property.Pattern;
-                    parameterSchema.Minimum = property.Minimum;
-                    parameterSchema.Maximum = property.Maximum;
-                    parameterSchema.ExclusiveMaximum = property.ExclusiveMaximum;
-                    parameterSchema.ExclusiveMinimum = property.ExclusiveMinimum;
-                    parameterSchema.Enum = property.Enum;
-                    parameterSchema.AllOf = property.AllOf;
+                    if (OpenApiSchemaCompatibility.TryGetProperty(schema, schemaPropertyName.ToLowerCamelCase(), out var property)
+                        || OpenApiSchemaCompatibility.TryGetProperty(schema, schemaPropertyName, out property))
+                    {
+                        if (property != null)
+                        {
+                            // Copy from property schema to parameter schema.
+                            parameterSchema.Description = property.Description;
+                            parameterSchema.MinLength = property.MinLength;
+                            OpenApiSchemaCompatibility.SetNullable(parameterSchema, OpenApiSchemaCompatibility.GetNullable(property));
+                            parameterSchema.MaxLength = property.MaxLength;
+                            parameterSchema.Pattern = property.Pattern;
+                            parameterSchema.Minimum = property.Minimum;
+                            parameterSchema.Maximum = property.Maximum;
+                            parameterSchema.ExclusiveMaximum = property.ExclusiveMaximum;
+                            parameterSchema.ExclusiveMinimum = property.ExclusiveMinimum;
+                            parameterSchema.Enum = property.Enum;
+                            parameterSchema.AllOf = property.AllOf;
+                        }
+                    }
                 }
             }
         }

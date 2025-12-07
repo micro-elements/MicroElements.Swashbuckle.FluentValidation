@@ -1,6 +1,11 @@
 using System.Collections.Generic;
 using FluentAssertions;
 using FluentValidation;
+#if OPENAPI_V2
+using Microsoft.OpenApi;
+#else
+using Microsoft.OpenApi.Models;
+#endif
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Xunit;
 
@@ -43,14 +48,14 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             var schemaRepository = new SchemaRepository();
             var referenceSchema = SchemaGenerator(new ModelValidator()).GenerateSchema(typeof(Model), schemaRepository);
 
-            var modelSchema = schemaRepository.Schemas["Model"];
+            var modelSchema = schemaRepository.GetSchema("Model");
             var listItemsProperty = modelSchema.Properties[nameof(Model.ListItems)];
             var subModelProperty = modelSchema.Properties[nameof(Model.SubModel)];
             listItemsProperty.Should().NotBeNull();
             subModelProperty.Should().NotBeNull();
             modelSchema.Required.Should().BeEmpty(because: "No required in Model");
 
-            var subModelSchema = schemaRepository.Schemas["SubModel"];
+            var subModelSchema = schemaRepository.GetSchema("SubModel");
             var subModelListItemsProperty = subModelSchema.Properties[nameof(SubModel.ListItems)];
             subModelListItemsProperty.Should().NotBeNull();
             subModelSchema.Required.Should().Contain(nameof(SubModel.ListItems), because: "ListItems is required in SubModel");

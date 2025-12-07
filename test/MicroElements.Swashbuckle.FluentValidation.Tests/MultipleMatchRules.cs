@@ -1,5 +1,10 @@
 using FluentAssertions;
 using FluentValidation;
+#if OPENAPI_V2
+using Microsoft.OpenApi;
+#else
+using Microsoft.OpenApi.Models;
+#endif
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Xunit;
 
@@ -58,8 +63,8 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             // *********************************
 
             var schema = new SchemaRepository().GenerateSchemaForValidator(new PhoneEntity.Validator());
-            var numberProp = schema.Properties[nameof(PhoneEntity.MobilePhoneNumber)];
-            numberProp.Type.Should().Be("string");
+            var numberProp = schema.GetProperty(nameof(PhoneEntity.MobilePhoneNumber))!;
+            numberProp.GetTypeString().Should().Be("string");
         }
     }
 }

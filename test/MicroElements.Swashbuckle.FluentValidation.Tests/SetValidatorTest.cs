@@ -1,5 +1,10 @@
 using FluentAssertions;
 using FluentValidation;
+#if OPENAPI_V2
+using Microsoft.OpenApi;
+#else
+using Microsoft.OpenApi.Models;
+#endif
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Xunit;
 
@@ -50,9 +55,9 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             var schemaRepository = new SchemaRepository();
             var referenceSchema = SchemaGenerator(new RegisterUserRequestValidator()).GenerateSchema(typeof(RegisterUserRequest), schemaRepository);
 
-            var schema = schemaRepository.Schemas[referenceSchema.Reference.Id];
-            var emailProperty = schema.Properties[nameof(RegisterUserRequest.Email)];
-            emailProperty.Type.Should().Be("string");
+            var schema = schemaRepository.GetSchema(referenceSchema.GetRefId()!);
+            var emailProperty = schema.GetProperty(nameof(RegisterUserRequest.Email))!;
+            emailProperty.GetTypeString().Should().Be("string");
             emailProperty.Format.Should().Be("email");
             emailProperty.MinLength.Should().Be(1);
         }

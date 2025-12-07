@@ -6,7 +6,9 @@ using System.Collections.Generic;
 using System.Linq;
 using FluentValidation.Validators;
 using MicroElements.OpenApi.FluentValidation;
+#if !OPENAPI_V2
 using Microsoft.OpenApi.Models;
+#endif
 
 namespace MicroElements.Swashbuckle.FluentValidation
 {

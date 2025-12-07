@@ -3,7 +3,9 @@
 
 using System;
 using MicroElements.OpenApi.FluentValidation;
+#if !OPENAPI_V2
 using Microsoft.OpenApi.Models;
+#endif
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace MicroElements.Swashbuckle.FluentValidation
@@ -38,6 +40,20 @@ namespace MicroElements.Swashbuckle.FluentValidation
         {
             var schemaId = _schemaIdSelector(type);
 
+#if OPENAPI_V2
+            if (!_schemaRepository.Schemas.TryGetValue(schemaId, out var schemaInterface))
+            {
+                schemaInterface = _schemaGenerator.GenerateSchema(type, _schemaRepository);
+            }
+
+            var schema = schemaInterface as OpenApiSchema ?? new OpenApiSchema();
+
+            if ((schema.Properties == null || schema.Properties.Count == 0) &&
+                _schemaRepository.Schemas.ContainsKey(schemaId))
+            {
+                schema = _schemaRepository.Schemas[schemaId] as OpenApiSchema ?? schema;
+            }
+#else
             if (!_schemaRepository.Schemas.TryGetValue(schemaId, out OpenApiSchema schema))
             {
                 schema = _schemaGenerator.GenerateSchema(type, _schemaRepository);
@@ -48,6 +64,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             {
                 schema = _schemaRepository.Schemas[schemaId];
             }
+#endif
 
             return schema;
         }
