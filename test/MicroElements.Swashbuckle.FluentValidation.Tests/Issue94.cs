@@ -2,6 +2,11 @@ using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
 using FluentValidation;
+#if OPENAPI_V2
+using Microsoft.OpenApi;
+#else
+using Microsoft.OpenApi.Models;
+#endif
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Xunit;
 
@@ -70,10 +75,10 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             var referenceSchema = SchemaGenerator(new Person.PersonValidator())
                 .GenerateSchema(typeof(Person), schemaRepository);
 
-            var schema = schemaRepository.Schemas[referenceSchema.Reference.Id];
+            var schema = schemaRepository.GetSchema(referenceSchema.GetRefId()!);
             schema.Properties.Keys.Should().BeEquivalentTo("Name", "Emails");
-            var nameProperty = schema.Properties[nameof(Person.Name)];
-            nameProperty.Type.Should().Be("string");
+            var nameProperty = schema.GetProperty(nameof(Person.Name))!;
+            nameProperty.GetTypeString().Should().Be("string");
             nameProperty.MaxLength.Should().Be(101);
         }
     }

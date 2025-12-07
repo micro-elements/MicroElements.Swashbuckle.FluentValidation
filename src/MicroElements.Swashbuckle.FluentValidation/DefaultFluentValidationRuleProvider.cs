@@ -8,7 +8,9 @@ using MicroElements.OpenApi;
 using MicroElements.OpenApi.Core;
 using MicroElements.OpenApi.FluentValidation;
 using Microsoft.Extensions.Options;
+#if !OPENAPI_V2
 using Microsoft.OpenApi.Models;
+#endif
 
 namespace MicroElements.Swashbuckle.FluentValidation
 {
@@ -35,20 +37,18 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 .WithCondition(validator => validator is INotNullValidator || validator is INotEmptyValidator)
                 .WithApply(context =>
                 {
-                    if (!context.Schema.Required.Contains(context.PropertyKey))
-                        context.Schema.Required.Add(context.PropertyKey);
-
-                    context.Property.Nullable = false;
+                    OpenApiSchemaCompatibility.AddRequired(context.Schema, context.PropertyKey);
+                    OpenApiSchemaCompatibility.SetNotNullable(context.Property);
                 });
 
             yield return new FluentValidationRule("NotEmpty")
                 .WithCondition(validator => validator is INotEmptyValidator)
                 .WithApply(context =>
                 {
-                    if (context.Property.Type == "string")
+                    if (OpenApiSchemaCompatibility.IsStringType(context.Property))
                         context.Property.SetNewMin(p => p.MinLength, 1, _options.Value.SetNotNullableIfMinLengthGreaterThenZero);
 
-                    if (context.Property.Type == "array")
+                    if (OpenApiSchemaCompatibility.IsArrayType(context.Property))
                         context.Property.SetNewMin(p => p.MinItems, 1, _options.Value.SetNotNullableIfMinLengthGreaterThenZero);
                 });
 
@@ -59,7 +59,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     var lengthValidator = (ILengthValidator) context.PropertyValidator;
                     var schemaProperty = context.Property;
 
-                    if (schemaProperty.Type == "array")
+                    if (OpenApiSchemaCompatibility.IsArrayType(schemaProperty))
                     {
                         if (lengthValidator.Max > 0)
                             schemaProperty.SetNewMax(p => p.MaxItems, lengthValidator.Max);
@@ -87,19 +87,19 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     if (_options.Value.UseAllOfForMultipleRules)
                     {
                         if (schemaProperty.Pattern != null ||
-                            schemaProperty.AllOf.Count(schema => schema.Pattern != null) > 0)
+                            OpenApiSchemaCompatibility.AllOfCountWhere(schemaProperty, schema => schema.Pattern != null) > 0)
                         {
-                            if (schemaProperty.AllOf.Count(schema => schema.Pattern != null) == 0)
+                            if (OpenApiSchemaCompatibility.AllOfCountWhere(schemaProperty, schema => schema.Pattern != null) == 0)
                             {
                                 // Add first pattern as AllOf
-                                schemaProperty.AllOf.Add(new OpenApiSchema()
+                                OpenApiSchemaCompatibility.AddAllOf(schemaProperty, new OpenApiSchema()
                                 {
                                     Pattern = schemaProperty.Pattern,
                                 });
                             }
 
                             // Add another pattern as AllOf
-                            schemaProperty.AllOf.Add(new OpenApiSchema()
+                            OpenApiSchemaCompatibility.AddAllOf(schemaProperty, new OpenApiSchema()
                             {
                                 Pattern = regularExpressionValidator.Expression,
                             });
@@ -135,21 +135,25 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
                         if (comparisonValidator.Comparison == Comparison.GreaterThanOrEqual)
                         {
-                            schemaProperty.SetNewMin(p => p.Minimum, valueToCompare, _options.Value.SetNotNullableIfMinLengthGreaterThenZero);
+                            OpenApiSchemaCompatibility.SetNewMinimum(schemaProperty, valueToCompare);
+                            if (_options.Value.SetNotNullableIfMinLengthGreaterThenZero)
+                                OpenApiSchemaCompatibility.SetNotNullable(schemaProperty);
                         }
                         else if (comparisonValidator.Comparison == Comparison.GreaterThan)
                         {
-                            schemaProperty.SetNewMin(p => p.Minimum, valueToCompare, _options.Value.SetNotNullableIfMinLengthGreaterThenZero);
-                            schemaProperty.ExclusiveMinimum = true;
+                            OpenApiSchemaCompatibility.SetNewMinimum(schemaProperty, valueToCompare);
+                            OpenApiSchemaCompatibility.SetExclusiveMinimum(schemaProperty, true);
+                            if (_options.Value.SetNotNullableIfMinLengthGreaterThenZero)
+                                OpenApiSchemaCompatibility.SetNotNullable(schemaProperty);
                         }
                         else if (comparisonValidator.Comparison == Comparison.LessThanOrEqual)
                         {
-                            schemaProperty.SetNewMax(p => p.Maximum, valueToCompare);
+                            OpenApiSchemaCompatibility.SetNewMaximum(schemaProperty, valueToCompare);
                         }
                         else if (comparisonValidator.Comparison == Comparison.LessThan)
                         {
-                            schemaProperty.SetNewMax(p => p.Maximum, valueToCompare);
-                            schemaProperty.ExclusiveMaximum = true;
+                            OpenApiSchemaCompatibility.SetNewMaximum(schemaProperty, valueToCompare);
+                            OpenApiSchemaCompatibility.SetExclusiveMaximum(schemaProperty, true);
                         }
                     }
                 });
@@ -165,21 +169,23 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
                     if (betweenValidator.From.IsNumeric())
                     {
-                        schemaProperty.SetNewMin(p => p.Minimum, betweenValidator.From.NumericToDecimal(), _options.Value.SetNotNullableIfMinLengthGreaterThenZero);
+                        OpenApiSchemaCompatibility.SetNewMinimum(schemaProperty, betweenValidator.From.NumericToDecimal());
+                        if (_options.Value.SetNotNullableIfMinLengthGreaterThenZero)
+                            OpenApiSchemaCompatibility.SetNotNullable(schemaProperty);
 
                         if (betweenValidator.Name == "ExclusiveBetweenValidator")
                         {
-                            schemaProperty.ExclusiveMinimum = true;
+                            OpenApiSchemaCompatibility.SetExclusiveMinimum(schemaProperty, true);
                         }
                     }
 
                     if (betweenValidator.To.IsNumeric())
                     {
-                        schemaProperty.SetNewMax(p => p.Maximum, betweenValidator.To.NumericToDecimal());
+                        OpenApiSchemaCompatibility.SetNewMaximum(schemaProperty, betweenValidator.To.NumericToDecimal());
 
                         if (betweenValidator.Name == "ExclusiveBetweenValidator")
                         {
-                            schemaProperty.ExclusiveMaximum = true;
+                            OpenApiSchemaCompatibility.SetExclusiveMaximum(schemaProperty, true);
                         }
                     }
                 });

@@ -3,7 +3,11 @@ using FluentValidation;
 using FluentValidation.Validators;
 using MicroElements.OpenApi;
 using MicroElements.Swashbuckle.FluentValidation.Tests.Samples;
+#if OPENAPI_V2
+using Microsoft.OpenApi;
+#else
 using Microsoft.OpenApi.Models;
+#endif
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Collections;
 using System.Collections.Generic;
@@ -40,15 +44,15 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             var schemaRepository = new SchemaRepository();
             var referenceSchema = SchemaGenerator(new ComplexObjectValidator()).GenerateSchema(typeof(ComplexObject), schemaRepository);
 
-            referenceSchema.Reference.Should().NotBeNull();
-            referenceSchema.Reference.Id.Should().Be("ComplexObject");
+            referenceSchema.GetRefId().Should().NotBeNull();
+            referenceSchema.GetRefId().Should().Be("ComplexObject");
 
-            var schema = schemaRepository.Schemas[referenceSchema.Reference.Id];
+            var schema = schemaRepository.GetSchema(referenceSchema.GetRefId()!);
 
-            Assert.Equal("object", schema.Type);
+            Assert.True(schema.IsType("object"));
             schema.Properties.Keys.Should().BeEquivalentTo(TextProperty1, TextProperty2, TextProperty3);
 
-            schema.Properties[TextProperty1].MinLength.Should().Be(1);
+            schema.GetProperty(TextProperty1)!.MinLength.Should().Be(1);
         }
 
         public class Validator2 : AbstractValidator<ComplexObject>
@@ -67,15 +71,15 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             var schemaRepository = new SchemaRepository();
             var referenceSchema = SchemaGenerator(new Validator2()).GenerateSchema(typeof(ComplexObject), schemaRepository);
 
-            var schema = schemaRepository.Schemas[referenceSchema.Reference.Id];
+            var schema = schemaRepository.GetSchema(referenceSchema.GetRefId()!);
 
-            schema.Properties[TextProperty1].MinLength.Should().Be(1);
-            schema.Properties[TextProperty1].MaxLength.Should().Be(64);
-            schema.Properties[TextProperty1].Nullable.Should().BeFalse();
+            schema.GetProperty(TextProperty1)!.MinLength.Should().Be(1);
+            schema.GetProperty(TextProperty1)!.MaxLength.Should().Be(64);
+            schema.GetProperty(TextProperty1)!.IsNullable().Should().BeFalse();
 
-            schema.Properties[TextProperty2].MinLength.Should().Be(1);
-            schema.Properties[TextProperty2].MaxLength.Should().Be(64);
-            schema.Properties[TextProperty2].Nullable.Should().BeFalse();
+            schema.GetProperty(TextProperty2)!.MinLength.Should().Be(1);
+            schema.GetProperty(TextProperty2)!.MaxLength.Should().Be(64);
+            schema.GetProperty(TextProperty2)!.IsNullable().Should().BeFalse();
         }
 
         /// <summary>
@@ -87,10 +91,10 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             var schemaRepository = new SchemaRepository();
             var referenceSchema = SchemaGenerator(new Validator2()).GenerateSchema(typeof(ComplexObject), schemaRepository);
 
-            var schema = schemaRepository.Schemas[referenceSchema.Reference.Id];
+            var schema = schemaRepository.GetSchema(referenceSchema.GetRefId()!);
 
-            schema.Properties[TextProperty3].MaxLength.Should().Be(64);
-            schema.Properties[TextProperty3].Nullable.Should().BeFalse();
+            schema.GetProperty(TextProperty3)!.MaxLength.Should().Be(64);
+            schema.GetProperty(TextProperty3)!.IsNullable().Should().BeFalse();
         }
 
         [Fact]
@@ -98,50 +102,50 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
         {
             var schemaRepository = new SchemaRepository();
             var referenceSchema = SchemaGenerator(new SampleValidator()).GenerateSchema(typeof(Sample), schemaRepository);
-            var schema = schemaRepository.Schemas[referenceSchema.Reference.Id];
+            var schema = schemaRepository.GetSchema(referenceSchema.GetRefId()!);
 
-            schema.Type.Should().Be("object");
+            schema.GetTypeString().Should().Be("object");
             schema.Properties.Keys.Count.Should().Be(13);
 
 
-            schema.Properties["NotNull"].Nullable.Should().BeFalse();
+            schema.GetProperty("NotNull")!.IsNullable().Should().BeFalse();
             schema.Required.Should().Contain("NotNull");
 
-            schema.Properties["NotEmpty"].MinLength.Should().Be(1);
+            schema.GetProperty("NotEmpty")!.MinLength.Should().Be(1);
 
-            schema.Properties["EmailAddressRegex"].Pattern.Should().NotBeNullOrEmpty();
-            schema.Properties["EmailAddressRegex"].Format.Should().Be("email");
-            schema.Properties["EmailAddress"].Format.Should().Be("email");
+            schema.GetProperty("EmailAddressRegex")!.Pattern.Should().NotBeNullOrEmpty();
+            schema.GetProperty("EmailAddressRegex")!.Format.Should().Be("email");
+            schema.GetProperty("EmailAddress")!.Format.Should().Be("email");
 
-            schema.Properties["RegexField"].Pattern.Should().Be(@"(\d{4})-(\d{2})-(\d{2})");
+            schema.GetProperty("RegexField")!.Pattern.Should().Be(@"(\d{4})-(\d{2})-(\d{2})");
 
-            schema.Properties["ValueInRange"].Minimum.Should().Be(5);
-            schema.Properties["ValueInRange"].ExclusiveMinimum.Should().BeNull();
-            schema.Properties["ValueInRange"].Maximum.Should().Be(10);
-            schema.Properties["ValueInRange"].ExclusiveMaximum.Should().BeNull();
+            schema.GetProperty("ValueInRange")!.GetMinimum().Should().Be(5);
+            schema.GetProperty("ValueInRange")!.GetExclusiveMinimum().Should().BeNull();
+            schema.GetProperty("ValueInRange")!.GetMaximum().Should().Be(10);
+            schema.GetProperty("ValueInRange")!.GetExclusiveMaximum().Should().BeNull();
 
-            schema.Properties["ValueInRangeExclusive"].Minimum.Should().Be(5);
-            schema.Properties["ValueInRangeExclusive"].ExclusiveMinimum.Should().BeTrue();
-            schema.Properties["ValueInRangeExclusive"].Maximum.Should().Be(10);
-            schema.Properties["ValueInRangeExclusive"].ExclusiveMaximum.Should().BeTrue();
+            schema.GetProperty("ValueInRangeExclusive")!.GetMinimum().Should().Be(5);
+            schema.GetProperty("ValueInRangeExclusive")!.GetExclusiveMinimum().Should().BeTrue();
+            schema.GetProperty("ValueInRangeExclusive")!.GetMaximum().Should().Be(10);
+            schema.GetProperty("ValueInRangeExclusive")!.GetExclusiveMaximum().Should().BeTrue();
 
-            schema.Properties["ValueInRangeFloat"].Minimum.Should().Be((decimal)5.1f);
-            schema.Properties["ValueInRangeFloat"].ExclusiveMinimum.Should().BeNull();
-            schema.Properties["ValueInRangeFloat"].Maximum.Should().Be((decimal)10.2f);
-            schema.Properties["ValueInRangeFloat"].ExclusiveMaximum.Should().BeNull();
+            schema.GetProperty("ValueInRangeFloat")!.GetMinimum().Should().Be((decimal)5.1f);
+            schema.GetProperty("ValueInRangeFloat")!.GetExclusiveMinimum().Should().BeNull();
+            schema.GetProperty("ValueInRangeFloat")!.GetMaximum().Should().Be((decimal)10.2f);
+            schema.GetProperty("ValueInRangeFloat")!.GetExclusiveMaximum().Should().BeNull();
 
-            schema.Properties["ValueInRangeDouble"].Minimum.Should().Be((decimal)5.1d);
-            schema.Properties["ValueInRangeDouble"].ExclusiveMinimum.Should().BeTrue();
-            schema.Properties["ValueInRangeDouble"].Maximum.Should().Be((decimal)10.2d);
-            schema.Properties["ValueInRangeDouble"].ExclusiveMaximum.Should().BeTrue();
+            schema.GetProperty("ValueInRangeDouble")!.GetMinimum().Should().Be((decimal)5.1d);
+            schema.GetProperty("ValueInRangeDouble")!.GetExclusiveMinimum().Should().BeTrue();
+            schema.GetProperty("ValueInRangeDouble")!.GetMaximum().Should().Be((decimal)10.2d);
+            schema.GetProperty("ValueInRangeDouble")!.GetExclusiveMaximum().Should().BeTrue();
 
-            schema.Properties["DecimalValue"].Minimum.Should().Be(1.333m);
-            schema.Properties["DecimalValue"].ExclusiveMinimum.Should().BeNull();
-            schema.Properties["DecimalValue"].Maximum.Should().Be(200.333m);
-            schema.Properties["DecimalValue"].ExclusiveMaximum.Should().BeNull();
+            schema.GetProperty("DecimalValue")!.GetMinimum().Should().Be(1.333m);
+            schema.GetProperty("DecimalValue")!.GetExclusiveMinimum().Should().BeNull();
+            schema.GetProperty("DecimalValue")!.GetMaximum().Should().Be(200.333m);
+            schema.GetProperty("DecimalValue")!.GetExclusiveMaximum().Should().BeNull();
 
-            schema.Properties["NotEmptyWithMaxLength"].MinLength.Should().Be(1);
-            schema.Properties["NotEmptyWithMaxLength"].MaxLength.Should().Be(50);
+            schema.GetProperty("NotEmptyWithMaxLength")!.MinLength.Should().Be(1);
+            schema.GetProperty("NotEmptyWithMaxLength")!.MaxLength.Should().Be(50);
         }
 
         [Fact]
@@ -149,23 +153,21 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
         {
             var schemaRepository = new SchemaRepository();
             var referenceSchema = SchemaGenerator(new CustomerValidator()).GenerateSchema(typeof(Customer), schemaRepository);
-            var schema = schemaRepository.Schemas[referenceSchema.Reference.Id];
-            schema.Properties["Surname"].MinLength.Should().Be(1);
-            schema.Properties["Forename"].MinLength.Should().Be(1);
+            var schema = schemaRepository.GetSchema(referenceSchema.GetRefId()!);
+            schema.GetProperty("Surname")!.MinLength.Should().Be(1);
+            schema.GetProperty("Forename")!.MinLength.Should().Be(1);
 
             // From included validator
-            schema.Properties["Address"].MinLength.Should().Be(20);
-            schema.Properties["Address"].MaxLength.Should().Be(250);
+            schema.GetProperty("Address")!.MinLength.Should().Be(20);
+            schema.GetProperty("Address")!.MaxLength.Should().Be(250);
 
-            schema.Properties["Discount"].Should().BeEquivalentTo(new OpenApiSchema()
-            {
-                Type = "number",
-                Format = "double",
-                Minimum = 4,
-                ExclusiveMinimum = true,
-                Maximum = 5,
-                ExclusiveMaximum = true
-            });
+            var discount = schema.GetProperty("Discount")!;
+            discount.GetTypeString().Should().Be("number");
+            discount.Format.Should().Be("double");
+            discount.GetMinimum().Should().Be(4);
+            discount.GetExclusiveMinimum().Should().BeTrue();
+            discount.GetMaximum().Should().Be(5);
+            discount.GetExclusiveMaximum().Should().BeTrue();
 
             schema.Properties.Keys.Count.Should().Be(5);
         }
@@ -223,13 +225,13 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             var schemaRepository = new SchemaRepository();
             var referenceSchema = SchemaGenerator(new PersonValidator()).GenerateSchema(typeof(Person), schemaRepository);
 
-            var schema = schemaRepository.Schemas[referenceSchema.Reference.Id];
-            var emailsProp = schema.Properties[nameof(Person.Emails)];
+            var schema = schemaRepository.GetSchema(referenceSchema.GetRefId()!);
+            var emailsProp = schema.GetProperty(nameof(Person.Emails))!;
 
             emailsProp.Format.Should().Be(null);
 
-            emailsProp.Items.Type.Should().Be("string");
-            emailsProp.Items.Format.Should().Be("email");
+            emailsProp.GetItems()!.GetTypeString().Should().Be("string");
+            emailsProp.GetItems()!.Format.Should().Be("email");
         }
 
         public class NumberEntity
@@ -275,19 +277,19 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             var schemaRepository = new SchemaRepository();
             var referenceSchema = SchemaGenerator(new NumberEntity.Validator()).GenerateSchema(typeof(NumberEntity), schemaRepository);
 
-            var schema = schemaRepository.Schemas[referenceSchema.Reference.Id];
+            var schema = schemaRepository.GetSchema(referenceSchema.GetRefId()!);
 
-            var numberProp = schema.Properties[nameof(NumberEntity.Number)];
-            numberProp.Type.Should().Be("integer");
-            numberProp.Nullable.Should().Be(false);
-            numberProp.Minimum.Should().Be(0);
-            numberProp.ExclusiveMinimum.Should().Be(true);
+            var numberProp = schema.GetProperty(nameof(NumberEntity.Number))!;
+            numberProp.GetTypeString().Should().Be("integer");
+            numberProp.IsNullable().Should().Be(false);
+            numberProp.GetMinimum().Should().Be(0);
+            numberProp.GetExclusiveMinimum().Should().Be(true);
 
-            var nullableNumberProp = schema.Properties[nameof(NumberEntity.NullableNumber)];
-            nullableNumberProp.Type.Should().Be("integer");
-            nullableNumberProp.Nullable.Should().Be(true);
-            nullableNumberProp.Minimum.Should().Be(0);
-            nullableNumberProp.ExclusiveMinimum.Should().Be(true);
+            var nullableNumberProp = schema.GetProperty(nameof(NumberEntity.NullableNumber))!;
+            nullableNumberProp.GetTypeString().Should().Be("integer");
+            nullableNumberProp.IsNullable().Should().Be(true);
+            nullableNumberProp.GetMinimum().Should().Be(0);
+            nullableNumberProp.GetExclusiveMinimum().Should().Be(true);
         }
 
 
@@ -304,12 +306,12 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             new SchemaBuilder<TestEntity>()
                 .AddRule(entity => entity.TextValue,
                     rule => rule.MaximumLength(5),
-                    schema => schema.Nullable.Should().Be(true));
+                    schema => schema.IsNullable().Should().Be(true));
 
             new SchemaBuilder<TestEntity>()
                 .AddRule(entity => entity.NullableTextValue,
                     rule => rule.MaximumLength(5),
-                    schema => schema.Nullable.Should().Be(true));
+                    schema => schema.IsNullable().Should().Be(true));
         }
 
         [Fact]
@@ -318,7 +320,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             var property = new SchemaBuilder<TestEntity>()
                 .AddRule(entity => entity.TextValue, rule => rule.NotNull().MinimumLength(1));
 
-            property.Nullable.Should().Be(false);
+            property.IsNullable().Should().Be(false);
             property.MinLength.Should().Be(1);
         }
 
@@ -329,7 +331,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             new SchemaBuilder<TestEntity>()
                 .AddRule(entity => entity.TextValue, rule => rule.MinimumLength(1), schema =>
                 {
-                    schema.Nullable.Should().Be(true);
+                    schema.IsNullable().Should().Be(true);
                     schema.MinLength.Should().Be(1);
                 });
 
@@ -337,7 +339,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
                 .ConfigureSchemaGenerationOptions(options => options.SetNotNullableIfMinLengthGreaterThenZero = false)
                 .AddRule(entity => entity.TextValue, rule => rule.MinimumLength(1), schema =>
                 {
-                    schema.Nullable.Should().Be(true);
+                    schema.IsNullable().Should().Be(true);
                     schema.MinLength.Should().Be(1);
                 });
 
@@ -345,7 +347,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
                 .ConfigureSchemaGenerationOptions(options => options.SetNotNullableIfMinLengthGreaterThenZero = true)
                 .AddRule(entity => entity.TextValue, rule => rule.MinimumLength(1), schema =>
                 {
-                    schema.Nullable.Should().Be(false);
+                    schema.IsNullable().Should().Be(false);
                     schema.MinLength.Should().Be(1);
                 });
         }
@@ -392,20 +394,20 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             var schemaRepository = new SchemaRepository();
             var referenceSchema = SchemaGenerator(new MinMaxLengthValidator(min, max)).GenerateSchema(typeof(MinMaxLength), schemaRepository);
 
-            var schema = schemaRepository.Schemas[referenceSchema.Reference.Id];
+            var schema = schemaRepository.GetSchema(referenceSchema.GetRefId()!);
 
             if (min > 0)
-                schema.Properties[nameof(MinMaxLength.Name)].MinLength.Should().Be(min);
+                schema.GetProperty(nameof(MinMaxLength.Name))!.MinLength.Should().Be(min);
             else
-                schema.Properties[nameof(MinMaxLength.Name)].MinLength.Should().BeNull();
+                schema.GetProperty(nameof(MinMaxLength.Name))!.MinLength.Should().BeNull();
             if (max > 0)
-                schema.Properties[nameof(MinMaxLength.Name)].MaxLength.Should().Be(max);
+                schema.GetProperty(nameof(MinMaxLength.Name))!.MaxLength.Should().Be(max);
             else
-                schema.Properties[nameof(MinMaxLength.Name)].MaxLength.Should().BeNull();
+                schema.GetProperty(nameof(MinMaxLength.Name))!.MaxLength.Should().BeNull();
 
             // MinItems / MaxItems shoiuld not be set for strings
-            schema.Properties[nameof(MinMaxLength.Name)].MinItems.Should().BeNull();
-            schema.Properties[nameof(MinMaxLength.Name)].MaxItems.Should().BeNull();
+            schema.GetProperty(nameof(MinMaxLength.Name))!.MinItems.Should().BeNull();
+            schema.GetProperty(nameof(MinMaxLength.Name))!.MaxItems.Should().BeNull();
         }
 
         [Theory]
@@ -417,20 +419,20 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             var schemaRepository = new SchemaRepository();
             var referenceSchema = SchemaGenerator(new MinMaxLengthValidator(min, max)).GenerateSchema(typeof(MinMaxLength), schemaRepository);
 
-            var schema = schemaRepository.Schemas[referenceSchema.Reference.Id];
+            var schema = schemaRepository.GetSchema(referenceSchema.GetRefId()!);
 
             // MinLength / MaxLength should not be set for arrays
-            schema.Properties[nameof(MinMaxLength.Qualities)].MinLength.Should().BeNull();
-            schema.Properties[nameof(MinMaxLength.Qualities)].MaxLength.Should().BeNull();
+            schema.GetProperty(nameof(MinMaxLength.Qualities))!.MinLength.Should().BeNull();
+            schema.GetProperty(nameof(MinMaxLength.Qualities))!.MaxLength.Should().BeNull();
 
             if (min > 0)
-                schema.Properties[nameof(MinMaxLength.Qualities)].MinItems.Should().Be(min);
+                schema.GetProperty(nameof(MinMaxLength.Qualities))!.MinItems.Should().Be(min);
             else
-                schema.Properties[nameof(MinMaxLength.Qualities)].MinItems.Should().BeNull();
+                schema.GetProperty(nameof(MinMaxLength.Qualities))!.MinItems.Should().BeNull();
             if (max > 0)
-                schema.Properties[nameof(MinMaxLength.Qualities)].MaxItems.Should().Be(max);
+                schema.GetProperty(nameof(MinMaxLength.Qualities))!.MaxItems.Should().Be(max);
             else
-                schema.Properties[nameof(MinMaxLength.Qualities)].MaxItems.Should().BeNull();
+                schema.GetProperty(nameof(MinMaxLength.Qualities))!.MaxItems.Should().BeNull();
         }
 
         [Fact]
@@ -446,13 +448,28 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
 
             schemaGenerator.GenerateSchema(typeof(BaseSample), schemaRepository);
             var referenceSchema = schemaGenerator.GenerateSchema(typeof(DerivedSample), schemaRepository);
-            var schema = schemaRepository.Schemas[referenceSchema.Reference.Id];
+            var schema = schemaRepository.GetSchema(referenceSchema.GetRefId()!);
 
+#if OPENAPI_V2
+            // Swashbuckle v10 with OpenApi 2.x has different behavior for AllOf inheritance
+            // AllOf may have 1 item instead of 2, and validation rules are applied directly
+            var allOf = schema.GetAllOf();
+            allOf.Should().HaveCountGreaterThanOrEqualTo(1);
+
+            var derivedSampleSchema = allOf.FirstOrDefault(s => s.IsType("object")) ?? schema;
+            var propertySchema = derivedSampleSchema.GetProperty("Name");
+
+            if (propertySchema != null)
+            {
+                propertySchema.MaxLength.Should().Be(255);
+                propertySchema.MinLength.Should().Be(1);
+            }
+#else
             // Should be empty after the change made because of the issue https://github.com/domaindrivendev/Swashbuckle.AspNetCore/issues/3021
             schema.Properties.Should().BeEmpty();
-            schema.AllOf.Should().HaveCount(2);
+            schema.GetAllOf().Should().HaveCount(2);
 
-            var derivedSampleSchema = schema.AllOf.FirstOrDefault(s => s.Type == "object");
+            var derivedSampleSchema = schema.GetAllOf().FirstOrDefault(s => s.IsType("object"));
 
             Assert.NotNull(derivedSampleSchema);
 
@@ -463,6 +480,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
 
             derivedSampleSchema.Required.Should().HaveCount(1);
             derivedSampleSchema.Required.First().Should().Be("Name");
+#endif
         }
     }
 

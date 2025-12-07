@@ -9,7 +9,11 @@ using MicroElements.Swashbuckle.FluentValidation.Generation;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+#if OPENAPI_V2
+using Microsoft.OpenApi;
+#else
 using Microsoft.OpenApi.Models;
+#endif
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace MicroElements.Swashbuckle.FluentValidation.Tests
@@ -120,7 +124,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             PropertyInfo propertyInfo = expressionBody.Member as PropertyInfo;
             string propertyName = _schemaGenerationOptions.NameResolver.GetPropertyName(propertyInfo);
 
-            var property = schema.Properties[propertyName];
+            var property = schema.GetProperty(propertyName)!;
 
             schemaCheck?.Invoke(property);
 
@@ -146,11 +150,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
                 serviceProvider: serviceProvider,
                 configureSerializer: configureSerializer);
 
-            OpenApiSchema schema = schemaGenerator
-                .GenerateSchema(typeof(T), schemaRepository);
-
-            if (schema.Reference?.Id != null)
-                schema = schemaRepository.Schemas[schema.Reference.Id];
+            OpenApiSchema schema = schemaGenerator.GenerateAndResolve<T>(schemaRepository);
 
             return schema;
         }

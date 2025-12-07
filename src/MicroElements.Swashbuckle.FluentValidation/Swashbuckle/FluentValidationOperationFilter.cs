@@ -4,12 +4,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using MicroElements.OpenApi;
 using MicroElements.OpenApi.Core;
 using MicroElements.OpenApi.FluentValidation;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+#if !OPENAPI_V2
 using Microsoft.OpenApi.Models;
+#endif
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace MicroElements.Swashbuckle.FluentValidation
@@ -110,7 +113,8 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     {
                         var schemaPropertyName = operationParameter.Name;
 
-                        KeyValuePair<string, OpenApiSchema> apiProperty = schema.Properties.FirstOrDefault(property => property.Key.EqualsIgnoreAll(schemaPropertyName));
+                        var apiProperty = OpenApiSchemaCompatibility.GetProperties(schema)
+                            .FirstOrDefault(property => property.Key.EqualsIgnoreAll(schemaPropertyName));
                         if (apiProperty.Key != null)
                         {
                             schemaPropertyName = apiProperty.Key;
@@ -140,27 +144,59 @@ namespace MicroElements.Swashbuckle.FluentValidation
                             logger: _logger,
                             schemaGenerationContext: schemaContext);
 
-                        if (schema.Required != null)
-                            operationParameter.Required = schema.Required.Contains(schemaPropertyName, IgnoreAllStringComparer.Instance);
+                        if (OpenApiSchemaCompatibility.RequiredContains(schema, schemaPropertyName))
+                        {
+#if OPENAPI_V2
+                            // In OpenApi 2.x, IOpenApiParameter.Required is read-only
+                            // We need to cast to OpenApiParameter to set it
+                            if (operationParameter is OpenApiParameter openApiParameter)
+                                openApiParameter.Required = true;
+#else
+                            operationParameter.Required = true;
+#endif
+                        }
 
                         var parameterSchema = operationParameter.Schema;
                         if (parameterSchema != null)
                         {
-                            if (schema.Properties.TryGetValue(schemaPropertyName.ToLowerCamelCase(), out var property)
-                                || schema.Properties.TryGetValue(schemaPropertyName, out property))
+                            if (OpenApiSchemaCompatibility.TryGetProperty(schema, schemaPropertyName.ToLowerCamelCase(), out var property)
+                                || OpenApiSchemaCompatibility.TryGetProperty(schema, schemaPropertyName, out property))
                             {
-                                // Copy from property schema to parameter schema.
-                                parameterSchema.Description = property.Description;
-                                parameterSchema.MinLength = property.MinLength;
-                                parameterSchema.Nullable = property.Nullable;
-                                parameterSchema.MaxLength = property.MaxLength;
-                                parameterSchema.Pattern = property.Pattern;
-                                parameterSchema.Minimum = property.Minimum;
-                                parameterSchema.Maximum = property.Maximum;
-                                parameterSchema.ExclusiveMaximum = property.ExclusiveMaximum;
-                                parameterSchema.ExclusiveMinimum = property.ExclusiveMinimum;
-                                parameterSchema.Enum = property.Enum;
-                                parameterSchema.AllOf = property.AllOf;
+                                if (property != null)
+                                {
+#if OPENAPI_V2
+                                    // In OpenApi 2.x, IOpenApiSchema properties are read-only
+                                    // We need to cast to OpenApiSchema to set them
+                                    if (parameterSchema is OpenApiSchema targetSchema)
+                                    {
+                                        // Copy from property schema to parameter schema.
+                                        targetSchema.Description = property.Description;
+                                        targetSchema.MinLength = property.MinLength;
+                                        OpenApiSchemaCompatibility.SetNullable(targetSchema, OpenApiSchemaCompatibility.GetNullable(property));
+                                        targetSchema.MaxLength = property.MaxLength;
+                                        targetSchema.Pattern = property.Pattern;
+                                        targetSchema.Minimum = property.Minimum;
+                                        targetSchema.Maximum = property.Maximum;
+                                        targetSchema.ExclusiveMaximum = property.ExclusiveMaximum;
+                                        targetSchema.ExclusiveMinimum = property.ExclusiveMinimum;
+                                        targetSchema.Enum = property.Enum;
+                                        targetSchema.AllOf = property.AllOf;
+                                    }
+#else
+                                    // Copy from property schema to parameter schema.
+                                    parameterSchema.Description = property.Description;
+                                    parameterSchema.MinLength = property.MinLength;
+                                    OpenApiSchemaCompatibility.SetNullable(parameterSchema, OpenApiSchemaCompatibility.GetNullable(property));
+                                    parameterSchema.MaxLength = property.MaxLength;
+                                    parameterSchema.Pattern = property.Pattern;
+                                    parameterSchema.Minimum = property.Minimum;
+                                    parameterSchema.Maximum = property.Maximum;
+                                    parameterSchema.ExclusiveMaximum = property.ExclusiveMaximum;
+                                    parameterSchema.ExclusiveMinimum = property.ExclusiveMinimum;
+                                    parameterSchema.Enum = property.Enum;
+                                    parameterSchema.AllOf = property.AllOf;
+#endif
+                                }
                             }
                         }
                     }

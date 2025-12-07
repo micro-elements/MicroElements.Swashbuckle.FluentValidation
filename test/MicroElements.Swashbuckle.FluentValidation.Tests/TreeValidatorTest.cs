@@ -1,6 +1,11 @@
 ﻿using System.Collections.Generic;
 using FluentAssertions;
 using FluentValidation;
+#if OPENAPI_V2
+using Microsoft.OpenApi;
+#else
+using Microsoft.OpenApi.Models;
+#endif
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Xunit;
 
@@ -41,11 +46,11 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
                 .GenerateSchema(typeof(Node), schemaRepository);
 
             // if we have gotten this far, huzza, no stack overflow.
-            
-            // MicroElements schema validation should work normally on other non-recursive properties 
-            var schema = schemaRepository.Schemas[referenceSchema.Reference.Id];
-            var idProperty = schema.Properties[nameof(Node.Id)];
-            idProperty.Type.Should().Be("string");
+
+            // MicroElements schema validation should work normally on other non-recursive properties
+            var schema = schemaRepository.GetSchema(referenceSchema.GetRefId()!);
+            var idProperty = schema.GetProperty(nameof(Node.Id))!;
+            idProperty.GetTypeString().Should().Be("string");
             idProperty.MinLength.Should().Be(1);
         }
     }

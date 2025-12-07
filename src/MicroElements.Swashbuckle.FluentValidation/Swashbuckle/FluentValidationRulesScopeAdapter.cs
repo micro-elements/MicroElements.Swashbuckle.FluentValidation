@@ -5,7 +5,9 @@ using System;
 using MicroElements.Swashbuckle.FluentValidation.AspNetCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+#if !OPENAPI_V2
 using Microsoft.OpenApi.Models;
+#endif
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace MicroElements.Swashbuckle.FluentValidation
@@ -41,10 +43,17 @@ namespace MicroElements.Swashbuckle.FluentValidation
         }
 
         /// <inheritdoc />
+#if OPENAPI_V2
+        public void Apply(IOpenApiSchema schema, SchemaFilterContext context)
+        {
+            _fluentValidationRules.Apply(schema, context);
+        }
+#else
         public void Apply(OpenApiSchema schema, SchemaFilterContext context)
         {
             _fluentValidationRules.Apply(schema, context);
         }
+#endif
     }
 
     /// <summary>

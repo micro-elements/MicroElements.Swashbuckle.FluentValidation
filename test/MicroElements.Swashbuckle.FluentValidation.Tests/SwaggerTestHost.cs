@@ -5,7 +5,11 @@ using Microsoft.AspNetCore.Mvc;
 using MicroElements.OpenApi.FluentValidation;
 using MicroElements.Swashbuckle.FluentValidation.AspNetCore;
 using Microsoft.Extensions.DependencyInjection;
+#if OPENAPI_V2
+using Microsoft.OpenApi;
+#else
 using Microsoft.OpenApi.Models;
+#endif
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -63,9 +67,9 @@ public class SwaggerTestHost
         var schemaGenerator = ServiceProvider.GetService<ISchemaGenerator>();
         if (schemaGenerator == null)
             throw new InvalidOperationException("ISchemaGenerator service not found. Make sure to call Configure() first.");
-        
+
         var openApiSchema = schemaGenerator.GenerateSchema(typeof(TModel), SchemaRepository);
-        schema = SchemaRepository.Schemas[openApiSchema.Reference.Id];
+        schema = SchemaRepository.GenerateAndResolve<TModel>(openApiSchema);
         return this;
     }
 }
