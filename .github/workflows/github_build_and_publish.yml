@@ -21,11 +21,12 @@ jobs:
 
     # Шаг 2: Устанавливаем .NET SDK
     - name: Setup .NET SDK
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: |
           8.0.x
           9.0.x
+          10.0.x
 
     - name: Build Windows
       if: runner.os == 'Windows'
