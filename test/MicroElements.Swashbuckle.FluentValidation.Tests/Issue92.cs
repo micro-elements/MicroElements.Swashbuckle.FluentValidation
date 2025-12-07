@@ -1,5 +1,10 @@
 using FluentAssertions;
 using FluentValidation;
+#if OPENAPI_V2
+using Microsoft.OpenApi;
+#else
+using Microsoft.OpenApi.Models;
+#endif
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Xunit;
 
@@ -37,18 +42,19 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             var schemaRepository = new SchemaRepository();
             var referenceSchema = SchemaGenerator(new CreateBookshelfCommandValidator()).GenerateSchema(typeof(CreateBookshelfCommand), schemaRepository);
 
-            var schema = schemaRepository.Schemas[referenceSchema.Reference.Id];
-            var booksProperty = schema.Properties[nameof(CreateBookshelfCommand.Books)];
-            booksProperty.Type.Should().Be("array");
+            var schema = schemaRepository.GetSchema(referenceSchema.GetRefId()!);
+            var booksProperty = schema.GetProperty(nameof(CreateBookshelfCommand.Books))!;
+            booksProperty.GetTypeString().Should().Be("array");
 
             // should use MinItems for array
             booksProperty.MinItems.Should().Be(1);
             booksProperty.MinLength.Should().Be(null);
 
             // items validation should be set
-            booksProperty.Items.Type.Should().Be("string");
-            booksProperty.Items.MinLength.Should().Be(5);
-            booksProperty.Items.MaxLength.Should().Be(250);
+            var items = booksProperty.GetItems()!;
+            items.GetTypeString().Should().Be("string");
+            items.MinLength.Should().Be(5);
+            items.MaxLength.Should().Be(250);
         }
     }
 }

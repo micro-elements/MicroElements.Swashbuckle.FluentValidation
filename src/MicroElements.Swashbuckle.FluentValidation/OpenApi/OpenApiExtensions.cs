@@ -4,7 +4,9 @@
 using System;
 using System.Linq.Expressions;
 using System.Reflection;
+#if !OPENAPI_V2
 using Microsoft.OpenApi.Models;
+#endif
 
 namespace MicroElements.OpenApi
 {
@@ -20,7 +22,7 @@ namespace MicroElements.OpenApi
         {
             if (schemaProperty.MinLength.HasValue && schemaProperty.MinLength > 0)
             {
-                schemaProperty.Nullable = false;
+                OpenApiSchemaCompatibility.SetNotNullable(schemaProperty);
             }
         }
 

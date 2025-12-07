@@ -4,8 +4,11 @@
 using System;
 using FluentValidation;
 using FluentValidation.Validators;
+using MicroElements.OpenApi;
 using MicroElements.OpenApi.FluentValidation;
+#if !OPENAPI_V2
 using Microsoft.OpenApi.Models;
+#endif
 
 namespace MicroElements.Swashbuckle.FluentValidation
 {
@@ -36,14 +39,15 @@ namespace MicroElements.Swashbuckle.FluentValidation
         {
             get
             {
-                if (!Schema.Properties.ContainsKey(PropertyKey))
+                if (!OpenApiSchemaCompatibility.PropertiesContainsKey(Schema, PropertyKey))
                 {
                     Type? schemaType = ValidationRuleInfo.GetReflectionContext()?.Type;
                     throw new ApplicationException($"Schema for type '{schemaType}' does not contain property '{PropertyKey}'.\nRegister {typeof(INameResolver)} if name in type differs from name in json.");
                 }
 
-                var schemaProperty = Schema.Properties[PropertyKey];
-                return !ValidationRuleInfo.IsCollectionRule() ? schemaProperty : schemaProperty.Items;
+                var schemaProperty = OpenApiSchemaCompatibility.GetProperty(Schema, PropertyKey)!;
+                var items = OpenApiSchemaCompatibility.GetItems(schemaProperty);
+                return !ValidationRuleInfo.IsCollectionRule() ? schemaProperty : items!;
             }
         }
 
