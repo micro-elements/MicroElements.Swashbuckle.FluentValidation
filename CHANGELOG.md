@@ -1,3 +1,7 @@
+# Changes in 7.0.0.1
+- Fixed: FluentValidation rules not applied to `[FromForm]` parameters (Issue #170)
+  - Added `RequestBody` processing in `FluentValidationOperationFilter` for `multipart/form-data` and `application/x-www-form-urlencoded` content types
+
 # Changes in 6.1.0
 - Added support for .NET 8 and .NET 9 to MicroElements.Swashbuckle.FluentValidation.AspNetCore
 - Dropped support for .NET 6.0 
