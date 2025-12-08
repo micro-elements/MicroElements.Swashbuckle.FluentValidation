@@ -1,4 +1,4 @@
-# Changes in 7.0.0.1
+# Changes in 7.0.1
 - Fixed: FluentValidation rules not applied to `[FromForm]` parameters (Issue #170)
   - Added `RequestBody` processing in `FluentValidationOperationFilter` for `multipart/form-data` and `application/x-www-form-urlencoded` content types
 
