@@ -80,9 +80,6 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
         private void ApplyInternal(OpenApiOperation operation, OperationFilterContext context)
         {
-            if (operation.Parameters == null)
-                return;
-
             if (_validatorRegistry == null)
             {
                 _logger.LogWarning(0, "ValidatorFactory is not provided. Please register FluentValidation.");
@@ -91,7 +88,19 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
             var schemaProvider = new SwashbuckleSchemaProvider(context.SchemaRepository, context.SchemaGenerator, _schemaGenerationOptions.SchemaIdSelector);
 
-            foreach (var operationParameter in operation.Parameters)
+            // Process operation parameters (FromQuery, FromRoute, FromHeader)
+            if (operation.Parameters != null)
+            {
+                ApplyRulesToParameters(operation, context, schemaProvider);
+            }
+
+            // Process RequestBody for FromForm and FromBody parameters
+            ApplyRulesToRequestBody(operation, context, schemaProvider);
+        }
+
+        private void ApplyRulesToParameters(OpenApiOperation operation, OperationFilterContext context, SwashbuckleSchemaProvider schemaProvider)
+        {
+            foreach (var operationParameter in operation.Parameters!)
             {
                 var apiParameterDescription = context.ApiDescription.ParameterDescriptions.FirstOrDefault(description =>
                     description.Name.Equals(operationParameter.Name, StringComparison.InvariantCultureIgnoreCase));
@@ -201,6 +210,89 @@ namespace MicroElements.Swashbuckle.FluentValidation
                         }
                     }
                 }
+            }
+        }
+
+        private void ApplyRulesToRequestBody(OpenApiOperation operation, OperationFilterContext context, SwashbuckleSchemaProvider schemaProvider)
+        {
+#if OPENAPI_V2
+            var requestBody = operation.RequestBody as OpenApiRequestBody;
+#else
+            var requestBody = operation.RequestBody;
+#endif
+            if (requestBody?.Content == null)
+                return;
+
+            // Content types used by [FromForm] attribute
+            var formContentTypes = new[] { "multipart/form-data", "application/x-www-form-urlencoded" };
+
+            foreach (var contentType in requestBody.Content)
+            {
+                if (!formContentTypes.Contains(contentType.Key, StringComparer.OrdinalIgnoreCase))
+                    continue;
+
+#if OPENAPI_V2
+                var rawSchema = contentType.Value.Schema;
+                var contentSchema = rawSchema as OpenApiSchema;
+                string? schemaRefId = rawSchema is OpenApiSchemaReference schemaRef ? schemaRef.Reference?.Id : null;
+#else
+                var contentSchema = contentType.Value.Schema;
+                string? schemaRefId = contentSchema?.Reference?.Id;
+#endif
+                if (contentSchema == null)
+                    continue;
+
+                // Find the parameter type from ApiDescription
+                var bodyParameter = context.ApiDescription.ParameterDescriptions
+                    .FirstOrDefault(p => p.Source?.Id == "Form" || p.Source?.Id == "Body");
+
+                Type? parameterType = null;
+                if (bodyParameter != null)
+                {
+                    parameterType = bodyParameter.ModelMetadata?.ContainerType ?? bodyParameter.ModelMetadata?.ModelType;
+                }
+
+                // If we couldn't find it from body parameter, try to find from schema reference
+                if (parameterType == null && schemaRefId != null)
+                {
+                    parameterType = context.ApiDescription.ParameterDescriptions
+                        .Select(p => p.ModelMetadata?.ModelType)
+                        .FirstOrDefault(t => t != null && _schemaGenerationOptions.SchemaIdSelector(t) == schemaRefId);
+                }
+
+                if (parameterType == null)
+                    continue;
+
+                var validator = _validatorRegistry!.GetValidator(parameterType);
+                if (validator == null)
+                    continue;
+
+                // Resolve the actual schema (dereference if needed)
+                OpenApiSchema resolvedSchema = contentSchema;
+                if (schemaRefId != null)
+                {
+                    resolvedSchema = schemaProvider.GetSchemaForType(parameterType);
+                }
+
+                if (resolvedSchema.Properties == null || resolvedSchema.Properties.Count == 0)
+                    continue;
+
+                var schemaContext = new SchemaGenerationContext(
+                    schemaRepository: context.SchemaRepository,
+                    schemaGenerator: context.SchemaGenerator,
+                    schema: resolvedSchema,
+                    schemaType: parameterType,
+                    rules: _rules,
+                    schemaGenerationOptions: _schemaGenerationOptions,
+                    schemaProvider: schemaProvider);
+
+                // Apply validation rules to all properties
+                FluentValidationSchemaBuilder.ApplyRulesToSchema(
+                    schemaType: parameterType,
+                    schemaPropertyNames: schemaContext.Properties,
+                    validator: validator,
+                    logger: _logger,
+                    schemaGenerationContext: schemaContext);
             }
         }
     }
