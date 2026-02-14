@@ -24,7 +24,8 @@ namespace MicroElements.OpenApi.FluentValidation
         public static IValidator? GetValidator(this IServiceProvider serviceProvider, Type modelType)
         {
             Type validatorType = typeof(IValidator<>).MakeGenericType(modelType);
-            return serviceProvider.GetService(validatorType) as IValidator;
+            return serviceProvider.GetService(validatorType) as IValidator
+                ?? serviceProvider.GetKeyedValidators(modelType).FirstOrDefault();
         }
 
         /// <summary>
@@ -78,6 +79,10 @@ namespace MicroElements.OpenApi.FluentValidation
 
             Type validatorType = typeof(IValidator<>).MakeGenericType(modelType);
 
+            // Track seen validators to deduplicate between keyed and non-keyed
+            var seen = new HashSet<IValidator>(ReferenceEqualityComparer.Instance);
+
+            // 1. Non-keyed validators (existing behavior)
             var validators = serviceProvider
                 .GetServices(validatorType)
                 .OfType<IValidator>();
@@ -86,6 +91,7 @@ namespace MicroElements.OpenApi.FluentValidation
             {
                 if (validatorFilter is null || validatorFilter.Matches(new ValidatorContext(typeContext, validator)))
                 {
+                    seen.Add(validator);
                     yield return validator;
 
                     if (options.ValidatorSearch.IsOneValidatorForType)
@@ -95,6 +101,23 @@ namespace MicroElements.OpenApi.FluentValidation
                 }
             }
 
+            // 2. Keyed validators (Issue #165)
+            foreach (var keyedValidator in serviceProvider.GetKeyedValidators(modelType))
+            {
+                if (seen.Add(keyedValidator)
+                    && (validatorFilter is null || validatorFilter.Matches(
+                        new ValidatorContext(typeContext, keyedValidator))))
+                {
+                    yield return keyedValidator;
+
+                    if (options.ValidatorSearch.IsOneValidatorForType)
+                    {
+                        yield break;
+                    }
+                }
+            }
+
+            // 3. Base type validators (existing behavior)
             if (options.ValidatorSearch.SearchBaseTypeValidators)
             {
                 Type? baseType = modelType.BaseType;
@@ -110,6 +133,32 @@ namespace MicroElements.OpenApi.FluentValidation
                             yield break;
                         }
                     }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Resolves keyed IValidator services by scanning IServiceCollection descriptors.
+        /// </summary>
+        internal static IEnumerable<IValidator> GetKeyedValidators(
+            this IServiceProvider serviceProvider,
+            Type modelType)
+        {
+            Type validatorType = typeof(IValidator<>).MakeGenericType(modelType);
+            var serviceCollection = serviceProvider.GetService<IServiceCollection>();
+
+            if (serviceCollection is null || serviceProvider is not IKeyedServiceProvider keyedProvider)
+                yield break;
+
+            foreach (var descriptor in serviceCollection)
+            {
+                if (descriptor.IsKeyedService
+                    && descriptor.ServiceType == validatorType
+                    && descriptor.ServiceKey is not null
+                    && keyedProvider.GetKeyedService(validatorType, descriptor.ServiceKey)
+                        is IValidator validator)
+                {
+                    yield return validator;
                 }
             }
         }

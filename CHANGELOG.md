@@ -1,3 +1,11 @@
+# Changes in 7.0.4-beta.2
+- Added: Support for keyed DI services (Issue #165)
+  - Validators registered via `AddKeyedScoped`, `AddKeyedTransient`, `AddKeyedSingleton` are now discovered automatically
+  - Works with both `GetValidator` (OperationFilter/DocumentFilter) and `GetValidators` (SchemaFilter) paths
+  - Registration order independent — keyed validators registered before or after `AddFluentValidationRulesToSwagger()` are discovered
+  - Deduplication: same validator registered as both keyed and non-keyed is returned only once
+  - Graceful fallback: no impact when keyed services are not used or DI container doesn't support `IKeyedServiceProvider`
+
 # Changes in 7.0.4-beta.1
 - Fixed: `[AsParameters]` types in minimal API and `[FromQuery]` container types create unused schemas in `components/schemas` (Issue #180)
   - `GetSchemaForType()` registers schemas in `SchemaRepository` as a side-effect of `GenerateSchema()`

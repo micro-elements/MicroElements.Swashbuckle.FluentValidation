@@ -81,6 +81,9 @@ namespace MicroElements.Swashbuckle.FluentValidation.AspNetCore
             // Adds default IValidatorRegistry
             services.TryAdd(new ServiceDescriptor(typeof(IValidatorRegistry), typeof(ServiceProviderValidatorRegistry), registrationOptions.ServiceLifetime));
 
+            // Issue #165: Register IServiceCollection for keyed validator discovery at resolution time
+            services.TryAddSingleton<IServiceCollection>(services);
+
             // Adds IFluentValidationRuleProvider
             services.TryAddSingleton<IFluentValidationRuleProvider<OpenApiSchema>, DefaultFluentValidationRuleProvider>();
 
