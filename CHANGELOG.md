@@ -1,3 +1,8 @@
+# Changes in 7.0.4-beta.3
+- Removed: Deprecated `FluentValidation.AspNetCore` package reference from test project (Issue #164)
+  - Replaced with `FluentValidation.DependencyInjectionExtensions` 12.0.0, the official non-deprecated successor
+  - Aligns test project with sample projects that already use `FluentValidation.DependencyInjectionExtensions`
+
 # Changes in 7.0.4-beta.2
 - Added: Support for keyed DI services (Issue #165)
   - Validators registered via `AddKeyedScoped`, `AddKeyedTransient`, `AddKeyedSingleton` are now discovered automatically
