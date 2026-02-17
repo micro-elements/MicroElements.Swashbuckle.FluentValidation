@@ -1,21 +1,9 @@
-# Changes in 7.0.4-beta.3
-- Removed: Deprecated `FluentValidation.AspNetCore` package reference from test project (Issue #164)
-  - Replaced with `FluentValidation.DependencyInjectionExtensions` 12.0.0, the official non-deprecated successor
-  - Aligns test project with sample projects that already use `FluentValidation.DependencyInjectionExtensions`
-
-# Changes in 7.0.4-beta.2
+# Changes in 7.0.4
+- Fixed: `[AsParameters]` types in minimal API and `[FromQuery]` container types create unused schemas in `components/schemas` (Issue #180)
 - Added: Support for keyed DI services (Issue #165)
   - Validators registered via `AddKeyedScoped`, `AddKeyedTransient`, `AddKeyedSingleton` are now discovered automatically
-  - Works with both `GetValidator` (OperationFilter/DocumentFilter) and `GetValidators` (SchemaFilter) paths
-  - Registration order independent — keyed validators registered before or after `AddFluentValidationRulesToSwagger()` are discovered
-  - Deduplication: same validator registered as both keyed and non-keyed is returned only once
-  - Graceful fallback: no impact when keyed services are not used or DI container doesn't support `IKeyedServiceProvider`
-
-# Changes in 7.0.4-beta.1
-- Fixed: `[AsParameters]` types in minimal API and `[FromQuery]` container types create unused schemas in `components/schemas` (Issue #180)
-  - `GetSchemaForType()` registers schemas in `SchemaRepository` as a side-effect of `GenerateSchema()`
-  - Added check-and-cleanup: snapshot existing schema IDs before processing, remove side-effect schemas after applying validation rules to parameters
-  - Fix applied to both default path (`FluentValidationOperationFilter`) and experimental path (`FluentValidationDocumentFilter`)
+- Removed: Deprecated `FluentValidation.AspNetCore` package reference (Issue #164)
+  - Replaced with `FluentValidation.DependencyInjectionExtensions` 12.0.0
 
 # Changes in 7.0.3
 - Fixed: NullReferenceException when models contain nested object properties (Issue #176 extended)
