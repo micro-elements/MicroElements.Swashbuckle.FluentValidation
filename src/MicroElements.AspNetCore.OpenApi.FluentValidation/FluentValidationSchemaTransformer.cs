@@ -96,7 +96,7 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
             var allSchemas = new List<OpenApiSchema>();
             ProcessAllSchemas(schema, allSchemas);
 
-            var schemaProvider = new AspNetCoreSchemaProvider(context);
+            var schemaProvider = new AspNetCoreSchemaProvider(context, _logger);
 
             foreach (var validator in validators)
             {

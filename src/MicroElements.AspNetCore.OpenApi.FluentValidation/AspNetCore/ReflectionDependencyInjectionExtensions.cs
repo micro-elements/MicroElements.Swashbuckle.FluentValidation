@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -16,16 +17,19 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation.AspNetCore
     /// </summary>
     internal static class ReflectionDependencyInjectionExtensions
     {
+        private static readonly ConcurrentDictionary<string, Type?> _typeCache = new();
+
         private static Type? GetByFullName(string typeName)
         {
-            Type? type = AppDomain
-                .CurrentDomain
-                .GetAssemblies()
-                .Where(assembly => assembly.FullName.Contains("Microsoft"))
-                .SelectMany(GetLoadableTypes)
-                .FirstOrDefault(type => type.FullName == typeName);
-
-            return type;
+            return _typeCache.GetOrAdd(typeName, static name =>
+            {
+                return AppDomain
+                    .CurrentDomain
+                    .GetAssemblies()
+                    .Where(assembly => assembly.FullName?.Contains("Microsoft") == true)
+                    .SelectMany(GetLoadableTypes)
+                    .FirstOrDefault(type => type.FullName == name);
+            });
         }
 
         /// <summary>
@@ -40,44 +44,6 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation.AspNetCore
             catch (ReflectionTypeLoadException e)
             {
                 return e.Types.Where(t => t != null);
-            }
-        }
-
-        /// <summary>
-        /// Calls through reflection: <c>services.Configure&lt;JsonOptions&gt;(options =&gt; configureJson(options));</c>.
-        /// Can be used from netstandard.
-        /// </summary>
-        /// <param name="services">Services.</param>
-        /// <param name="configureJson">Action to configure <see cref="JsonSerializerOptions"/> in JsonOptions.</param>
-        public static void ConfigureJsonOptionsForAspNetCore(this IServiceCollection services, Action<JsonSerializerOptions> configureJson)
-        {
-            Action<object> configureJsonOptionsUntyped = options =>
-            {
-                PropertyInfo? propertyInfo = options.GetType().GetProperty("JsonSerializerOptions");
-
-                if (propertyInfo?.GetValue(options) is JsonSerializerOptions jsonSerializerOptions)
-                {
-                    configureJson(jsonSerializerOptions);
-                }
-            };
-
-            Type? jsonOptionsType = GetByFullName("Microsoft.AspNetCore.Mvc.JsonOptions");
-            if (jsonOptionsType != null)
-            {
-                Type? extensionsType = GetByFullName("Microsoft.Extensions.DependencyInjection.OptionsServiceCollectionExtensions");
-
-                MethodInfo? configureMethodGeneric = extensionsType
-                    ?.GetTypeInfo()
-                    .DeclaredMethods
-                    .FirstOrDefault(info => info.Name == "Configure" && info.GetParameters().Length == 2);
-
-                MethodInfo? configureMethod = configureMethodGeneric?.MakeGenericMethod(jsonOptionsType);
-
-                if (configureMethod != null)
-                {
-                    // services.Configure<JsonOptions>(options => configureJson(options));
-                    configureMethod.Invoke(services, new object?[] { services, configureJsonOptionsUntyped });
-                }
             }
         }
 

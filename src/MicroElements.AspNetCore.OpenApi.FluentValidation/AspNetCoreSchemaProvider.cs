@@ -5,6 +5,8 @@ using System;
 using System.Threading;
 using MicroElements.OpenApi.FluentValidation;
 using Microsoft.AspNetCore.OpenApi;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 #if !OPENAPI_V2
 using Microsoft.OpenApi.Models;
 #endif
@@ -19,14 +21,17 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
     internal class AspNetCoreSchemaProvider : ISchemaProvider<OpenApiSchema>
     {
         private readonly OpenApiSchemaTransformerContext? _context;
+        private readonly ILogger _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AspNetCoreSchemaProvider"/> class.
         /// </summary>
         /// <param name="context">Optional transformer context (used for GetOrCreateSchemaAsync on .NET 10+).</param>
-        public AspNetCoreSchemaProvider(OpenApiSchemaTransformerContext? context = null)
+        /// <param name="logger">Optional logger.</param>
+        public AspNetCoreSchemaProvider(OpenApiSchemaTransformerContext? context = null, ILogger? logger = null)
         {
             _context = context;
+            _logger = logger ?? NullLogger.Instance;
         }
 
         /// <inheritdoc />
@@ -45,9 +50,9 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
                     return _context.GetOrCreateSchemaAsync(type, null, CancellationToken.None)
                         .GetAwaiter().GetResult();
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    // Fallback to empty schema if sub-schema resolution fails.
+                    _logger.LogWarning(ex, "GetOrCreateSchemaAsync failed for type '{SchemaType}'. Falling back to empty schema.", type);
                     return new OpenApiSchema();
                 }
             }
