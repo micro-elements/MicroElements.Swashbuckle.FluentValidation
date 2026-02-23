@@ -37,6 +37,10 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
 
             // Register JsonSerializerOptions (reference to Microsoft.AspNetCore.Mvc.JsonOptions.Value)
             services.TryAddTransient<AspNetJsonSerializerOptions>(provider => new AspNetJsonSerializerOptions(provider.GetJsonSerializerOptionsOrDefault()));
+
+            // TryAdd ensures we only register a bare JsonSerializerOptions fallback when the host
+            // hasn't already registered one (e.g. via AddControllers or AddJsonOptions).
+            // This keeps the library non-intrusive while still providing a default for minimal APIs.
             services.TryAddTransient<JsonSerializerOptions>(provider => provider.GetService<AspNetJsonSerializerOptions>()?.Value!);
 
             // Adds name resolver. For example when property name in schema differs from property name in dotnet class.

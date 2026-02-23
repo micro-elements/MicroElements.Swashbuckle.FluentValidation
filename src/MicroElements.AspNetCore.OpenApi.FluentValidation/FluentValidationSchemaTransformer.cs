@@ -134,6 +134,15 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
             return Task.CompletedTask;
         }
 
+        /// <summary>
+        /// Collects the root schema and any embedded schemas from AllOf/OneOf/AnyOf into <paramref name="schemas"/>.
+        /// </summary>
+        /// <remarks>
+        /// Traversal is one level deep: only direct children of AllOf/OneOf/AnyOf that contain
+        /// properties are included. Deeply nested composition hierarchies are not recursed.
+        /// This is sufficient for the polymorphic/inheritance models produced by Microsoft.AspNetCore.OpenApi
+        /// but may need to be extended if deeper nesting is encountered.
+        /// </remarks>
         private static void ProcessAllSchemas(OpenApiSchema schema, List<OpenApiSchema> schemas)
         {
             schemas.Add(schema);

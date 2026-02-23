@@ -1,6 +1,8 @@
 // Copyright (c) MicroElements. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+// Copied from Swashbuckle package; namespace preserved for Phase 2 (v7.2) unification.
+
 using System;
 using System.Linq.Expressions;
 using System.Reflection;
