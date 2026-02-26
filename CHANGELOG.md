@@ -1,3 +1,15 @@
+# Changes in 7.1.0-beta.1
+- Added: New package `MicroElements.AspNetCore.OpenApi.FluentValidation` for Microsoft.AspNetCore.OpenApi support (Issue #149)
+  - Implements `IOpenApiSchemaTransformer` for .NET 9 and .NET 10
+  - Supports all FluentValidation rules: Required, NotEmpty, Length, Pattern, Email, Comparison, Between
+  - Handles AllOf/OneOf/AnyOf sub-schemas for polymorphic models
+  - No dependency on Swashbuckle
+  - User-facing API: `services.AddFluentValidationRulesToOpenApi()` + `options.AddFluentValidationRules()`
+  - .NET 10: full nested validator support via `GetOrCreateSchemaAsync`
+  - .NET 9: limited nested validator support (fallback to empty schema)
+- Added: Sample project `SampleAspNetCoreOpenApi` demonstrating Microsoft.AspNetCore.OpenApi integration
+- Added: ADR-001 documenting the architectural decision for AspNetCore.OpenApi support
+
 # Changes in 7.0.5
 - Added: `RemoveUnusedQuerySchemas` option (default: `true`) to control cleanup of
   container type schemas for `[FromQuery]`/`[AsParameters]` types (Issue #180)
