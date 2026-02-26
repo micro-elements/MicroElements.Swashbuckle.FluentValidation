@@ -53,6 +53,13 @@ namespace MicroElements.OpenApi.FluentValidation
         /// Gets <see cref="IRuleComponent"/> filter.
         /// </summary>
         ICondition<RuleComponentContext>? RuleComponentFilter { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether schemas created as side-effects of processing
+        /// [FromQuery]/[AsParameters] container types should be removed from components/schemas.
+        /// Default: true. Set to false to preserve these schemas for use in custom DocumentFilters.
+        /// </summary>
+        bool RemoveUnusedQuerySchemas { get; }
     }
 
     /// <summary>
@@ -92,6 +99,9 @@ namespace MicroElements.OpenApi.FluentValidation
 
         /// <inheritdoc />
         public ICondition<RuleComponentContext>? RuleComponentFilter { get; set; }
+
+        /// <inheritdoc />
+        public bool RemoveUnusedQuerySchemas { get; set; } = true;
 
         /// <summary>
         /// Sets values that compatible with FluentValidation.

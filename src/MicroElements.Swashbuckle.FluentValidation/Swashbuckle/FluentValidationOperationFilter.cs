@@ -104,7 +104,9 @@ namespace MicroElements.Swashbuckle.FluentValidation
             // GetSchemaForType() has a side-effect of registering schemas in SchemaRepository.
             // For [AsParameters]/[FromQuery] container types, Swashbuckle does NOT create schemas
             // (it expands them into individual parameters), so any schemas we create are unused.
-            var existingSchemaIds = new HashSet<string>(context.SchemaRepository.Schemas.Keys);
+            HashSet<string>? existingSchemaIds = _schemaGenerationOptions.RemoveUnusedQuerySchemas
+                ? new HashSet<string>(context.SchemaRepository.Schemas.Keys)
+                : null;
 
             foreach (var operationParameter in operation.Parameters!)
             {
@@ -220,11 +222,14 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
             // Issue #180: Remove schemas that we created as a side-effect of GetSchemaForType().
             // These schemas were not created by Swashbuckle and are not referenced elsewhere.
-            foreach (var schemaId in context.SchemaRepository.Schemas.Keys.ToArray())
+            if (existingSchemaIds != null)
             {
-                if (!existingSchemaIds.Contains(schemaId))
+                foreach (var schemaId in context.SchemaRepository.Schemas.Keys.ToArray())
                 {
-                    context.SchemaRepository.Schemas.Remove(schemaId);
+                    if (!existingSchemaIds.Contains(schemaId))
+                    {
+                        context.SchemaRepository.Schemas.Remove(schemaId);
+                    }
                 }
             }
         }

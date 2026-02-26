@@ -1,3 +1,7 @@
+# Changes in 7.0.5
+- Added: `RemoveUnusedQuerySchemas` option (default: `true`) to control cleanup of
+  container type schemas for `[FromQuery]`/`[AsParameters]` types (Issue #180)
+
 # Changes in 7.0.4
 - Fixed: `[AsParameters]` types in minimal API and `[FromQuery]` container types create unused schemas in `components/schemas` (Issue #180)
 - Added: Support for keyed DI services (Issue #165)
