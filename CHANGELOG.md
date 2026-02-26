@@ -9,6 +9,8 @@
   - .NET 9: limited nested validator support (fallback to empty schema)
 - Added: Sample project `SampleAspNetCoreOpenApi` demonstrating Microsoft.AspNetCore.OpenApi integration
 - Added: ADR-001 documenting the architectural decision for AspNetCore.OpenApi support
+- Added: `RemoveUnusedQuerySchemas` option (default: `true`) to control cleanup of
+  container type schemas for `[FromQuery]`/`[AsParameters]` types (Issue #180)
 
 # Changes in 7.0.4
 - Fixed: `[AsParameters]` types in minimal API and `[FromQuery]` container types create unused schemas in `components/schemas` (Issue #180)
