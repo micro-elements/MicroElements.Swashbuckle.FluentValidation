@@ -109,6 +109,17 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             schemaRepository.Schemas.Count.Should().Be(originalCount);
         }
 
+        /// <summary>
+        /// Verifies that the default value of RemoveUnusedQuerySchemas is true.
+        /// </summary>
+        [Fact]
+        public void Default_RemoveUnusedQuerySchemas_Should_Be_True()
+        {
+            var options = new SchemaGenerationOptions();
+            options.RemoveUnusedQuerySchemas.Should().BeTrue(
+                because: "the default should preserve v7.0.4 behavior of cleaning up unused schemas");
+        }
+
 // OperationFilter integration tests require framework-specific OpenApi types.
 // Use #if to handle Swashbuckle v8/v9 vs v10 (OPENAPI_V2) differences.
 #if !OPENAPI_V2
@@ -315,6 +326,240 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             // Assert: Pre-existing schema should still be present
             schemaRepository.Schemas.Should().ContainKey("SearchRequest",
                 because: "schemas that existed before OperationFilter processing should be preserved");
+        }
+
+        /// <summary>
+        /// Verifies that when RemoveUnusedQuerySchemas is false, container type schemas
+        /// created as a side-effect of GetSchemaForType() are preserved in SchemaRepository.
+        /// This supports workflows where custom DocumentFilters consume these schemas.
+        /// </summary>
+        [Fact]
+        public void OperationFilter_Should_Preserve_Schemas_When_RemoveUnusedQuerySchemas_Is_False()
+        {
+            // Arrange
+            var schemaGeneratorOptions = new SchemaGeneratorOptions();
+            var schemaRepository = new SchemaRepository();
+            var schemaGenerator = SchemaGenerator(new SearchRequestValidator());
+
+            var schemaGenerationOptions = new SchemaGenerationOptions
+            {
+                NameResolver = new SystemTextJsonNameResolver(),
+                SchemaIdSelector = schemaGeneratorOptions.SchemaIdSelector,
+                RemoveUnusedQuerySchemas = false,
+            };
+
+            var validatorRegistry = new ValidatorRegistry(
+                new IValidator[] { new SearchRequestValidator() },
+                new OptionsWrapper<SchemaGenerationOptions>(schemaGenerationOptions));
+
+            var metadataProvider = new EmptyModelMetadataProvider();
+            var queryMetadata = metadataProvider.GetMetadataForProperty(typeof(SearchRequest), nameof(SearchRequest.Query));
+            var pageMetadata = metadataProvider.GetMetadataForProperty(typeof(SearchRequest), nameof(SearchRequest.Page));
+
+            var apiDescription = new ApiDescription();
+            apiDescription.ParameterDescriptions.Add(new ApiParameterDescription
+            {
+                Name = "Query",
+                ModelMetadata = queryMetadata,
+                Source = BindingSource.Query,
+            });
+            apiDescription.ParameterDescriptions.Add(new ApiParameterDescription
+            {
+                Name = "Page",
+                ModelMetadata = pageMetadata,
+                Source = BindingSource.Query,
+            });
+
+            var operation = new OpenApiOperation
+            {
+                Parameters = new List<OpenApiParameter>
+                {
+                    new OpenApiParameter { Name = "Query", In = ParameterLocation.Query, Schema = new OpenApiSchema { Type = "string" } },
+                    new OpenApiParameter { Name = "Page", In = ParameterLocation.Query, Schema = new OpenApiSchema { Type = "integer" } },
+                },
+            };
+
+            var context = new OperationFilterContext(
+                apiDescription,
+                schemaGenerator,
+                schemaRepository,
+                typeof(AsParametersTests).GetMethod(nameof(OperationFilter_Should_Preserve_Schemas_When_RemoveUnusedQuerySchemas_Is_False))!);
+
+            schemaRepository.Schemas.Should().BeEmpty();
+
+            // Act
+            var operationFilter = new FluentValidationOperationFilter(
+                validatorRegistry: validatorRegistry,
+                schemaGenerationOptions: new OptionsWrapper<SchemaGenerationOptions>(schemaGenerationOptions));
+
+            operationFilter.Apply(operation, context);
+
+            // Assert: SchemaRepository SHOULD contain SearchRequest schema (not cleaned up)
+            schemaRepository.Schemas.Should().ContainKey("SearchRequest",
+                because: "RemoveUnusedQuerySchemas is false, so container type schemas should be preserved for custom DocumentFilters");
+        }
+
+        /// <summary>
+        /// Verifies that when RemoveUnusedQuerySchemas is false, the DocumentFilter preserves
+        /// container type schemas created as a side-effect of GetSchemaForType().
+        /// This is the key scenario from the regression: custom DocumentFilters that run after
+        /// this filter depend on these schemas being present.
+        /// </summary>
+        [Fact]
+        public void DocumentFilter_Should_Preserve_Schemas_When_RemoveUnusedQuerySchemas_Is_False()
+        {
+            // Arrange
+            var schemaGeneratorOptions = new SchemaGeneratorOptions();
+            var schemaRepository = new SchemaRepository();
+            var schemaGenerator = SchemaGenerator(new SearchRequestValidator());
+
+            var schemaGenerationOptions = new SchemaGenerationOptions
+            {
+                NameResolver = new SystemTextJsonNameResolver(),
+                SchemaIdSelector = schemaGeneratorOptions.SchemaIdSelector,
+                RemoveUnusedQuerySchemas = false,
+            };
+
+            var validatorRegistry = new ValidatorRegistry(
+                new IValidator[] { new SearchRequestValidator() },
+                new OptionsWrapper<SchemaGenerationOptions>(schemaGenerationOptions));
+
+            var metadataProvider = new EmptyModelMetadataProvider();
+            var queryMetadata = metadataProvider.GetMetadataForProperty(typeof(SearchRequest), nameof(SearchRequest.Query));
+            var pageMetadata = metadataProvider.GetMetadataForProperty(typeof(SearchRequest), nameof(SearchRequest.Page));
+
+            var apiDescription = new ApiDescription { RelativePath = "api/search" };
+            apiDescription.ParameterDescriptions.Add(new ApiParameterDescription
+            {
+                Name = "Query",
+                ModelMetadata = queryMetadata,
+                Source = BindingSource.Query,
+            });
+            apiDescription.ParameterDescriptions.Add(new ApiParameterDescription
+            {
+                Name = "Page",
+                ModelMetadata = pageMetadata,
+                Source = BindingSource.Query,
+            });
+
+            var swaggerDoc = new OpenApiDocument
+            {
+                Paths = new OpenApiPaths
+                {
+                    ["/api/search"] = new OpenApiPathItem
+                    {
+                        Operations = new Dictionary<OperationType, OpenApiOperation>
+                        {
+                            [OperationType.Get] = new OpenApiOperation
+                            {
+                                Parameters = new List<OpenApiParameter>
+                                {
+                                    new OpenApiParameter { Name = "Query", In = ParameterLocation.Query, Schema = new OpenApiSchema { Type = "string" } },
+                                    new OpenApiParameter { Name = "Page", In = ParameterLocation.Query, Schema = new OpenApiSchema { Type = "integer" } },
+                                },
+                            },
+                        },
+                    },
+                },
+            };
+
+            var documentFilterContext = new DocumentFilterContext(
+                new[] { apiDescription },
+                schemaGenerator,
+                schemaRepository);
+
+            schemaRepository.Schemas.Should().BeEmpty();
+
+            // Act
+            var documentFilter = new FluentValidationDocumentFilter(
+                validatorRegistry: validatorRegistry,
+                schemaGenerationOptions: new OptionsWrapper<SchemaGenerationOptions>(schemaGenerationOptions));
+
+            documentFilter.Apply(swaggerDoc, documentFilterContext);
+
+            // Assert: SchemaRepository SHOULD contain SearchRequest schema (not cleaned up)
+            schemaRepository.Schemas.Should().ContainKey("SearchRequest",
+                because: "RemoveUnusedQuerySchemas is false, so container type schemas should be preserved for custom DocumentFilters");
+        }
+
+        /// <summary>
+        /// Verifies that with the default RemoveUnusedQuerySchemas=true, the DocumentFilter
+        /// removes container type schemas created as a side-effect.
+        /// </summary>
+        [Fact]
+        public void DocumentFilter_Should_Cleanup_ContainerType_Schemas_By_Default()
+        {
+            // Arrange
+            var schemaGeneratorOptions = new SchemaGeneratorOptions();
+            var schemaRepository = new SchemaRepository();
+            var schemaGenerator = SchemaGenerator(new SearchRequestValidator());
+
+            var schemaGenerationOptions = new SchemaGenerationOptions
+            {
+                NameResolver = new SystemTextJsonNameResolver(),
+                SchemaIdSelector = schemaGeneratorOptions.SchemaIdSelector,
+            };
+
+            var validatorRegistry = new ValidatorRegistry(
+                new IValidator[] { new SearchRequestValidator() },
+                new OptionsWrapper<SchemaGenerationOptions>(schemaGenerationOptions));
+
+            var metadataProvider = new EmptyModelMetadataProvider();
+            var queryMetadata = metadataProvider.GetMetadataForProperty(typeof(SearchRequest), nameof(SearchRequest.Query));
+            var pageMetadata = metadataProvider.GetMetadataForProperty(typeof(SearchRequest), nameof(SearchRequest.Page));
+
+            var apiDescription = new ApiDescription { RelativePath = "api/search" };
+            apiDescription.ParameterDescriptions.Add(new ApiParameterDescription
+            {
+                Name = "Query",
+                ModelMetadata = queryMetadata,
+                Source = BindingSource.Query,
+            });
+            apiDescription.ParameterDescriptions.Add(new ApiParameterDescription
+            {
+                Name = "Page",
+                ModelMetadata = pageMetadata,
+                Source = BindingSource.Query,
+            });
+
+            var swaggerDoc = new OpenApiDocument
+            {
+                Paths = new OpenApiPaths
+                {
+                    ["/api/search"] = new OpenApiPathItem
+                    {
+                        Operations = new Dictionary<OperationType, OpenApiOperation>
+                        {
+                            [OperationType.Get] = new OpenApiOperation
+                            {
+                                Parameters = new List<OpenApiParameter>
+                                {
+                                    new OpenApiParameter { Name = "Query", In = ParameterLocation.Query, Schema = new OpenApiSchema { Type = "string" } },
+                                    new OpenApiParameter { Name = "Page", In = ParameterLocation.Query, Schema = new OpenApiSchema { Type = "integer" } },
+                                },
+                            },
+                        },
+                    },
+                },
+            };
+
+            var documentFilterContext = new DocumentFilterContext(
+                new[] { apiDescription },
+                schemaGenerator,
+                schemaRepository);
+
+            schemaRepository.Schemas.Should().BeEmpty();
+
+            // Act
+            var documentFilter = new FluentValidationDocumentFilter(
+                validatorRegistry: validatorRegistry,
+                schemaGenerationOptions: new OptionsWrapper<SchemaGenerationOptions>(schemaGenerationOptions));
+
+            documentFilter.Apply(swaggerDoc, documentFilterContext);
+
+            // Assert: SchemaRepository should NOT contain SearchRequest schema (cleaned up)
+            schemaRepository.Schemas.Should().NotContainKey("SearchRequest",
+                because: "container type schemas created as a side-effect should be cleaned up by default (Issue #180)");
         }
 #endif
     }

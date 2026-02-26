@@ -47,6 +47,7 @@ namespace MicroElements.OpenApi.FluentValidation
             options.ValidatorFilter = other.ValidatorFilter;
             options.RuleFilter = other.RuleFilter;
             options.RuleComponentFilter = other.RuleComponentFilter;
+            options.RemoveUnusedQuerySchemas = other.RemoveUnusedQuerySchemas;
             return options;
         }
     }
