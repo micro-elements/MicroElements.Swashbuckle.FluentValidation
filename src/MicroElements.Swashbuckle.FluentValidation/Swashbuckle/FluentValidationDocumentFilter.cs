@@ -96,9 +96,10 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 .Distinct();
 
             var containerTypes = apiDescriptions
-                .SelectMany(description => description.ParameterDescriptions)
-                .Where(description => description.ModelMetadata.ContainerType != null)
-                .Select(description => description.ModelMetadata.ContainerType)
+                .SelectMany(apiDesc => apiDesc.ParameterDescriptions.Select(pd => new { apiDesc, pd }))
+                .Select(x => x.pd.ModelMetadata.ContainerType
+                    ?? AsParametersHelper.ResolveContainerType(x.pd.Name, AsParametersHelper.GetMethodInfo(x.apiDesc)))
+                .Where(type => type != null)
                 .Distinct();
 
             var schemasForTypes = modelTypes
@@ -123,7 +124,9 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 {
                     foreach (var apiParameterDescription in apiDescription.ParameterDescriptions)
                     {
-                        var containerType = apiParameterDescription.ModelMetadata.ContainerType;
+                        var containerType = apiParameterDescription.ModelMetadata.ContainerType
+                            ?? AsParametersHelper.ResolveContainerType(
+                                apiParameterDescription.Name, AsParametersHelper.GetMethodInfo(apiDescription));
                         if (containerType != null)
                         {
                             var parameterItem = new ParameterItem
