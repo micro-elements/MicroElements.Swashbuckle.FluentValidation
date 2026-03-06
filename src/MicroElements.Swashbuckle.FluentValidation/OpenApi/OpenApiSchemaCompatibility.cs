@@ -190,7 +190,7 @@ namespace MicroElements.OpenApi
         {
 #if OPENAPI_V2
             if (schema.Properties?.TryGetValue(key, out var property) == true)
-                return property as OpenApiSchema;
+                return property as OpenApiSchema; // Returns null for OpenApiSchemaReference (e.g. enums)
             return null;
 #else
             if (schema.Properties?.TryGetValue(key, out var property) == true)

@@ -88,8 +88,11 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
                 .Try(() => _validatorRegistry.GetValidators(type).ToArray())
                 .OnError(e => _logger.LogWarning(0, e, "GetValidators for type '{ModelType}' failed", type));
 
-            if (validators == null)
+            if (validators == null || validators.Length == 0)
+            {
+                _logger.LogDebug("No validators found for type '{ModelType}'", type);
                 return Task.CompletedTask;
+            }
 
             // Collect root schema and any embedded schemas from AllOf/OneOf/AnyOf.
             // This handles polymorphic/inheritance models where properties may be in sub-schemas.
@@ -158,7 +161,7 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
             {
                 foreach (var embeddedSchema in collectionOfSchemas)
                 {
-                    if (embeddedSchema.Properties == null || embeddedSchema.Properties.Count == 0)
+                    if (OpenApiSchemaCompatibility.PropertiesCount(embeddedSchema) == 0)
                     {
                         continue;
                     }

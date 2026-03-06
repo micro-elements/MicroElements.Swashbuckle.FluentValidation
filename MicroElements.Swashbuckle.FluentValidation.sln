@@ -38,6 +38,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MicroElements.AspNetCore.Op
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleAspNetCoreOpenApi", "samples\SampleAspNetCoreOpenApi\SampleAspNetCoreOpenApi.csproj", "{1BD071E8-AB99-4DD7-B4AD-2D7BBA1848FD}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{0C88DD14-F956-CE84-757C-A364CCF449FC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MicroElements.AspNetCore.OpenApi.FluentValidation.Tests", "test\MicroElements.AspNetCore.OpenApi.FluentValidation.Tests\MicroElements.AspNetCore.OpenApi.FluentValidation.Tests.csproj", "{51A03741-CE69-4834-ADBB-E6532AEF3832}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -156,6 +160,18 @@ Global
 		{1BD071E8-AB99-4DD7-B4AD-2D7BBA1848FD}.Release|x64.Build.0 = Release|Any CPU
 		{1BD071E8-AB99-4DD7-B4AD-2D7BBA1848FD}.Release|x86.ActiveCfg = Release|Any CPU
 		{1BD071E8-AB99-4DD7-B4AD-2D7BBA1848FD}.Release|x86.Build.0 = Release|Any CPU
+		{51A03741-CE69-4834-ADBB-E6532AEF3832}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{51A03741-CE69-4834-ADBB-E6532AEF3832}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{51A03741-CE69-4834-ADBB-E6532AEF3832}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{51A03741-CE69-4834-ADBB-E6532AEF3832}.Debug|x64.Build.0 = Debug|Any CPU
+		{51A03741-CE69-4834-ADBB-E6532AEF3832}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{51A03741-CE69-4834-ADBB-E6532AEF3832}.Debug|x86.Build.0 = Debug|Any CPU
+		{51A03741-CE69-4834-ADBB-E6532AEF3832}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{51A03741-CE69-4834-ADBB-E6532AEF3832}.Release|Any CPU.Build.0 = Release|Any CPU
+		{51A03741-CE69-4834-ADBB-E6532AEF3832}.Release|x64.ActiveCfg = Release|Any CPU
+		{51A03741-CE69-4834-ADBB-E6532AEF3832}.Release|x64.Build.0 = Release|Any CPU
+		{51A03741-CE69-4834-ADBB-E6532AEF3832}.Release|x86.ActiveCfg = Release|Any CPU
+		{51A03741-CE69-4834-ADBB-E6532AEF3832}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -166,6 +182,7 @@ Global
 		{6F4B88CA-B550-4C5E-981A-4608EC254976} = {9ED7D819-FC90-4504-A46D-D38E3BE107B7}
 		{FC318D02-FA03-4D3E-92F8-A37E41947DC9} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{1BD071E8-AB99-4DD7-B4AD-2D7BBA1848FD} = {9ED7D819-FC90-4504-A46D-D38E3BE107B7}
+		{51A03741-CE69-4834-ADBB-E6532AEF3832} = {0C88DD14-F956-CE84-757C-A364CCF449FC}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1AA0A677-C642-44C8-A6CE-495E7B7074B8}
