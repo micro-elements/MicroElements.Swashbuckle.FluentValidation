@@ -561,6 +561,154 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             schemaRepository.Schemas.Should().NotContainKey("SearchRequest",
                 because: "container type schemas created as a side-effect should be cleaned up by default (Issue #180)");
         }
+
+        /// <summary>
+        /// Helper method that simulates a Minimal API endpoint with [AsParameters].
+        /// Used for MethodInfo reflection in null-ContainerType tests.
+        /// </summary>
+        public static void EndpointWithAsParameters([Microsoft.AspNetCore.Http.AsParameters] SearchRequest request)
+        {
+        }
+
+        /// <summary>
+        /// Issue #180: Verifies that the OperationFilter applies validation rules
+        /// when ModelMetadata.ContainerType is null (as happens on .NET 8 for [AsParameters]).
+        /// Uses GetMetadataForType() to produce metadata with ContainerType == null.
+        /// </summary>
+        [Fact]
+        public void OperationFilter_Should_Apply_Rules_When_ContainerType_Is_Null()
+        {
+            // Arrange: metadata with ContainerType == null (simulates .NET 8 behavior)
+            var schemaGeneratorOptions = new SchemaGeneratorOptions();
+            var schemaRepository = new SchemaRepository();
+            var schemaGenerator = SchemaGenerator(new SearchRequestValidator());
+
+            var schemaGenerationOptions = new SchemaGenerationOptions
+            {
+                NameResolver = new SystemTextJsonNameResolver(),
+                SchemaIdSelector = schemaGeneratorOptions.SchemaIdSelector,
+            };
+
+            var validatorRegistry = new ValidatorRegistry(
+                new IValidator[] { new SearchRequestValidator() },
+                new OptionsWrapper<SchemaGenerationOptions>(schemaGenerationOptions));
+
+            var metadataProvider = new EmptyModelMetadataProvider();
+
+            // GetMetadataForType produces metadata with ContainerType == null
+            var queryMetadata = metadataProvider.GetMetadataForType(typeof(string));
+            var pageMetadata = metadataProvider.GetMetadataForType(typeof(int));
+
+            var apiDescription = new ApiDescription();
+            apiDescription.ParameterDescriptions.Add(new ApiParameterDescription
+            {
+                Name = "Query",
+                ModelMetadata = queryMetadata,
+                Source = BindingSource.Query,
+            });
+            apiDescription.ParameterDescriptions.Add(new ApiParameterDescription
+            {
+                Name = "Page",
+                ModelMetadata = pageMetadata,
+                Source = BindingSource.Query,
+            });
+
+            var queryParamSchema = new OpenApiSchema { Type = "string" };
+            var pageParamSchema = new OpenApiSchema { Type = "integer" };
+
+            var operation = new OpenApiOperation
+            {
+                Parameters = new List<OpenApiParameter>
+                {
+                    new OpenApiParameter { Name = "Query", In = ParameterLocation.Query, Schema = queryParamSchema },
+                    new OpenApiParameter { Name = "Page", In = ParameterLocation.Query, Schema = pageParamSchema },
+                },
+            };
+
+            // MethodInfo points to our helper with [AsParameters] attribute
+            var context = new OperationFilterContext(
+                apiDescription,
+                schemaGenerator,
+                schemaRepository,
+                typeof(AsParametersTests).GetMethod(nameof(EndpointWithAsParameters))!);
+
+            // Act
+            var operationFilter = new FluentValidationOperationFilter(
+                validatorRegistry: validatorRegistry,
+                schemaGenerationOptions: new OptionsWrapper<SchemaGenerationOptions>(schemaGenerationOptions));
+
+            operationFilter.Apply(operation, context);
+
+            // Assert: Validation rules should be applied via [AsParameters] fallback
+            queryParamSchema.MinLength.Should().Be(1, because: "NotEmpty should set MinLength to 1 via [AsParameters] fallback");
+            queryParamSchema.MaxLength.Should().Be(200, because: "MaximumLength(200) should set MaxLength via [AsParameters] fallback");
+
+            pageParamSchema.GetMinimum().Should().Be(0, because: "GreaterThan(0) should set Minimum via [AsParameters] fallback");
+            pageParamSchema.GetExclusiveMinimum().Should().Be(true, because: "GreaterThan(0) should set ExclusiveMinimum via [AsParameters] fallback");
+        }
+
+        /// <summary>
+        /// Issue #180: Verifies that the OperationFilter does NOT apply fallback
+        /// when MethodInfo has no [AsParameters] attribute and ContainerType is null.
+        /// This ensures the fallback only activates for genuine [AsParameters] scenarios.
+        /// </summary>
+        [Fact]
+        public void OperationFilter_Should_Skip_When_No_AsParameters_And_ContainerType_Is_Null()
+        {
+            // Arrange: metadata with ContainerType == null, but no [AsParameters] on method
+            var schemaGeneratorOptions = new SchemaGeneratorOptions();
+            var schemaRepository = new SchemaRepository();
+            var schemaGenerator = SchemaGenerator(new SearchRequestValidator());
+
+            var schemaGenerationOptions = new SchemaGenerationOptions
+            {
+                NameResolver = new SystemTextJsonNameResolver(),
+                SchemaIdSelector = schemaGeneratorOptions.SchemaIdSelector,
+            };
+
+            var validatorRegistry = new ValidatorRegistry(
+                new IValidator[] { new SearchRequestValidator() },
+                new OptionsWrapper<SchemaGenerationOptions>(schemaGenerationOptions));
+
+            var metadataProvider = new EmptyModelMetadataProvider();
+            var queryMetadata = metadataProvider.GetMetadataForType(typeof(string));
+
+            var apiDescription = new ApiDescription();
+            apiDescription.ParameterDescriptions.Add(new ApiParameterDescription
+            {
+                Name = "Query",
+                ModelMetadata = queryMetadata,
+                Source = BindingSource.Query,
+            });
+
+            var queryParamSchema = new OpenApiSchema { Type = "string" };
+
+            var operation = new OpenApiOperation
+            {
+                Parameters = new List<OpenApiParameter>
+                {
+                    new OpenApiParameter { Name = "Query", In = ParameterLocation.Query, Schema = queryParamSchema },
+                },
+            };
+
+            // MethodInfo does NOT have [AsParameters] — regular method
+            var context = new OperationFilterContext(
+                apiDescription,
+                schemaGenerator,
+                schemaRepository,
+                typeof(AsParametersTests).GetMethod(nameof(OperationFilter_Should_Skip_When_No_AsParameters_And_ContainerType_Is_Null))!);
+
+            // Act
+            var operationFilter = new FluentValidationOperationFilter(
+                validatorRegistry: validatorRegistry,
+                schemaGenerationOptions: new OptionsWrapper<SchemaGenerationOptions>(schemaGenerationOptions));
+
+            operationFilter.Apply(operation, context);
+
+            // Assert: No validation rules should be applied (no ContainerType, no [AsParameters])
+            queryParamSchema.MinLength.Should().BeNull(because: "without ContainerType and [AsParameters], no validation should be applied");
+            queryParamSchema.MaxLength.Should().BeNull(because: "without ContainerType and [AsParameters], no validation should be applied");
+        }
 #endif
     }
 }

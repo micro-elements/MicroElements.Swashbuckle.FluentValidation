@@ -234,3 +234,35 @@ dotnet run
 ### 7.4 Dependencies
 - NO transitive dependency on Swashbuckle
 - Depends on MicroElements.OpenApi.FluentValidation and Microsoft.AspNetCore.OpenApi
+
+---
+
+## 8. Post-Beta Findings (v7.1.0-beta.2)
+
+### 8.1 Issue: Scoped DI Registration Fails in .NET 10 Build-Time Document Generation
+
+**.NET 10 enables `OpenApiGenerateDocuments` by default**, which generates OpenAPI documents at build time without an HTTP scope. `FluentValidationSchemaTransformer` and `IValidatorRegistry` were registered as `Scoped`, causing DI resolution failures in scopeless contexts.
+
+**Fix:** Changed both registrations from `TryAddScoped` to `TryAddTransient` in `ServiceCollectionExtensions.cs`. Both types are stateless wrappers and safe to use as Transient.
+
+### 8.2 Issue: `GetProperty()` Returns Null for `OpenApiSchemaReference`
+
+On .NET 10 (OPENAPI_V2), property values in `schema.Properties` can be `OpenApiSchemaReference` (e.g., enum types). `GetProperty()` casts via `property as OpenApiSchema`, which returns null for references. The `OpenApiRuleContext.Property` getter already handles this by returning an empty schema (Issue #176 fix), so rules are silently skipped for reference properties. This is correct behavior — enum/reference properties don't need validation constraints.
+
+**Fix:** Added clarifying comment. The `GetProperties()` method already filtered out references (Issue #176), but `GetProperty()`/`TryGetProperty()` now have matching documentation.
+
+### 8.3 Diagnostic Logging
+
+Added debug-level logging when no validators are found for a type, making it easier for users to diagnose "rules not applied" scenarios.
+
+### 8.4 Integration Tests
+
+Added `MicroElements.AspNetCore.OpenApi.FluentValidation.Tests` project with `WebApplicationFactory`-based integration tests covering:
+- Basic validation rules (NotEmpty, MaxLength, comparisons, email format)
+- Enum properties (OpenApiSchemaReference handling)
+- Comparison rules (exclusiveMinimum, InclusiveBetween)
+- Transient DI resolution without scope (build-time compatibility)
+
+### 8.5 Sample App Updated
+
+`SampleAspNetCoreOpenApi` now targets `net9.0;net10.0` and includes an enum property (`CustomerType`) to exercise the OpenApiSchemaReference code path.

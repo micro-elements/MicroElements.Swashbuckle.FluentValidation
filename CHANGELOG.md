@@ -9,6 +9,15 @@
   - .NET 9: limited nested validator support (fallback to empty schema)
 - Added: Sample project `SampleAspNetCoreOpenApi` demonstrating Microsoft.AspNetCore.OpenApi integration
 - Added: ADR-001 documenting the architectural decision for AspNetCore.OpenApi support
+
+# Changes in 7.0.6
+- Fixed: `[AsParameters]` validation rules not applied on .NET 8 Minimal APIs (Issue #180)
+  - On .NET 8, `ModelMetadata.ContainerType` is null for `[AsParameters]` decomposed parameters
+  - Added `AsParametersHelper` fallback that resolves the container type via `[AsParameters]` reflection on `MethodInfo`
+  - Applied fallback in both `FluentValidationOperationFilter` and `FluentValidationDocumentFilter`
+  - Zero regression on .NET 9/10 where `ContainerType` is already populated
+
+# Changes in 7.0.5
 - Added: `RemoveUnusedQuerySchemas` option (default: `true`) to control cleanup of
   container type schemas for `[FromQuery]`/`[AsParameters]` types (Issue #180)
 

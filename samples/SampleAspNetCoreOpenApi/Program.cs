@@ -41,6 +41,17 @@ public class Customer
     public int Age { get; set; }
     public string? Phone { get; set; }
     public Address? Address { get; set; }
+    public CustomerType Type { get; set; }
+}
+
+/// <summary>
+/// Sample enum to test OpenApiSchemaReference handling.
+/// </summary>
+public enum CustomerType
+{
+    Regular,
+    Premium,
+    Vip,
 }
 
 /// <summary>

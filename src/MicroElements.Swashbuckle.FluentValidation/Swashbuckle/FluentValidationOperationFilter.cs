@@ -117,6 +117,12 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 if (modelMetadata != null)
                 {
                     var parameterType = modelMetadata.ContainerType;
+
+                    // Fallback for .NET 8 where ContainerType may be null for [AsParameters]
+                    if (parameterType == null)
+                        parameterType = AsParametersHelper.ResolveContainerType(
+                            operationParameter.Name, context.MethodInfo);
+
                     if (parameterType == null)
                         continue;
 

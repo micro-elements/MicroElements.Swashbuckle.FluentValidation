@@ -32,8 +32,10 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
             this IServiceCollection services,
             Action<SchemaGenerationOptions>? configure = null)
         {
-            // Register the schema transformer for DI activation
-            services.TryAddScoped<FluentValidationSchemaTransformer>();
+            // Register the schema transformer for DI activation.
+            // Transient (not Scoped) because .NET 10 build-time document generation
+            // runs without an HTTP scope, causing scoped resolution to fail.
+            services.TryAddTransient<FluentValidationSchemaTransformer>();
 
             // Register JsonSerializerOptions (reference to Microsoft.AspNetCore.Mvc.JsonOptions.Value)
             services.TryAddTransient<AspNetJsonSerializerOptions>(provider => new AspNetJsonSerializerOptions(provider.GetJsonSerializerOptionsOrDefault()));
@@ -46,8 +48,9 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
             // Adds name resolver. For example when property name in schema differs from property name in dotnet class.
             services.TryAddSingleton<INameResolver, SystemTextJsonNameResolver>();
 
-            // Adds default IValidatorRegistry
-            services.TryAddScoped<IValidatorRegistry, ServiceProviderValidatorRegistry>();
+            // Adds default IValidatorRegistry.
+            // Transient for the same reason as FluentValidationSchemaTransformer above.
+            services.TryAddTransient<IValidatorRegistry, ServiceProviderValidatorRegistry>();
 
             // Issue #165: Register IServiceCollection for keyed validator discovery at resolution time
             services.TryAddSingleton<IServiceCollection>(services);
