@@ -589,14 +589,15 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             var referenceSchema = SchemaGenerator(new BigIntegerModelValidator()).GenerateSchema(typeof(BigIntegerModel), schemaRepository);
             var schema = schemaRepository.GetSchema(referenceSchema.GetRefId()!);
 
-            var valueProp = schema.GetProperty("Value");
+            var valueProp = schema.GetProperty("Value", schemaRepository)!;
 #if OPENAPI_V2
-            // Swashbuckle v10 with OpenApi 2.x may not map BigInteger to a schema property
-            if (valueProp == null)
-                return;
+            // Swashbuckle v10 renders BigInteger as $ref; schema filter cannot apply min/max to referenced schemas
+            valueProp.GetMinimum().Should().BeNull();
+            valueProp.GetMaximum().Should().BeNull();
+#else
+            valueProp.GetMinimum().Should().Be(0);
+            valueProp.GetMaximum().Should().Be(12345678900m);
 #endif
-            valueProp!.GetMinimum().Should().Be(0);
-            valueProp!.GetMaximum().Should().Be(12345678900m);
         }
 
         /// <summary>
@@ -614,15 +615,9 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             var referenceSchema = SchemaGenerator(validator).GenerateSchema(typeof(BigIntegerModel), schemaRepository);
             var schema = schemaRepository.GetSchema(referenceSchema.GetRefId()!);
 
-            var valueProp = schema.GetProperty("Value");
-#if OPENAPI_V2
-            // Swashbuckle v10 with OpenApi 2.x may not map BigInteger to a schema property
-            if (valueProp == null)
-                return;
-#endif
-            // Should not crash; min/max should not be set since conversion overflows
-            valueProp!.GetMinimum().Should().BeNull();
-            valueProp!.GetMaximum().Should().BeNull();
+            // Should not crash; min/max should not be set (overflow on net8/9, $ref on net10)
+            schema.GetProperty("Value", schemaRepository)!.GetMinimum().Should().BeNull();
+            schema.GetProperty("Value", schemaRepository)!.GetMaximum().Should().BeNull();
         }
 
         /// <summary>
@@ -639,14 +634,14 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             var referenceSchema = SchemaGenerator(validator).GenerateSchema(typeof(BigIntegerModel), schemaRepository);
             var schema = schemaRepository.GetSchema(referenceSchema.GetRefId()!);
 
-            var valueProp = schema.GetProperty("Value");
+            var valueProp = schema.GetProperty("Value", schemaRepository)!;
 #if OPENAPI_V2
-            // Swashbuckle v10 with OpenApi 2.x may not map BigInteger to a schema property
-            if (valueProp == null)
-                return;
+            // Swashbuckle v10 renders BigInteger as $ref; schema filter cannot apply min/max to referenced schemas
+            valueProp.GetMinimum().Should().BeNull();
+#else
+            valueProp.GetMinimum().Should().Be(10);
+            valueProp.GetExclusiveMinimum().Should().Be(true);
 #endif
-            valueProp!.GetMinimum().Should().Be(10);
-            valueProp!.GetExclusiveMinimum().Should().Be(true);
         }
 
         [Fact]

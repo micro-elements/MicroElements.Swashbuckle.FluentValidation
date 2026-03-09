@@ -117,11 +117,24 @@ internal static class TestCompatibility
     /// <summary>
     /// Gets property from schema.
     /// </summary>
-    public static OpenApiSchema? GetProperty(this OpenApiSchema schema, string key)
+    public static OpenApiSchema? GetProperty(this OpenApiSchema schema, string key, SchemaRepository? repository = null)
     {
 #if OPENAPI_V2
         if (schema.Properties?.TryGetValue(key, out var prop) == true)
-            return prop as OpenApiSchema;
+        {
+            if (prop is OpenApiSchema openApiSchema)
+                return openApiSchema;
+
+            // Property may be an OpenApiSchemaReference (e.g. for BigInteger, custom types).
+            // Resolve through repository if available.
+            if (prop is OpenApiSchemaReference schemaRef && repository != null)
+            {
+                var refId = schemaRef.Reference?.Id;
+                if (refId != null && repository.Schemas.TryGetValue(refId, out var resolved))
+                    return resolved as OpenApiSchema;
+            }
+        }
+
         return null;
 #else
         if (schema.Properties?.TryGetValue(key, out var prop) == true)
