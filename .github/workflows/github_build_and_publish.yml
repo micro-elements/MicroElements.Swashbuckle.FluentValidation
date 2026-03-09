@@ -31,7 +31,7 @@ jobs:
     - name: Build Windows
       if: runner.os == 'Windows'
       run: |
-        ./build.ps1 --target=Travis --verbosity=normal --ForceUploadPackages=false
+        ./build.ps1 --target=Travis --verbosity=normal --ForceUploadPackages=false --UploadPackages=false
       shell: powershell
 
     # Шаг 3: Сборка проекта
