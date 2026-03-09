@@ -1,3 +1,10 @@
+# Changes in 7.1.1
+- Fixed: Nested object validation not applied for `[FromQuery]` parameters (Issue #162)
+  - When Swashbuckle decomposes `[FromQuery]` models with nested objects into flat parameters (e.g., `operation.op`), the full dot-path name was used for schema property matching instead of the leaf name (`op`)
+  - `EqualsIgnoreAll("operation.op", "op")` compared `"OPERATIONOP"` vs `"OP"` and failed to match
+  - Strip dot-path prefix using `LastIndexOf('.')` in both `FluentValidationOperationFilter` and `FluentValidationDocumentFilter`
+  - Supports arbitrarily deep nesting (e.g., `a.b.c` → `c`)
+
 # Changes in 7.1.0
 - Added: New package `MicroElements.AspNetCore.OpenApi.FluentValidation` for Microsoft.AspNetCore.OpenApi support (Issue #149)
   - Implements `IOpenApiSchemaTransformer` for .NET 9 and .NET 10
