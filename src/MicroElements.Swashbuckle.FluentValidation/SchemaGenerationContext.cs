@@ -67,7 +67,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             ValidationRuleContext validationRuleContext,
             IPropertyValidator propertyValidator)
         {
-            return new OpenApiRuleContext(Schema, schemaPropertyName, validationRuleContext, propertyValidator);
+            return new OpenApiRuleContext(Schema, schemaPropertyName, validationRuleContext, propertyValidator, SchemaRepository);
         }
 
         /// <summary>

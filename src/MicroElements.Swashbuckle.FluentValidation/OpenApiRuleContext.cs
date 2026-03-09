@@ -9,6 +9,7 @@ using MicroElements.OpenApi.FluentValidation;
 #if !OPENAPI_V2
 using Microsoft.OpenApi.Models;
 #endif
+using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace MicroElements.Swashbuckle.FluentValidation
 {
@@ -45,7 +46,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     throw new ApplicationException($"Schema for type '{schemaType}' does not contain property '{PropertyKey}'.\nRegister {typeof(INameResolver)} if name in type differs from name in json.");
                 }
 
-                var schemaProperty = OpenApiSchemaCompatibility.GetProperty(Schema, PropertyKey);
+                var schemaProperty = OpenApiSchemaCompatibility.GetProperty(Schema, PropertyKey, _schemaRepository);
 
                 // Property is a schema reference (enum, nested class) - return empty schema to skip validation
                 // Issue #176: https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/issues/176
@@ -64,6 +65,8 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// </summary>
         private ValidationRuleContext ValidationRuleInfo { get; }
 
+        private readonly SchemaRepository? _schemaRepository;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="OpenApiRuleContext"/> class.
         /// </summary>
@@ -71,16 +74,19 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <param name="propertyKey">Property name.</param>
         /// <param name="validationRuleInfo">ValidationRuleInfo.</param>
         /// <param name="propertyValidator">Property validator.</param>
+        /// <param name="schemaRepository">Optional schema repository for resolving references.</param>
         public OpenApiRuleContext(
             OpenApiSchema schema,
             string propertyKey,
             ValidationRuleContext validationRuleInfo,
-            IPropertyValidator propertyValidator)
+            IPropertyValidator propertyValidator,
+            SchemaRepository? schemaRepository = null)
         {
             Schema = schema;
             PropertyKey = propertyKey;
             ValidationRuleInfo = validationRuleInfo;
             PropertyValidator = propertyValidator;
+            _schemaRepository = schemaRepository;
         }
     }
 }
