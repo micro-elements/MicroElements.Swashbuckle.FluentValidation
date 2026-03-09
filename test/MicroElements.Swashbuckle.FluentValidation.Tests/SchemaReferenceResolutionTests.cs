@@ -69,11 +69,12 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
         }
 
         /// <summary>
-        /// Verifies that GetProperty without repository returns null for $ref properties on OPENAPI_V2,
-        /// but still works on non-OPENAPI_V2 where properties are always OpenApiSchema.
+        /// Verifies that GetProperty works after the schema filter has resolved $ref properties.
+        /// On OPENAPI_V2, the schema filter replaces $ref entries with concrete schemas during processing,
+        /// so GetProperty works even without a repository after the filter has run.
         /// </summary>
         [Fact]
-        public void GetProperty_Without_Repository_Behavior()
+        public void GetProperty_Without_Repository_After_Filter_Processing()
         {
             // Arrange
             var schemaRepository = new SchemaRepository();
@@ -84,17 +85,75 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             var referenceSchema = schemaGenerator.GenerateSchema(typeof(SchemaGenerationTests.BigIntegerModel), schemaRepository);
             var schema = schemaRepository.GetSchema(referenceSchema.GetRefId()!);
 
-            // Act: GetProperty WITHOUT repository
+            // Act: GetProperty WITHOUT repository — after the schema filter has already processed the schema,
+            // the $ref is replaced with a concrete OpenApiSchema, so it works without repository.
             var property = OpenApiSchemaCompatibility.GetProperty(schema, "Value");
 
-#if OPENAPI_V2
-            // On OPENAPI_V2, BigInteger is rendered as $ref → GetProperty returns null without repository
-            property.Should().BeNull("BigInteger property is OpenApiSchemaReference on OPENAPI_V2");
-#else
-            // On older versions, BigInteger is rendered inline → GetProperty works without repository
-            property.Should().NotBeNull("BigInteger property is inline OpenApiSchema on non-OPENAPI_V2");
-#endif
+            // After filter processing, the property should be available regardless of OPENAPI version
+            property.Should().NotBeNull("property should be available after schema filter processing");
         }
 
+        /// <summary>
+        /// Two models sharing the same BigInteger $ref type but with different validator ranges
+        /// should get independent min/max constraints (no shared schema mutation).
+        /// </summary>
+        public class ModelA
+        {
+            public BigInteger Amount { get; set; }
+        }
+
+        public class ModelB
+        {
+            public BigInteger Amount { get; set; }
+        }
+
+        public class ModelAValidator : AbstractValidator<ModelA>
+        {
+            public ModelAValidator()
+            {
+                RuleFor(x => x.Amount).InclusiveBetween(new BigInteger(10), new BigInteger(100));
+            }
+        }
+
+        public class ModelBValidator : AbstractValidator<ModelB>
+        {
+            public ModelBValidator()
+            {
+                RuleFor(x => x.Amount).InclusiveBetween(new BigInteger(500), new BigInteger(1000));
+            }
+        }
+
+        [Fact]
+        public void SharedRef_Should_Not_Corrupt_Between_Models()
+        {
+            // Arrange: both models share BigInteger which may be a $ref in the SchemaRepository
+            var schemaRepository = new SchemaRepository();
+            var schemaGenerator = SchemaGenerator(new ModelAValidator(), new ModelBValidator());
+
+            // Act: generate schemas for both models into the same repository
+            var refA = schemaGenerator.GenerateSchema(typeof(ModelA), schemaRepository);
+            var schemaA = schemaRepository.GetSchema(refA.GetRefId()!);
+
+            var refB = schemaGenerator.GenerateSchema(typeof(ModelB), schemaRepository);
+            var schemaB = schemaRepository.GetSchema(refB.GetRefId()!);
+
+            // Assert: each model should have its own min/max constraints
+            // Use OpenApiSchemaCompatibility.GetProperty which handles $ref resolution on OPENAPI_V2
+            var propertyA = OpenApiSchemaCompatibility.GetProperty(schemaA, "Amount", schemaRepository);
+            var propertyB = OpenApiSchemaCompatibility.GetProperty(schemaB, "Amount", schemaRepository);
+
+            propertyA.Should().NotBeNull("ModelA should have Amount property");
+            propertyB.Should().NotBeNull("ModelB should have Amount property");
+
+            var minA = OpenApiSchemaCompatibility.GetMinimum(propertyA!);
+            var maxA = OpenApiSchemaCompatibility.GetMaximum(propertyA!);
+            var minB = OpenApiSchemaCompatibility.GetMinimum(propertyB!);
+            var maxB = OpenApiSchemaCompatibility.GetMaximum(propertyB!);
+
+            minA.Should().Be(10, "ModelA minimum should be 10");
+            maxA.Should().Be(100, "ModelA maximum should be 100");
+            minB.Should().Be(500, "ModelB minimum should be 500");
+            maxB.Should().Be(1000, "ModelB maximum should be 1000");
+        }
     }
 }

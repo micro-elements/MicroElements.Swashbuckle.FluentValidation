@@ -19,7 +19,7 @@ namespace MicroElements.OpenApi.Core
         internal static bool IsNumeric(this object value) => value is int || value is long || value is float || value is double || value is decimal || value is BigInteger;
 
         /// <summary>
-        /// Convert numeric to double.
+        /// Convert numeric to decimal.
         /// </summary>
         internal static decimal NumericToDecimal(this object value) => value is BigInteger bigInt ? (decimal)bigInt : Convert.ToDecimal(value);
 

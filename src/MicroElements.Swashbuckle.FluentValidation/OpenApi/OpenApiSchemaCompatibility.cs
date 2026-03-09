@@ -186,13 +186,14 @@ namespace MicroElements.OpenApi
 
         /// <summary>
         /// Gets property from schema by key.
+        /// On OPENAPI_V2, if the property is a $ref, resolves it via the repository and returns the shared schema.
+        /// The returned schema must not be mutated; use ResolveRefProperty when mutation isolation is needed.
         /// </summary>
         public static OpenApiSchema? GetProperty(OpenApiSchema schema, string key, SchemaRepository? repository = null)
         {
 #if OPENAPI_V2
             if (schema.Properties?.TryGetValue(key, out var property) == true)
                 return ResolveProperty(property, repository);
-
             return null;
 #else
             if (schema.Properties?.TryGetValue(key, out var property) == true)
@@ -203,6 +204,8 @@ namespace MicroElements.OpenApi
 
         /// <summary>
         /// Tries to get property from schema by key.
+        /// On OPENAPI_V2, if the property is a $ref, resolves it via the repository and returns the shared schema.
+        /// The returned schema must not be mutated; use ResolveRefProperty when mutation isolation is needed.
         /// </summary>
         public static bool TryGetProperty(OpenApiSchema schema, string key, out OpenApiSchema? property, SchemaRepository? repository = null)
         {
@@ -239,8 +242,35 @@ namespace MicroElements.OpenApi
             if (property is OpenApiSchemaReference schemaRef && repository != null)
             {
                 var refId = schemaRef.Reference?.Id;
-                if (refId != null && repository.Schemas.TryGetValue(refId, out var resolved))
-                    return resolved as OpenApiSchema;
+                if (refId != null && repository.Schemas.TryGetValue(refId, out var resolved) && resolved is OpenApiSchema resolvedSchema)
+                    return resolvedSchema;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Resolves a $ref property, replaces it with an isolated shallow copy in the parent schema,
+        /// and returns the copy. If the property is already a concrete OpenApiSchema, returns it as-is.
+        /// This prevents validation rules from mutating the shared schema in SchemaRepository.
+        /// </summary>
+        public static OpenApiSchema? ResolveRefProperty(OpenApiSchema schema, string key, SchemaRepository? repository)
+        {
+            if (schema.Properties == null || !schema.Properties.TryGetValue(key, out var prop))
+                return null;
+
+            if (prop is OpenApiSchema openApiSchema)
+                return openApiSchema;
+
+            if (prop is OpenApiSchemaReference schemaRef && repository != null)
+            {
+                var refId = schemaRef.Reference?.Id;
+                if (refId != null && repository.Schemas.TryGetValue(refId, out var resolved) && resolved is OpenApiSchema resolvedSchema)
+                {
+                    var copy = (OpenApiSchema)resolvedSchema.CreateShallowCopy();
+                    schema.Properties[key] = copy;
+                    return copy;
+                }
             }
 
             return null;
