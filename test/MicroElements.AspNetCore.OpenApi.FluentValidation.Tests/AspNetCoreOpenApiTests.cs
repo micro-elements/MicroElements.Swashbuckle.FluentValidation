@@ -113,8 +113,9 @@ public class AspNetCoreOpenApiTests : IClassFixture<AspNetCoreOpenApiTests.TestW
         }
         else
         {
-            // If value is a $ref, the constraints may be on the referenced schema
-            // or may not be applied (known limitation for AspNetCore path without SchemaRepository)
+            // Known architectural limitation: Microsoft.AspNetCore.OpenApi renders BigInteger as a $ref
+            // but its pipeline has no SchemaRepository concept, so the $ref cannot be resolved for
+            // constraint application. Validation rules are not applied in this path.
             value.TryGetProperty("$ref", out _).Should().BeTrue(
                 "BigInteger should either have inline min/max or be a $ref");
         }
