@@ -7,7 +7,7 @@
     <Authors>alexey.petriashev;MicroElements</Authors>
     <PackageIconUrl>https://raw.githubusercontent.com/micro-elements/MicroElements/master/image/logo_rounded.png</PackageIconUrl>
     <PackageProjectUrl>https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>git://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation</RepositoryUrl>
   </PropertyGroup>
