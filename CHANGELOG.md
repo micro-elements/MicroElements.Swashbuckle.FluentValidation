@@ -4,6 +4,14 @@
   - `EqualsIgnoreAll("operation.op", "op")` compared `"OPERATIONOP"` vs `"OP"` and failed to match
   - Strip dot-path prefix using `LastIndexOf('.')` in both `FluentValidationOperationFilter` and `FluentValidationDocumentFilter`
   - Supports arbitrarily deep nesting (e.g., `a.b.c` → `c`)
+- Added: `SetNotNullableIfMinimumGreaterThenZero` option to separately control nullable behavior for numeric Minimum constraints (Issue #154, ported from vchirikov fork PR #2)
+  - Distinct from existing `SetNotNullableIfMinLengthGreaterThenZero` (for string MinLength)
+  - Default: `false` (backward compatible)
+- Fixed: `SetNotNullableIfMinLengthGreaterThenZero` option now works in NSwag provider (Issue #154)
+  - `NSwagFluentValidationRuleProvider` now accepts `IOptions<SchemaGenerationOptions>`
+  - Rules NotEmpty, Length, Comparison, Between respect both nullable options
+  - Feature parity across Swashbuckle, AspNetCore.OpenApi, and NSwag providers
+- Improved: Comparison/Between rules now use `SetNotNullableIfMinimumGreaterThenZero()` which checks actual Minimum value instead of unconditionally setting not-nullable
 
 # Changes in 7.1.0
 - Added: New package `MicroElements.AspNetCore.OpenApi.FluentValidation` for Microsoft.AspNetCore.OpenApi support (Issue #149)

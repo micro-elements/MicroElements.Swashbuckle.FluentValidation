@@ -19,6 +19,11 @@ namespace MicroElements.OpenApi.FluentValidation
         bool SetNotNullableIfMinLengthGreaterThenZero { get; }
 
         /// <summary>
+        /// Gets a value indicating whether property should be set to not nullable if Minimum is greater than zero.
+        /// </summary>
+        bool SetNotNullableIfMinimumGreaterThenZero { get; }
+
+        /// <summary>
         /// Gets a value indicating whether schema generator should use AllOf for multiple rules (for example for multiple patterns).
         /// </summary>
         bool UseAllOfForMultipleRules { get; }
@@ -72,6 +77,12 @@ namespace MicroElements.OpenApi.FluentValidation
         /// Default: false.
         /// </summary>
         public bool SetNotNullableIfMinLengthGreaterThenZero { get; set; } = false;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether property should be set to not nullable if Minimum is greater than zero.
+        /// Default: false.
+        /// </summary>
+        public bool SetNotNullableIfMinimumGreaterThenZero { get; set; } = false;
 
         /// <summary>
         /// Gets or sets a value indicating whether schema generator should use AllOf for multiple rules (for example for multiple patterns).

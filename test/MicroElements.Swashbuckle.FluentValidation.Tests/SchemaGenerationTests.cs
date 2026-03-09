@@ -352,6 +352,135 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
                 });
         }
 
+        public class TestNumberEntity
+        {
+            public int IntValue { get; set; }
+            public int? NullableIntValue { get; set; }
+        }
+
+        [Fact]
+        public void GreaterThan_ShouldNot_Set_NotNullable_By_Default()
+        {
+            // Default: both options are false, nullable should remain unchanged
+            new SchemaBuilder<TestNumberEntity>()
+                .AddRule(entity => entity.NullableIntValue, rule => rule.GreaterThan(0), schema =>
+                {
+                    schema.IsNullable().Should().Be(true);
+                    schema.GetMinimum().Should().Be(0);
+                });
+        }
+
+        [Fact]
+        public void GreaterThan_Should_Set_NotNullable_When_SetNotNullableIfMinimumGreaterThenZero()
+        {
+            // SetNotNullableIfMinimumGreaterThenZero = true
+            new SchemaBuilder<TestNumberEntity>()
+                .ConfigureSchemaGenerationOptions(options => options.SetNotNullableIfMinimumGreaterThenZero = true)
+                .AddRule(entity => entity.NullableIntValue, rule => rule.GreaterThan(0), schema =>
+                {
+                    schema.IsNullable().Should().Be(false);
+                    schema.GetMinimum().Should().Be(0);
+                });
+
+            // GreaterThanOrEqual(1) should also set not nullable
+            new SchemaBuilder<TestNumberEntity>()
+                .ConfigureSchemaGenerationOptions(options => options.SetNotNullableIfMinimumGreaterThenZero = true)
+                .AddRule(entity => entity.NullableIntValue, rule => rule.GreaterThanOrEqualTo(1), schema =>
+                {
+                    schema.IsNullable().Should().Be(false);
+                    schema.GetMinimum().Should().Be(1);
+                });
+
+            // GreaterThanOrEqual(0) should NOT set not nullable (minimum is not > 0)
+            new SchemaBuilder<TestNumberEntity>()
+                .ConfigureSchemaGenerationOptions(options => options.SetNotNullableIfMinimumGreaterThenZero = true)
+                .AddRule(entity => entity.NullableIntValue, rule => rule.GreaterThanOrEqualTo(0), schema =>
+                {
+                    schema.IsNullable().Should().Be(true);
+                    schema.GetMinimum().Should().Be(0);
+                });
+        }
+
+        [Fact]
+        public void GreaterThan_Should_Not_Set_NotNullable_When_Option_Is_False()
+        {
+            new SchemaBuilder<TestNumberEntity>()
+                .ConfigureSchemaGenerationOptions(options => options.SetNotNullableIfMinimumGreaterThenZero = false)
+                .AddRule(entity => entity.NullableIntValue, rule => rule.GreaterThan(0), schema =>
+                {
+                    schema.IsNullable().Should().Be(true);
+                    schema.GetMinimum().Should().Be(0);
+                });
+
+            new SchemaBuilder<TestNumberEntity>()
+                .ConfigureSchemaGenerationOptions(options => options.SetNotNullableIfMinimumGreaterThenZero = false)
+                .AddRule(entity => entity.NullableIntValue, rule => rule.GreaterThanOrEqualTo(1), schema =>
+                {
+                    schema.IsNullable().Should().Be(true);
+                    schema.GetMinimum().Should().Be(1);
+                });
+        }
+
+        [Fact]
+        public void InclusiveBetween_Should_Set_NotNullable_When_SetNotNullableIfMinimumGreaterThenZero()
+        {
+            // InclusiveBetween(1, 100) has minimum > 0, should set not nullable
+            new SchemaBuilder<TestNumberEntity>()
+                .ConfigureSchemaGenerationOptions(options => options.SetNotNullableIfMinimumGreaterThenZero = true)
+                .AddRule(entity => entity.NullableIntValue, rule => rule.InclusiveBetween(1, 100), schema =>
+                {
+                    schema.IsNullable().Should().Be(false);
+                    schema.GetMinimum().Should().Be(1);
+                    schema.GetMaximum().Should().Be(100);
+                });
+
+            // InclusiveBetween(0, 100) has minimum == 0, should NOT set not nullable
+            new SchemaBuilder<TestNumberEntity>()
+                .ConfigureSchemaGenerationOptions(options => options.SetNotNullableIfMinimumGreaterThenZero = true)
+                .AddRule(entity => entity.NullableIntValue, rule => rule.InclusiveBetween(0, 100), schema =>
+                {
+                    schema.IsNullable().Should().Be(true);
+                    schema.GetMinimum().Should().Be(0);
+                });
+        }
+
+        [Fact]
+        public void ExclusiveBetween_Should_Set_NotNullable_When_SetNotNullableIfMinimumGreaterThenZero()
+        {
+            // ExclusiveBetween(1, 100) has minimum > 0, should set not nullable
+            new SchemaBuilder<TestNumberEntity>()
+                .ConfigureSchemaGenerationOptions(options => options.SetNotNullableIfMinimumGreaterThenZero = true)
+                .AddRule(entity => entity.NullableIntValue, rule => rule.ExclusiveBetween(1, 100), schema =>
+                {
+                    schema.IsNullable().Should().Be(false);
+                    schema.GetMinimum().Should().Be(1);
+                    schema.GetExclusiveMinimum().Should().Be(true);
+                });
+
+            // ExclusiveBetween(0, 100) has minimum == 0 (exclusive flag set after nullable check), should NOT set not nullable
+            new SchemaBuilder<TestNumberEntity>()
+                .ConfigureSchemaGenerationOptions(options => options.SetNotNullableIfMinimumGreaterThenZero = true)
+                .AddRule(entity => entity.NullableIntValue, rule => rule.ExclusiveBetween(0, 100), schema =>
+                {
+                    schema.IsNullable().Should().Be(true);
+                    schema.GetMinimum().Should().Be(0);
+                    schema.GetExclusiveMinimum().Should().Be(true);
+                });
+        }
+
+        [Fact]
+        public void SetNotNullableIfMinLengthGreaterThenZero_Should_Still_Work_For_Numeric()
+        {
+            // Legacy behavior: SetNotNullableIfMinLengthGreaterThenZero also triggers nullable removal for numeric
+            new SchemaBuilder<TestNumberEntity>()
+                .ConfigureSchemaGenerationOptions(options => options.SetNotNullableIfMinLengthGreaterThenZero = true)
+                .AddRule(entity => entity.NullableIntValue, rule => rule.GreaterThan(0), schema =>
+                {
+                    schema.IsNullable().Should().Be(false);
+                    schema.GetMinimum().Should().Be(0);
+                });
+        }
+
         public class BestShot
         {
             [JsonPropertyName("photo")]

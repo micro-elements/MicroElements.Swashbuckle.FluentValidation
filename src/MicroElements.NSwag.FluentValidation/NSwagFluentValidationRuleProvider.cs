@@ -1,4 +1,4 @@
-﻿// Copyright (c) MicroElements. All rights reserved.
+// Copyright (c) MicroElements. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -7,6 +7,7 @@ using System.Linq;
 using FluentValidation.Validators;
 using MicroElements.OpenApi.Core;
 using MicroElements.OpenApi.FluentValidation;
+using Microsoft.Extensions.Options;
 using NJsonSchema;
 using NJsonSchema.Generation;
 
@@ -14,6 +15,17 @@ namespace MicroElements.NSwag.FluentValidation
 {
     public class NSwagFluentValidationRuleProvider : IFluentValidationRuleProvider<SchemaProcessorContext>
     {
+        private readonly IOptions<SchemaGenerationOptions> _options;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="NSwagFluentValidationRuleProvider"/> class.
+        /// </summary>
+        /// <param name="options">Schema generation options.</param>
+        public NSwagFluentValidationRuleProvider(IOptions<SchemaGenerationOptions>? options = null)
+        {
+            _options = options ?? new OptionsWrapper<SchemaGenerationOptions>(new SchemaGenerationOptions());
+        }
+
         /// <inheritdoc />
         public IEnumerable<IFluentValidationRule<SchemaProcessorContext>> GetRules()
         {
@@ -24,7 +36,7 @@ namespace MicroElements.NSwag.FluentValidation
         /// Creates default rules.
         /// Can be overriden by name.
         /// </summary>
-        public static FluentValidationRule[] CreateDefaultRules()
+        public FluentValidationRule[] CreateDefaultRules()
         {
             return new[]
             {
@@ -94,6 +106,11 @@ namespace MicroElements.NSwag.FluentValidation
                         }
 
                         property.MinLength = 1;
+
+                        if (_options.Value.SetNotNullableIfMinLengthGreaterThenZero)
+                        {
+                            SetNSwagNotNullable(property);
+                        }
                     },
                 },
                 new FluentValidationRule("Length")
@@ -104,14 +121,20 @@ namespace MicroElements.NSwag.FluentValidation
                         var schema = context.Schema.Schema;
 
                         var lengthValidator = (ILengthValidator) context.PropertyValidator;
+                        var property = schema.Properties[context.PropertyKey];
 
                         if (lengthValidator.Max > 0)
-                            schema.Properties[context.PropertyKey].MaxLength = lengthValidator.Max;
+                            property.MaxLength = lengthValidator.Max;
 
                         if (lengthValidator.GetType() == typeof(MinimumLengthValidator<>)
                             || lengthValidator.GetType() == typeof(ExactLengthValidator<>)
-                            || schema.Properties[context.PropertyKey].MinLength == null)
-                            schema.Properties[context.PropertyKey].MinLength = lengthValidator.Min;
+                            || property.MinLength == null)
+                            property.MinLength = lengthValidator.Min;
+
+                        if (_options.Value.SetNotNullableIfMinLengthGreaterThenZero && property.MinLength > 0)
+                        {
+                            SetNSwagNotNullable(property);
+                        }
                     },
                 },
                 new FluentValidationRule("Pattern")
@@ -141,11 +164,15 @@ namespace MicroElements.NSwag.FluentValidation
                             if (comparisonValidator.Comparison == Comparison.GreaterThanOrEqual)
                             {
                                 schemaProperty.Minimum = valueToCompare;
+                                if (ShouldSetNotNullableForNumericMinimum)
+                                    SetNSwagNotNullableIfMinimumGreaterThenZero(schemaProperty);
                             }
                             else if (comparisonValidator.Comparison == Comparison.GreaterThan)
                             {
                                 schemaProperty.Minimum = valueToCompare;
                                 schemaProperty.IsExclusiveMinimum = true;
+                                if (ShouldSetNotNullableForNumericMinimum)
+                                    SetNSwagNotNullableIfMinimumGreaterThenZero(schemaProperty);
                             }
                             else if (comparisonValidator.Comparison == Comparison.LessThanOrEqual)
                             {
@@ -178,6 +205,9 @@ namespace MicroElements.NSwag.FluentValidation
                             {
                                 schemaProperty.Minimum = Convert.ToDecimal(betweenValidator.From);
                             }
+
+                            if (ShouldSetNotNullableForNumericMinimum)
+                                SetNSwagNotNullableIfMinimumGreaterThenZero(schemaProperty);
                         }
 
                         if (betweenValidator.To.IsNumeric())
@@ -206,6 +236,41 @@ namespace MicroElements.NSwag.FluentValidation
                     },
                 },
             };
+        }
+
+        /// <summary>
+        /// Returns true when either numeric minimum option OR legacy min-length option is enabled,
+        /// preserving backwards compatibility for users who relied on SetNotNullableIfMinLengthGreaterThenZero
+        /// to also affect numeric minimum constraints.
+        /// </summary>
+        private bool ShouldSetNotNullableForNumericMinimum =>
+            _options.Value.SetNotNullableIfMinLengthGreaterThenZero || _options.Value.SetNotNullableIfMinimumGreaterThenZero;
+
+        /// <summary>
+        /// Sets NJsonSchema property as not nullable.
+        /// </summary>
+        private static void SetNSwagNotNullable(JsonSchemaProperty property)
+        {
+            property.IsNullableRaw = false;
+
+            if (property.Type.HasFlag(JsonObjectType.Null))
+            {
+                property.Type &= ~JsonObjectType.Null;
+            }
+        }
+
+        /// <summary>
+        /// Sets NJsonSchema property as not nullable if Minimum > 0 or ExclusiveMinimum >= 0.
+        /// </summary>
+        private static void SetNSwagNotNullableIfMinimumGreaterThenZero(JsonSchemaProperty property)
+        {
+            var minimum = property.Minimum ?? property.ExclusiveMinimum;
+            var isExclusive = property.IsExclusiveMinimum || property.ExclusiveMinimum.HasValue;
+
+            if (minimum.HasValue && (isExclusive ? minimum >= 0 : minimum > 0))
+            {
+                SetNSwagNotNullable(property);
+            }
         }
     }
 }
