@@ -136,6 +136,12 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     {
                         var schemaPropertyName = operationParameter.Name;
 
+                        // For nested [FromQuery] parameters (e.g., "operation.op"), use only the leaf
+                        // property name since the schema for the nested type only has the leaf property.
+                        var dotIndex = schemaPropertyName.LastIndexOf('.');
+                        if (dotIndex >= 0)
+                            schemaPropertyName = schemaPropertyName.Substring(dotIndex + 1);
+
                         var apiProperty = OpenApiSchemaCompatibility.GetProperties(schema)
                             .FirstOrDefault(property => property.Key.EqualsIgnoreAll(schemaPropertyName));
                         if (apiProperty.Key != null)

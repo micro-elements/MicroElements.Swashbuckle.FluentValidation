@@ -204,6 +204,15 @@ namespace MicroElements.Swashbuckle.FluentValidation
             {
                 var itemParameterDescription = item.ParameterDescription;
                 var schemaPropertyName = itemParameterDescription?.ModelMetadata?.BinderModelName ?? itemParameterDescription?.Name;
+
+                // For nested [FromQuery] parameters (e.g., "operation.op"), use only the leaf property name.
+                if (schemaPropertyName != null)
+                {
+                    var dotIndex = schemaPropertyName.LastIndexOf('.');
+                    if (dotIndex >= 0)
+                        schemaPropertyName = schemaPropertyName.Substring(dotIndex + 1);
+                }
+
                 var parameterSchema = item.ParameterSchema;
                 var schema = item.Schema;
                 if (schema != null && parameterSchema != null && schemaPropertyName != null)
