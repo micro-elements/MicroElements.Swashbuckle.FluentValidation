@@ -32,11 +32,11 @@ namespace MicroElements.OpenApi
         internal static void SetNotNullableIfMinimumGreaterThenZero(this OpenApiSchema schemaProperty)
         {
 #if OPENAPI_V2
-            // In OpenAPI 3.1 / OpenApi 2.x, exclusiveMinimum is a number (string)
+            // In OpenAPI 2.x / 3.0 (OPENAPI_V2 build), Minimum and ExclusiveMinimum are represented as strings
             bool isExclusive = !string.IsNullOrEmpty(schemaProperty.ExclusiveMinimum);
             var minimum = isExclusive
-                ? (decimal.TryParse(schemaProperty.ExclusiveMinimum, out var em) ? em : (decimal?)null)
-                : (schemaProperty.Minimum != null && decimal.TryParse(schemaProperty.Minimum, out var m) ? m : (decimal?)null);
+                ? (decimal.TryParse(schemaProperty.ExclusiveMinimum, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var em) ? em : (decimal?)null)
+                : (schemaProperty.Minimum != null && decimal.TryParse(schemaProperty.Minimum, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var m) ? m : (decimal?)null);
             if (minimum.HasValue && (isExclusive ? minimum >= 0 : minimum > 0))
             {
                 OpenApiSchemaCompatibility.SetNotNullable(schemaProperty);

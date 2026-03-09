@@ -164,14 +164,14 @@ namespace MicroElements.NSwag.FluentValidation
                             if (comparisonValidator.Comparison == Comparison.GreaterThanOrEqual)
                             {
                                 schemaProperty.Minimum = valueToCompare;
-                                if (ShouldSetNotNullableForMinimum)
+                                if (ShouldSetNotNullableForNumericMinimum)
                                     SetNSwagNotNullableIfMinimumGreaterThenZero(schemaProperty);
                             }
                             else if (comparisonValidator.Comparison == Comparison.GreaterThan)
                             {
                                 schemaProperty.Minimum = valueToCompare;
                                 schemaProperty.IsExclusiveMinimum = true;
-                                if (ShouldSetNotNullableForMinimum)
+                                if (ShouldSetNotNullableForNumericMinimum)
                                     SetNSwagNotNullableIfMinimumGreaterThenZero(schemaProperty);
                             }
                             else if (comparisonValidator.Comparison == Comparison.LessThanOrEqual)
@@ -206,7 +206,7 @@ namespace MicroElements.NSwag.FluentValidation
                                 schemaProperty.Minimum = Convert.ToDecimal(betweenValidator.From);
                             }
 
-                            if (ShouldSetNotNullableForMinimum)
+                            if (ShouldSetNotNullableForNumericMinimum)
                                 SetNSwagNotNullableIfMinimumGreaterThenZero(schemaProperty);
                         }
 
@@ -238,7 +238,12 @@ namespace MicroElements.NSwag.FluentValidation
             };
         }
 
-        private bool ShouldSetNotNullableForMinimum =>
+        /// <summary>
+        /// Returns true when either numeric minimum option OR legacy min-length option is enabled,
+        /// preserving backwards compatibility for users who relied on SetNotNullableIfMinLengthGreaterThenZero
+        /// to also affect numeric minimum constraints.
+        /// </summary>
+        private bool ShouldSetNotNullableForNumericMinimum =>
             _options.Value.SetNotNullableIfMinLengthGreaterThenZero || _options.Value.SetNotNullableIfMinimumGreaterThenZero;
 
         /// <summary>
