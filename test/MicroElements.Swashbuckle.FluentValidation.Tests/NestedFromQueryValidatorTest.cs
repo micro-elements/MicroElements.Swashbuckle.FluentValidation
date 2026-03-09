@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Collections.Generic;
+using System.Text.Json;
 using FluentAssertions;
 using FluentValidation;
 using MicroElements.OpenApi.FluentValidation;
@@ -248,6 +249,79 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
                 because: "NotEmpty should set MinLength to 1 even for deeply nested parameter 'parent.operation.op'");
             operation.Parameters[0].Required.Should().BeTrue(
                 because: "NotEmpty should mark deeply nested parameter as required");
+        }
+
+        /// <summary>
+        /// Issue #162: Verifies that the DocumentFilter correctly copies validation rules
+        /// from schema properties to parameter schemas for nested [FromQuery] parameters.
+        /// </summary>
+        [Fact]
+        public void DocumentFilter_Should_Apply_Rules_To_Nested_FromQuery_Parameters()
+        {
+            // Arrange — use camelCase serialization to match real-world ASP.NET Core defaults
+            var schemaGeneratorOptions = new SchemaGeneratorOptions();
+            var schemaRepository = new SchemaRepository();
+            var schemaGenerator = SchemaGenerator(
+                configureSerializer: opts => opts.PropertyNamingPolicy = JsonNamingPolicy.CamelCase);
+
+            var schemaGenerationOptions = new SchemaGenerationOptions
+            {
+                NameResolver = new SystemTextJsonNameResolver(),
+                SchemaIdSelector = schemaGeneratorOptions.SchemaIdSelector,
+            };
+
+            var validatorRegistry = new ValidatorRegistry(
+                new IValidator[] { new FluentOperationValidator() },
+                new OptionsWrapper<SchemaGenerationOptions>(schemaGenerationOptions));
+
+            var metadataProvider = new EmptyModelMetadataProvider();
+            var opMetadata = metadataProvider.GetMetadataForProperty(typeof(FluentOperation), nameof(FluentOperation.Op));
+
+            var apiDescription = new ApiDescription { RelativePath = "api/test" };
+            apiDescription.ParameterDescriptions.Add(new ApiParameterDescription
+            {
+                Name = "operation.op",
+                ModelMetadata = opMetadata,
+                Source = BindingSource.Query,
+            });
+
+            var opParamSchema = new OpenApiSchema { Type = "string" };
+
+            var swaggerDoc = new OpenApiDocument
+            {
+                Paths = new OpenApiPaths
+                {
+                    ["/api/test"] = new OpenApiPathItem
+                    {
+                        Operations = new Dictionary<OperationType, OpenApiOperation>
+                        {
+                            [OperationType.Get] = new OpenApiOperation
+                            {
+                                Parameters = new List<OpenApiParameter>
+                                {
+                                    new OpenApiParameter { Name = "operation.op", In = ParameterLocation.Query, Schema = opParamSchema },
+                                },
+                            },
+                        },
+                    },
+                },
+            };
+
+            var documentFilterContext = new DocumentFilterContext(
+                new[] { apiDescription },
+                schemaGenerator,
+                schemaRepository);
+
+            // Act
+            var documentFilter = new FluentValidationDocumentFilter(
+                validatorRegistry: validatorRegistry,
+                schemaGenerationOptions: new OptionsWrapper<SchemaGenerationOptions>(schemaGenerationOptions));
+
+            documentFilter.Apply(swaggerDoc, documentFilterContext);
+
+            // Assert: The parameter schema should have validation rules copied from the nested type's schema
+            opParamSchema.MinLength.Should().Be(1,
+                because: "DocumentFilter should copy MinLength from nested type schema for dot-path parameter 'operation.op'");
         }
 #endif
     }
