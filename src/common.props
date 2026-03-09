@@ -5,11 +5,15 @@
     <Product>MicroElements</Product>
     <Copyright>Alexey Petryashev 2024</Copyright>
     <Authors>alexey.petriashev;MicroElements</Authors>
-    <PackageIconUrl>https://raw.githubusercontent.com/micro-elements/MicroElements/master/image/logo_rounded.png</PackageIconUrl>
+    <PackageIcon>icon.png</PackageIcon>
     <PackageProjectUrl>https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>git://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation</RepositoryUrl>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)..\icon.png" Pack="true" PackagePath="" />
+  </ItemGroup>
 
 </Project>
