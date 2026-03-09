@@ -40,6 +40,7 @@ namespace MicroElements.OpenApi.FluentValidation
         public static SchemaGenerationOptions SetFrom(this SchemaGenerationOptions options, ISchemaGenerationOptions other)
         {
             options.SetNotNullableIfMinLengthGreaterThenZero = other.SetNotNullableIfMinLengthGreaterThenZero;
+            options.SetNotNullableIfMinimumGreaterThenZero = other.SetNotNullableIfMinimumGreaterThenZero;
             options.UseAllOfForMultipleRules = other.UseAllOfForMultipleRules;
             options.ValidatorSearch = other.ValidatorSearch;
             options.NameResolver = other.NameResolver;

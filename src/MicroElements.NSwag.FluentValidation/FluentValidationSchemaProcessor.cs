@@ -54,7 +54,7 @@ namespace MicroElements.NSwag.FluentValidation
             _validatorFactory = validatorFactory;
 
             // MicroElements services
-            _rules = new NSwagFluentValidationRuleProvider().GetRules().ToArray().OverrideRules(rules);
+            _rules = new NSwagFluentValidationRuleProvider(schemaGenerationOptions).GetRules().ToArray().OverrideRules(rules);
             _schemaGenerationOptions = schemaGenerationOptions?.Value ?? new SchemaGenerationOptions();
             _schemaGenerationOptions.FillDefaults(swaggerGenOptions);
         }

@@ -136,15 +136,15 @@ namespace MicroElements.Swashbuckle.FluentValidation
                         if (comparisonValidator.Comparison == Comparison.GreaterThanOrEqual)
                         {
                             OpenApiSchemaCompatibility.SetNewMinimum(schemaProperty, valueToCompare);
-                            if (_options.Value.SetNotNullableIfMinLengthGreaterThenZero)
-                                OpenApiSchemaCompatibility.SetNotNullable(schemaProperty);
+                            if (_options.Value.SetNotNullableIfMinLengthGreaterThenZero || _options.Value.SetNotNullableIfMinimumGreaterThenZero)
+                                schemaProperty.SetNotNullableIfMinimumGreaterThenZero();
                         }
                         else if (comparisonValidator.Comparison == Comparison.GreaterThan)
                         {
                             OpenApiSchemaCompatibility.SetNewMinimum(schemaProperty, valueToCompare);
                             OpenApiSchemaCompatibility.SetExclusiveMinimum(schemaProperty, true);
-                            if (_options.Value.SetNotNullableIfMinLengthGreaterThenZero)
-                                OpenApiSchemaCompatibility.SetNotNullable(schemaProperty);
+                            if (_options.Value.SetNotNullableIfMinLengthGreaterThenZero || _options.Value.SetNotNullableIfMinimumGreaterThenZero)
+                                schemaProperty.SetNotNullableIfMinimumGreaterThenZero();
                         }
                         else if (comparisonValidator.Comparison == Comparison.LessThanOrEqual)
                         {
@@ -170,8 +170,8 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     if (betweenValidator.From.IsNumeric())
                     {
                         OpenApiSchemaCompatibility.SetNewMinimum(schemaProperty, betweenValidator.From.NumericToDecimal());
-                        if (_options.Value.SetNotNullableIfMinLengthGreaterThenZero)
-                            OpenApiSchemaCompatibility.SetNotNullable(schemaProperty);
+                        if (_options.Value.SetNotNullableIfMinLengthGreaterThenZero || _options.Value.SetNotNullableIfMinimumGreaterThenZero)
+                            schemaProperty.SetNotNullableIfMinimumGreaterThenZero();
 
                         if (betweenValidator.Name == "ExclusiveBetweenValidator")
                         {
