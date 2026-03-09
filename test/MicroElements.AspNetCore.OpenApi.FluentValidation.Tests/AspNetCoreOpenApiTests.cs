@@ -85,6 +85,41 @@ public class AspNetCoreOpenApiTests : IClassFixture<AspNetCoreOpenApiTests.TestW
         quantity.GetProperty("maximum").GetInt32().Should().Be(1000);
     }
 
+    /// <summary>
+    /// Issue #146: BigInteger properties should have validation constraints applied.
+    /// </summary>
+    [Fact]
+    public async Task BigIntegerProperty_ShouldHaveValidationConstraints()
+    {
+        var schemas = await GetSchemasAsync();
+
+        var bigIntModel = schemas.GetProperty("TestBigIntegerModel");
+        var props = bigIntModel.GetProperty("properties");
+
+        // Name should have standard string constraints
+        var name = props.GetProperty("name");
+        name.GetProperty("minLength").GetInt32().Should().Be(1);
+        name.GetProperty("maxLength").GetInt32().Should().Be(100);
+
+        // Value (BigInteger): InclusiveBetween(0, 999) => minimum: 0, maximum: 999
+        // In ASP.NET Core OpenAPI, BigInteger is serialized as a $ref to the component schema.
+        // The transformer applies validation rules to the shared component schema object,
+        // so constraints appear on the BigInteger component rather than inline on the property.
+        var value = props.GetProperty("value");
+        if (value.TryGetProperty("$ref", out _))
+        {
+            // Follow the $ref — constraints are on the BigInteger component schema
+            var bigInteger = schemas.GetProperty("BigInteger");
+            bigInteger.GetProperty("minimum").GetInt32().Should().Be(0);
+            bigInteger.GetProperty("maximum").GetInt32().Should().Be(999);
+        }
+        else
+        {
+            value.GetProperty("minimum").GetInt32().Should().Be(0);
+            value.GetProperty("maximum").GetInt32().Should().Be(999);
+        }
+    }
+
     [Fact]
     public void TransformerCanResolveWithoutScope()
     {

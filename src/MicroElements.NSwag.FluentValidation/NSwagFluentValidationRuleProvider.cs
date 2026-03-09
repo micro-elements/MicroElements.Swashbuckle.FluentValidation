@@ -157,7 +157,7 @@ namespace MicroElements.NSwag.FluentValidation
 
                         if (comparisonValidator.ValueToCompare.IsNumeric())
                         {
-                            var valueToCompare = Convert.ToDecimal(comparisonValidator.ValueToCompare);
+                            var valueToCompare = comparisonValidator.ValueToCompare.NumericToDecimal();
                             var schema = context.Schema.Schema;
                             var schemaProperty = schema.Properties[context.PropertyKey];
 
@@ -199,11 +199,11 @@ namespace MicroElements.NSwag.FluentValidation
                         {
                             if (betweenValidator.GetType().IsSubClassOfGeneric(typeof(ExclusiveBetweenValidator<,>)))
                             {
-                                schemaProperty.ExclusiveMinimum = Convert.ToDecimal(betweenValidator.From);
+                                schemaProperty.ExclusiveMinimum = betweenValidator.From.NumericToDecimal();
                             }
                             else
                             {
-                                schemaProperty.Minimum = Convert.ToDecimal(betweenValidator.From);
+                                schemaProperty.Minimum = betweenValidator.From.NumericToDecimal();
                             }
 
                             if (ShouldSetNotNullableForNumericMinimum)
@@ -214,11 +214,11 @@ namespace MicroElements.NSwag.FluentValidation
                         {
                             if (betweenValidator.GetType().IsSubClassOfGeneric(typeof(ExclusiveBetweenValidator<,>)))
                             {
-                                schemaProperty.ExclusiveMaximum = Convert.ToDecimal(betweenValidator.To);
+                                schemaProperty.ExclusiveMaximum = betweenValidator.To.NumericToDecimal();
                             }
                             else
                             {
-                                schemaProperty.Maximum = Convert.ToDecimal(betweenValidator.To);
+                                schemaProperty.Maximum = betweenValidator.To.NumericToDecimal();
                             }
                         }
                     },

@@ -188,8 +188,8 @@ namespace MicroElements.Swashbuckle.FluentValidation
                         var parameterSchema = operationParameter.Schema;
                         if (parameterSchema != null)
                         {
-                            if (OpenApiSchemaCompatibility.TryGetProperty(schema, schemaPropertyName.ToLowerCamelCase(), out var property)
-                                || OpenApiSchemaCompatibility.TryGetProperty(schema, schemaPropertyName, out property))
+                            if (OpenApiSchemaCompatibility.TryGetProperty(schema, schemaPropertyName.ToLowerCamelCase(), out var property, context.SchemaRepository)
+                                || OpenApiSchemaCompatibility.TryGetProperty(schema, schemaPropertyName, out property, context.SchemaRepository))
                             {
                                 if (property != null)
                                 {

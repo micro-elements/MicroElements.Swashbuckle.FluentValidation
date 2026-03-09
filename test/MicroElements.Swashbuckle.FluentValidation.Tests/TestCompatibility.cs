@@ -3,6 +3,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using MicroElements.OpenApi;
 #if OPENAPI_V2
 using Microsoft.OpenApi;
 #else
@@ -115,19 +116,12 @@ internal static class TestCompatibility
     }
 
     /// <summary>
-    /// Gets property from schema.
+    /// Gets property from schema. Delegates to production <see cref="OpenApiSchemaCompatibility.GetProperty"/>
+    /// to avoid duplicating $ref resolution logic.
     /// </summary>
-    public static OpenApiSchema? GetProperty(this OpenApiSchema schema, string key)
+    public static OpenApiSchema? GetProperty(this OpenApiSchema schema, string key, SchemaRepository? repository = null)
     {
-#if OPENAPI_V2
-        if (schema.Properties?.TryGetValue(key, out var prop) == true)
-            return prop as OpenApiSchema;
-        return null;
-#else
-        if (schema.Properties?.TryGetValue(key, out var prop) == true)
-            return prop;
-        return null;
-#endif
+        return OpenApiSchemaCompatibility.GetProperty(schema, key, repository);
     }
 
     /// <summary>

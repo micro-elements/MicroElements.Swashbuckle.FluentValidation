@@ -1,3 +1,15 @@
+# Changes in 7.1.2
+- Added: `BigInteger` support for min/max validation constraints in OpenAPI schema generation (Issue #146)
+  - `IsNumeric()` and `NumericToDecimal()` now handle `BigInteger` values
+  - `BigInteger` properties with GreaterThan, LessThan, InclusiveBetween, ExclusiveBetween rules produce correct `minimum`/`maximum` in Swagger
+  - NSwag provider updated with the same `BigInteger` support
+  - Out-of-range `BigInteger` values (exceeding `decimal` range) are handled gracefully via existing try/catch
+- Fixed: Shared schema mutation when multiple models reference the same `BigInteger` type with different constraints (net10.0)
+  - `ResolveRefProperty` creates an isolated shallow copy before applying rule mutations
+  - Prevents `$ref`-based schema corruption across models in `SchemaRepository`
+- Fixed: Replaced deprecated `PackageLicenseUrl` with `PackageLicenseExpression` (Issue #144)
+- Fixed: Replaced deprecated `PackageIconUrl` with embedded `PackageIcon`
+
 # Changes in 7.1.1
 - Fixed: Nested object validation not applied for `[FromQuery]` parameters (Issue #162)
   - When Swashbuckle decomposes `[FromQuery]` models with nested objects into flat parameters (e.g., `operation.op`), the full dot-path name was used for schema property matching instead of the leaf name (`op`)

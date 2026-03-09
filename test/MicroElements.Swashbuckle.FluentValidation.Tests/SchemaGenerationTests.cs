@@ -12,6 +12,7 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text.Json.Serialization;
 using Xunit;
 
@@ -562,6 +563,74 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
                 schema.GetProperty(nameof(MinMaxLength.Qualities))!.MaxItems.Should().Be(max);
             else
                 schema.GetProperty(nameof(MinMaxLength.Qualities))!.MaxItems.Should().BeNull();
+        }
+
+        /// <summary>
+        /// https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/issues/146
+        /// BigInteger within decimal range should emit min/max constraints.
+        /// </summary>
+        public class BigIntegerModel
+        {
+            public BigInteger Value { get; set; }
+        }
+
+        public class BigIntegerModelValidator : AbstractValidator<BigIntegerModel>
+        {
+            public BigIntegerModelValidator()
+            {
+                RuleFor(x => x.Value).InclusiveBetween(new BigInteger(0), new BigInteger(12345678900));
+            }
+        }
+
+        [Fact]
+        public void BigInteger_InclusiveBetween_Should_Set_MinMax()
+        {
+            var schemaRepository = new SchemaRepository();
+            var referenceSchema = SchemaGenerator(new BigIntegerModelValidator()).GenerateSchema(typeof(BigIntegerModel), schemaRepository);
+            var schema = schemaRepository.GetSchema(referenceSchema.GetRefId()!);
+
+            var valueProp = schema.GetProperty("Value", schemaRepository)!;
+            valueProp.GetMinimum().Should().Be(0);
+            valueProp.GetMaximum().Should().Be(12345678900m);
+        }
+
+        /// <summary>
+        /// https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/issues/146
+        /// BigInteger exceeding decimal range should silently skip (no crash).
+        /// </summary>
+        [Fact]
+        public void BigInteger_ExceedingDecimalRange_Should_Not_Crash()
+        {
+            var overflowValue = BigInteger.Parse("999999999999999999999999999999999");
+            var validator = new InlineValidator<BigIntegerModel>();
+            validator.RuleFor(x => x.Value).InclusiveBetween(overflowValue, overflowValue);
+
+            var schemaRepository = new SchemaRepository();
+            var referenceSchema = SchemaGenerator(validator).GenerateSchema(typeof(BigIntegerModel), schemaRepository);
+            var schema = schemaRepository.GetSchema(referenceSchema.GetRefId()!);
+
+            // Should not crash; min/max should not be set (overflow on all TFMs)
+            schema.GetProperty("Value", schemaRepository)!.GetMinimum().Should().BeNull();
+            schema.GetProperty("Value", schemaRepository)!.GetMaximum().Should().BeNull();
+        }
+
+        /// <summary>
+        /// https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/issues/146
+        /// BigInteger GreaterThan should emit minimum constraint.
+        /// </summary>
+        [Fact]
+        public void BigInteger_GreaterThan_Should_Set_Minimum()
+        {
+            var validator = new InlineValidator<BigIntegerModel>();
+            validator.RuleFor(x => x.Value).GreaterThan(new BigInteger(10));
+
+            var schemaRepository = new SchemaRepository();
+            var referenceSchema = SchemaGenerator(validator).GenerateSchema(typeof(BigIntegerModel), schemaRepository);
+            var schema = schemaRepository.GetSchema(referenceSchema.GetRefId()!);
+
+            var valueProp = schema.GetProperty("Value", schemaRepository)!;
+            valueProp.GetMinimum().Should().Be(10);
+            valueProp.GetExclusiveMinimum().Should().Be(true);
         }
 
         [Fact]

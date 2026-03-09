@@ -17,5 +17,6 @@ var app = builder.Build();
 app.MapOpenApi();
 app.MapPost("/api/customers", (TestCustomer customer) => Results.Ok(customer));
 app.MapPost("/api/orders", (TestOrder order) => Results.Ok(order));
+app.MapPost("/api/biginteger", (TestBigIntegerModel model) => Results.Ok(model));
 
 app.Run();
