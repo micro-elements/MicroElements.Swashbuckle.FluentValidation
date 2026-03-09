@@ -356,6 +356,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
         {
             public int IntValue { get; set; }
             public int? NullableIntValue { get; set; }
+            public System.Numerics.BigInteger BigIntegerValue { get; set; }
         }
 
         [Fact]
@@ -479,6 +480,28 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
                     schema.IsNullable().Should().Be(false);
                     schema.GetMinimum().Should().Be(0);
                 });
+        }
+
+        [Fact]
+        public void BigInteger_InclusiveBetween_Should_Set_Min_Max()
+        {
+            new SchemaBuilder<TestNumberEntity>()
+                .AddRule(entity => entity.BigIntegerValue,
+                    rule => rule.InclusiveBetween(new System.Numerics.BigInteger(0), new System.Numerics.BigInteger(12345678900)),
+                    schema =>
+                    {
+                        schema.GetMinimum().Should().Be(0);
+                        schema.GetMaximum().Should().Be(12345678900m);
+                    });
+        }
+
+        [Fact]
+        public void BigInteger_GreaterThanOrEqual_Should_Set_Minimum()
+        {
+            new SchemaBuilder<TestNumberEntity>()
+                .AddRule(entity => entity.BigIntegerValue,
+                    rule => rule.GreaterThanOrEqualTo(new System.Numerics.BigInteger(100)),
+                    schema => schema.GetMinimum().Should().Be(100));
         }
 
         public class BestShot

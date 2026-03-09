@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 
 namespace MicroElements.OpenApi.Core
 {
@@ -15,12 +16,17 @@ namespace MicroElements.OpenApi.Core
         /// <summary>
         /// Is supported swagger numeric type.
         /// </summary>
-        internal static bool IsNumeric(this object value) => value is int || value is long || value is float || value is double || value is decimal;
+        internal static bool IsNumeric(this object value) => value is int || value is long || value is float || value is double || value is decimal || value is BigInteger;
 
         /// <summary>
         /// Convert numeric to double.
         /// </summary>
-        internal static decimal NumericToDecimal(this object value) => Convert.ToDecimal(value);
+        internal static decimal NumericToDecimal(this object value)
+        {
+            if (value is BigInteger bigInteger)
+                return (decimal)bigInteger;
+            return Convert.ToDecimal(value);
+        }
 
         /// <summary>
         /// Returns not null enumeration.
