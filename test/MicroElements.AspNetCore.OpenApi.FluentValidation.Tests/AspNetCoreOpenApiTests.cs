@@ -87,8 +87,6 @@ public class AspNetCoreOpenApiTests : IClassFixture<AspNetCoreOpenApiTests.TestW
 
     /// <summary>
     /// Issue #146: BigInteger properties should have validation constraints applied.
-    /// Tests whether Microsoft.AspNetCore.OpenApi renders BigInteger as a reference
-    /// and whether validation rules are still applied.
     /// </summary>
     [Fact]
     public async Task BigIntegerProperty_ShouldHaveValidationConstraints()
@@ -104,20 +102,21 @@ public class AspNetCoreOpenApiTests : IClassFixture<AspNetCoreOpenApiTests.TestW
         name.GetProperty("maxLength").GetInt32().Should().Be(100);
 
         // Value (BigInteger): InclusiveBetween(0, 999) => minimum: 0, maximum: 999
-        // Check if value property has min/max (may be inline or $ref depending on TFM)
+        // In ASP.NET Core OpenAPI, BigInteger is serialized as a $ref to the component schema.
+        // The transformer applies validation rules to the shared component schema object,
+        // so constraints appear on the BigInteger component rather than inline on the property.
         var value = props.GetProperty("value");
-        if (value.TryGetProperty("minimum", out var minimum))
+        if (value.TryGetProperty("$ref", out _))
         {
-            minimum.GetInt32().Should().Be(0);
-            value.GetProperty("maximum").GetInt32().Should().Be(999);
+            // Follow the $ref — constraints are on the BigInteger component schema
+            var bigInteger = schemas.GetProperty("BigInteger");
+            bigInteger.GetProperty("minimum").GetInt32().Should().Be(0);
+            bigInteger.GetProperty("maximum").GetInt32().Should().Be(999);
         }
         else
         {
-            // Known architectural limitation: Microsoft.AspNetCore.OpenApi renders BigInteger as a $ref
-            // but its pipeline has no SchemaRepository concept, so the $ref cannot be resolved for
-            // constraint application. Validation rules are not applied in this path.
-            value.TryGetProperty("$ref", out _).Should().BeTrue(
-                "BigInteger should either have inline min/max or be a $ref");
+            value.GetProperty("minimum").GetInt32().Should().Be(0);
+            value.GetProperty("maximum").GetInt32().Should().Be(999);
         }
     }
 
