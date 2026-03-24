@@ -3,6 +3,7 @@
 using FluentValidation;
 using MicroElements.AspNetCore.OpenApi.FluentValidation;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddValidatorsFromAssemblyContaining<TestMarker>();
@@ -18,5 +19,7 @@ app.MapOpenApi();
 app.MapPost("/api/customers", (TestCustomer customer) => Results.Ok(customer));
 app.MapPost("/api/orders", (TestOrder order) => Results.Ok(order));
 app.MapPost("/api/biginteger", (TestBigIntegerModel model) => Results.Ok(model));
+app.MapGet("/api/search", ([AsParameters] TestQueryParameters query) => Results.Ok(query));
+app.MapPost("/api/request", (TestRequestWithNested dto) => Results.Ok(dto));
 
 app.Run();

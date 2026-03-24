@@ -36,6 +36,7 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
             // Transient (not Scoped) because .NET 10 build-time document generation
             // runs without an HTTP scope, causing scoped resolution to fail.
             services.TryAddTransient<FluentValidationSchemaTransformer>();
+            services.TryAddTransient<FluentValidationOperationTransformer>();
 
             // Register JsonSerializerOptions (reference to Microsoft.AspNetCore.Mvc.JsonOptions.Value)
             services.TryAddTransient<AspNetJsonSerializerOptions>(provider => new AspNetJsonSerializerOptions(provider.GetJsonSerializerOptionsOrDefault()));

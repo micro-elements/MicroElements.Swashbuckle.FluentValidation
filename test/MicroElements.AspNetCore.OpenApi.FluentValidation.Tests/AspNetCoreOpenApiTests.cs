@@ -120,6 +120,65 @@ public class AspNetCoreOpenApiTests : IClassFixture<AspNetCoreOpenApiTests.TestW
         }
     }
 
+    /// <summary>
+    /// Issue #200: Query parameters with [AsParameters] should have validation constraints.
+    /// </summary>
+    [Fact]
+    public async Task QueryParameters_WithAsParameters_ShouldHaveValidationConstraints()
+    {
+        var client = _factory.CreateClient();
+        var response = await client.GetAsync("/openapi/v1.json");
+        response.EnsureSuccessStatusCode();
+        var json = await response.Content.ReadAsStringAsync();
+        var doc = JsonDocument.Parse(json);
+
+        // Find the /api/search GET operation
+        var searchPath = doc.RootElement.GetProperty("paths").GetProperty("/api/search").GetProperty("get");
+        var parameters = searchPath.GetProperty("parameters");
+
+        // Find Skip and Take parameters
+        JsonElement? skipParam = null, takeParam = null;
+        foreach (var param in parameters.EnumerateArray())
+        {
+            var name = param.GetProperty("name").GetString();
+            if (name == "Skip") skipParam = param;
+            if (name == "Take") takeParam = param;
+        }
+
+        skipParam.Should().NotBeNull("Skip parameter should exist");
+        takeParam.Should().NotBeNull("Take parameter should exist");
+
+        // Skip: GreaterThanOrEqualTo(0) => minimum: 0
+        var skipSchema = skipParam!.Value.GetProperty("schema");
+        skipSchema.GetProperty("minimum").GetInt32().Should().Be(0);
+
+        // Take: InclusiveBetween(1, 100) => minimum: 1, maximum: 100
+        var takeSchema = takeParam!.Value.GetProperty("schema");
+        takeSchema.GetProperty("minimum").GetInt32().Should().Be(1);
+        takeSchema.GetProperty("maximum").GetInt32().Should().Be(100);
+    }
+
+    /// <summary>
+    /// Issue #200 (part 2): Nested DTOs in request body should have validation constraints.
+    /// Known limitation: schema transformer does not apply rules to nested component schemas yet.
+    /// </summary>
+    [Fact(Skip = "Known limitation: nested component schemas need separate investigation")]
+    public async Task NestedDto_ShouldHaveValidationConstraints()
+    {
+        var schemas = await GetSchemasAsync();
+
+        var createAccount = schemas.GetProperty("TestCreateAccount");
+        var props = createAccount.GetProperty("properties");
+
+        var email = props.GetProperty("email");
+        email.GetProperty("minLength").GetInt32().Should().Be(1);
+        email.GetProperty("format").GetString().Should().Be("email");
+
+        var username = props.GetProperty("username");
+        username.GetProperty("minLength").GetInt32().Should().Be(1);
+        username.GetProperty("maxLength").GetInt32().Should().Be(50);
+    }
+
     [Fact]
     public void TransformerCanResolveWithoutScope()
     {

@@ -19,6 +19,7 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
         public static OpenApiOptions AddFluentValidationRules(this OpenApiOptions options)
         {
             options.AddSchemaTransformer<FluentValidationSchemaTransformer>();
+            options.AddOperationTransformer<FluentValidationOperationTransformer>();
             return options;
         }
     }
