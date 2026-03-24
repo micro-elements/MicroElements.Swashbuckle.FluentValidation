@@ -228,6 +228,8 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
 
         /// <summary>
         /// Sets basic type information on a schema from a CLR type.
+        /// TODO: Add support for DateTime, DateTimeOffset, Guid, enum types, and collections.
+        /// Currently these all fall through to "string" which may cause incorrect schema types.
         /// </summary>
         private static void SetSchemaType(OpenApiSchema schema, Type type)
         {
@@ -277,18 +279,15 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
 
         /// <summary>
         /// Resolves the container type for a parameter by inspecting [AsParameters] on method parameters.
-        /// Supports nested parameter paths (e.g., "address.city") by using the leaf property name.
+        /// For nested paths (e.g., "Filter.MinAge"), walks the path to find the correct container type.
         /// </summary>
         private static Type? ResolveContainerType(string parameterName, MethodInfo? methodInfo)
         {
             if (methodInfo == null)
                 return null;
 
-            // For nested paths like "address.city", use the leaf name for property matching
-            var leafName = parameterName;
-            var dotIndex = leafName.LastIndexOf('.');
-            if (dotIndex >= 0)
-                leafName = leafName.Substring(dotIndex + 1);
+            // Split dot-path into segments (e.g., "Filter.MinAge" => ["Filter", "MinAge"])
+            var segments = parameterName.Split('.');
 
             foreach (var param in methodInfo.GetParameters())
             {
@@ -296,11 +295,41 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
                     continue;
 
                 var paramType = param.ParameterType;
-                var property = paramType.GetProperties()
-                    .FirstOrDefault(p => p.Name.Equals(leafName, StringComparison.OrdinalIgnoreCase));
 
-                if (property != null)
-                    return paramType;
+                if (segments.Length == 1)
+                {
+                    // Simple case: direct property on [AsParameters] type
+                    var property = paramType.GetProperties()
+                        .FirstOrDefault(p => p.Name.Equals(segments[0], StringComparison.OrdinalIgnoreCase));
+                    if (property != null)
+                        return paramType;
+                }
+                else
+                {
+                    // Nested case: walk path segments to find the container of the leaf property
+                    // e.g., "Filter.MinAge" => find Filter on paramType, return Filter's type
+                    var currentType = paramType;
+                    for (int i = 0; i < segments.Length - 1; i++)
+                    {
+                        var navProp = currentType.GetProperties()
+                            .FirstOrDefault(p => p.Name.Equals(segments[i], StringComparison.OrdinalIgnoreCase));
+                        if (navProp == null)
+                        {
+                            currentType = null;
+                            break;
+                        }
+
+                        currentType = navProp.PropertyType;
+                    }
+
+                    if (currentType != null)
+                    {
+                        var leafProp = currentType.GetProperties()
+                            .FirstOrDefault(p => p.Name.Equals(segments[^1], StringComparison.OrdinalIgnoreCase));
+                        if (leafProp != null)
+                            return currentType;
+                    }
+                }
             }
 
             return null;

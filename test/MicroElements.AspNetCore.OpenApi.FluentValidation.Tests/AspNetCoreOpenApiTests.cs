@@ -275,11 +275,10 @@ public class AspNetCoreOpenApiTests : IClassFixture<AspNetCoreOpenApiTests.TestW
     }
 
     /// <summary>
-    /// Issue #200 review (point 3): Nested query parameters with dot-paths
-    /// (e.g., "filter.minAge") should resolve correctly via leaf name.
+    /// Issue #200: Direct [AsParameters] should have validation constraints.
     /// </summary>
     [Fact]
-    public async Task NestedQueryParameters_WithDotPath_ShouldHaveValidationConstraints()
+    public async Task DirectAsParameters_ShouldHaveValidationConstraints()
     {
         var client = _factory.CreateClient();
         var response = await client.GetAsync("/openapi/v1.json");
