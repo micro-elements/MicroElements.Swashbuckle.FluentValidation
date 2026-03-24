@@ -274,6 +274,63 @@ public class AspNetCoreOpenApiTests : IClassFixture<AspNetCoreOpenApiTests.TestW
             "Query parameter container type should not appear in component schemas");
     }
 
+    /// <summary>
+    /// Issue #200 review (point 3): Nested query parameters with dot-paths
+    /// (e.g., "filter.minAge") should resolve correctly via leaf name.
+    /// </summary>
+    [Fact]
+    public async Task NestedQueryParameters_WithDotPath_ShouldHaveValidationConstraints()
+    {
+        var client = _factory.CreateClient();
+        var response = await client.GetAsync("/openapi/v1.json");
+        response.EnsureSuccessStatusCode();
+        var json = await response.Content.ReadAsStringAsync();
+        var doc = JsonDocument.Parse(json);
+
+        var filterPath = doc.RootElement.GetProperty("paths").GetProperty("/api/filter").GetProperty("get");
+        var parameters = filterPath.GetProperty("parameters");
+
+        JsonElement? minAgeParam = null, maxAgeParam = null;
+        foreach (var param in parameters.EnumerateArray())
+        {
+            var name = param.GetProperty("name").GetString();
+            if (name == "MinAge" || name == "minAge") minAgeParam = param;
+            if (name == "MaxAge" || name == "maxAge") maxAgeParam = param;
+        }
+
+        minAgeParam.Should().NotBeNull("MinAge parameter should exist");
+        maxAgeParam.Should().NotBeNull("MaxAge parameter should exist");
+
+        // MinAge: GreaterThanOrEqualTo(0) => minimum: 0
+        var minAgeSchema = minAgeParam!.Value.GetProperty("schema");
+        minAgeSchema.GetProperty("minimum").GetInt32().Should().Be(0);
+
+        // MaxAge: LessThanOrEqualTo(200) => maximum: 200
+        var maxAgeSchema = maxAgeParam!.Value.GetProperty("schema");
+        maxAgeSchema.GetProperty("maximum").GetInt32().Should().Be(200);
+    }
+
+    /// <summary>
+    /// Issue #200 review (point 5): Collection constraints (MinItems/MaxItems)
+    /// should be applied and copied correctly.
+    /// </summary>
+    [Fact]
+    public async Task CollectionConstraints_ShouldBeApplied()
+    {
+        var schemas = await GetSchemasAsync();
+
+        var model = schemas.GetProperty("TestCollectionModel");
+        var props = model.GetProperty("properties");
+
+        // Tags: NotEmpty => minItems: 1
+        var tags = props.GetProperty("tags");
+        tags.GetProperty("minItems").GetInt32().Should().Be(1);
+
+        // Scores: NotEmpty => minItems: 1
+        var scores = props.GetProperty("scores");
+        scores.GetProperty("minItems").GetInt32().Should().Be(1);
+    }
+
     [Fact]
     public void TransformerCanResolveWithoutScope()
     {

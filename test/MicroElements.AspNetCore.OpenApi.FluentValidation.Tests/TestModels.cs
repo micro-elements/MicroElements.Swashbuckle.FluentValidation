@@ -100,6 +100,43 @@ public class TestCreateAccountValidator : AbstractValidator<TestCreateAccount>
     }
 }
 
+// Issue #200: Nested query parameters (dot-path, e.g. "filter.minAge")
+public class TestNestedQueryParameters
+{
+    public TestFilterParams Filter { get; set; } = new();
+}
+
+public class TestFilterParams
+{
+    public int MinAge { get; set; }
+    public int MaxAge { get; set; }
+}
+
+public class TestFilterParamsValidator : AbstractValidator<TestFilterParams>
+{
+    public TestFilterParamsValidator()
+    {
+        RuleFor(x => x.MinAge).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.MaxAge).LessThanOrEqualTo(200);
+    }
+}
+
+// Issue #200: Collection constraints (MinItems/MaxItems)
+public class TestCollectionModel
+{
+    public List<string> Tags { get; set; } = new();
+    public List<int> Scores { get; set; } = new();
+}
+
+public class TestCollectionModelValidator : AbstractValidator<TestCollectionModel>
+{
+    public TestCollectionModelValidator()
+    {
+        RuleFor(x => x.Tags).NotEmpty(); // minItems: 1
+        RuleFor(x => x.Scores).NotEmpty(); // minItems: 1
+    }
+}
+
 // BigInteger model for Issue #146
 public class TestBigIntegerModel
 {
