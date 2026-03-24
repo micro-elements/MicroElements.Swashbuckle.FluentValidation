@@ -253,6 +253,8 @@ namespace MicroElements.OpenApi
         /// Resolves a $ref property, replaces it with an isolated shallow copy in the parent schema,
         /// and returns the copy. If the property is already a concrete OpenApiSchema, returns it as-is.
         /// This prevents validation rules from mutating the shared schema in SchemaRepository.
+        /// After rule application, call <see cref="RestoreUnmodifiedRefs"/> to restore $refs
+        /// for properties that were not modified by rules (Issue #198).
         /// </summary>
         public static OpenApiSchema? ResolveRefProperty(OpenApiSchema schema, string key, SchemaRepository? repository)
         {
@@ -274,6 +276,92 @@ namespace MicroElements.OpenApi
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Snapshots all $ref properties in the schema before rule application.
+        /// Returns a dictionary of property key to original OpenApiSchemaReference.
+        /// </summary>
+        public static Dictionary<string, OpenApiSchemaReference>? SnapshotRefs(OpenApiSchema schema)
+        {
+            if (schema.Properties == null)
+                return null;
+
+            Dictionary<string, OpenApiSchemaReference>? snapshot = null;
+            foreach (var kvp in schema.Properties)
+            {
+                if (kvp.Value is OpenApiSchemaReference schemaRef)
+                {
+                    snapshot ??= new Dictionary<string, OpenApiSchemaReference>();
+                    snapshot[kvp.Key] = schemaRef;
+                }
+            }
+
+            return snapshot;
+        }
+
+        /// <summary>
+        /// Restores $ref properties that were replaced by ResolveRefProperty but not meaningfully
+        /// modified by validation rules. Compares the inline copy against the original component
+        /// schema to detect changes. Issue #198.
+        /// </summary>
+        public static void RestoreUnmodifiedRefs(
+            OpenApiSchema schema,
+            Dictionary<string, OpenApiSchemaReference>? snapshot,
+            SchemaRepository? repository)
+        {
+            if (snapshot == null || repository == null || schema.Properties == null)
+                return;
+
+            foreach (var kvp in snapshot)
+            {
+                var key = kvp.Key;
+                var originalRef = kvp.Value;
+
+                if (!schema.Properties.TryGetValue(key, out var currentProp))
+                    continue;
+
+                // If still a ref, nothing was replaced
+                if (currentProp is OpenApiSchemaReference)
+                    continue;
+
+                if (currentProp is OpenApiSchema inlineCopy)
+                {
+                    var refId = originalRef.Reference?.Id;
+                    if (refId != null && repository.Schemas.TryGetValue(refId, out var resolved) && resolved is OpenApiSchema componentSchema)
+                    {
+                        if (!HasValidationConstraintChanges(inlineCopy, componentSchema))
+                        {
+                            schema.Properties[key] = originalRef;
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Checks if the inline copy has any validation constraint differences compared to the component schema.
+        /// </summary>
+        private static bool HasValidationConstraintChanges(OpenApiSchema copy, OpenApiSchema original)
+        {
+            if (copy.MinLength != original.MinLength) return true;
+            if (copy.MaxLength != original.MaxLength) return true;
+            if (copy.MinItems != original.MinItems) return true;
+            if (copy.MaxItems != original.MaxItems) return true;
+            if (copy.Pattern != original.Pattern) return true;
+            if (copy.Minimum != original.Minimum) return true;
+            if (copy.Maximum != original.Maximum) return true;
+            if (copy.ExclusiveMinimum != original.ExclusiveMinimum) return true;
+            if (copy.ExclusiveMaximum != original.ExclusiveMaximum) return true;
+            if (copy.Type != original.Type) return true;
+
+            // Check Required collection changes
+            var copyReq = copy.Required;
+            var origReq = original.Required;
+            if (copyReq?.Count != origReq?.Count) return true;
+            if (copyReq != null && origReq != null && !copyReq.SetEquals(origReq)) return true;
+
+            return false;
         }
 #endif
 

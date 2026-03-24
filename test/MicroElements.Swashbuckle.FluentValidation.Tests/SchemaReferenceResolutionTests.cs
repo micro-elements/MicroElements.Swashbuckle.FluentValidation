@@ -123,6 +123,66 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             }
         }
 
+        /// <summary>
+        /// Issue #198: SetValidator with nested object type should preserve $ref in parent schema.
+        /// https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/issues/198
+        /// </summary>
+        public class PersonModel
+        {
+            public AddressModel Address { get; set; }
+        }
+
+        public class AddressModel
+        {
+            public string Street { get; set; }
+        }
+
+        public class AddressModelValidator : AbstractValidator<AddressModel>
+        {
+            public AddressModelValidator()
+            {
+                RuleFor(x => x.Street).NotEmpty();
+            }
+        }
+
+        public class PersonModelValidator : AbstractValidator<PersonModel>
+        {
+            public PersonModelValidator()
+            {
+                RuleFor(x => x.Address)
+                    .NotEmpty()
+                    .SetValidator(new AddressModelValidator());
+            }
+        }
+
+        [Fact]
+        public void SetValidator_Should_Preserve_Ref_For_Nested_Object()
+        {
+            // Arrange
+            var schemaRepository = new SchemaRepository();
+            var schemaGenerator = SchemaGenerator(new PersonModelValidator(), new AddressModelValidator());
+
+            // Act
+            var referenceSchema = schemaGenerator.GenerateSchema(typeof(PersonModel), schemaRepository);
+            var personSchema = schemaRepository.GetSchema(referenceSchema.GetRefId()!);
+
+            // Assert: Person schema should have "Address" in required
+            personSchema.Required.Should().Contain("Address");
+
+            // Assert: Address component schema should exist and have street constraints
+            schemaRepository.Schemas.Should().ContainKey("AddressModel");
+
+            // Assert: Person.properties["Address"] should remain a $ref, not an inline copy
+            var addressProp = personSchema.Properties["Address"];
+#if OPENAPI_V2
+            addressProp.Should().BeOfType<OpenApiSchemaReference>(
+                "Person.properties['address'] should be a $ref, not an inline copy of the Address schema");
+#else
+            addressProp.Reference.Should().NotBeNull(
+                "Person.properties['address'] should be a $ref, not an inline copy of the Address schema");
+#endif
+        }
+
         [Fact]
         public void SharedRef_Should_Not_Corrupt_Between_Models()
         {

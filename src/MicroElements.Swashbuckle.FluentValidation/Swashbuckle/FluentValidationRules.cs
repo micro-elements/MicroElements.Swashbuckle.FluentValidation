@@ -107,6 +107,13 @@ namespace MicroElements.Swashbuckle.FluentValidation
             {
                 foreach (var oneOfSchemas in allSchemas)
                 {
+#if OPENAPI_V2
+                    // Issue #198: Snapshot $ref properties before rule application.
+                    // ResolveRefProperty replaces $refs with copies for mutation isolation (Issue #146),
+                    // but we restore unmodified refs afterwards to preserve $ref structure.
+                    var refSnapshot = OpenApiSchemaCompatibility.SnapshotRefs(oneOfSchemas);
+#endif
+
                     var validatorContext = new ValidatorContext(typeContext, validator);
                     var schemaContext = new SchemaGenerationContext(
                         schemaRepository: context.SchemaRepository,
@@ -126,6 +133,11 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     {
                         _logger.LogWarning(0, e, "Applying IncludeRules for type '{ModelType}' failed", context.Type);
                     }
+
+#if OPENAPI_V2
+                    // Issue #198: Restore $refs for properties that were not meaningfully modified by rules.
+                    OpenApiSchemaCompatibility.RestoreUnmodifiedRefs(oneOfSchemas, refSnapshot, context.SchemaRepository);
+#endif
                 }
             }
         }
