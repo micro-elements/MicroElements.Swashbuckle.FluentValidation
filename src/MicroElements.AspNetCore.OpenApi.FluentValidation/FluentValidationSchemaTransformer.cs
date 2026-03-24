@@ -77,10 +77,18 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
             if (type.IsPrimitiveType())
                 return Task.CompletedTask;
 
-            // Skip property-level schemas (we process only type-level schemas).
-            // IOpenApiSchemaTransformer is called for each schema including property schemas.
+            // For property-level schemas, only process if the property type is a complex object
+            // with its own validator. This handles nested DTOs (Issue #200).
+            // Simple properties (string, int) are handled by the parent type's validator.
             if (context.JsonPropertyInfo != null)
-                return Task.CompletedTask;
+            {
+                var propertyType = context.JsonPropertyInfo.PropertyType;
+                if (propertyType.IsPrimitiveType() || propertyType == typeof(object))
+                    return Task.CompletedTask;
+
+                // Use the property type for nested object schemas, not the parent type
+                type = propertyType;
+            }
 
             var typeContext = new TypeContext(type, _schemaGenerationOptions);
 

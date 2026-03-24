@@ -162,7 +162,7 @@ public class AspNetCoreOpenApiTests : IClassFixture<AspNetCoreOpenApiTests.TestW
     /// Issue #200 (part 2): Nested DTOs in request body should have validation constraints.
     /// Known limitation: schema transformer does not apply rules to nested component schemas yet.
     /// </summary>
-    [Fact(Skip = "Known limitation: nested component schemas need separate investigation")]
+    [Fact]
     public async Task NestedDto_ShouldHaveValidationConstraints()
     {
         var schemas = await GetSchemasAsync();
@@ -177,6 +177,101 @@ public class AspNetCoreOpenApiTests : IClassFixture<AspNetCoreOpenApiTests.TestW
         var username = props.GetProperty("username");
         username.GetProperty("minLength").GetInt32().Should().Be(1);
         username.GetProperty("maxLength").GetInt32().Should().Be(50);
+    }
+
+    /// <summary>
+    /// Regression: existing top-level schema validation (TestCustomer) must still work
+    /// after adding property-level schema processing for nested DTOs.
+    /// </summary>
+    [Fact]
+    public async Task TopLevelSchema_ShouldStillHaveValidationConstraints()
+    {
+        var schemas = await GetSchemasAsync();
+
+        // TestCustomer constraints should still be applied
+        var customer = schemas.GetProperty("TestCustomer");
+        var props = customer.GetProperty("properties");
+
+        // Age: GreaterThanOrEqualTo(0), LessThanOrEqualTo(150)
+        var age = props.GetProperty("age");
+        age.GetProperty("minimum").GetInt32().Should().Be(0);
+        age.GetProperty("maximum").GetInt32().Should().Be(150);
+
+        // Required array should still contain expected fields
+        var required = customer.GetProperty("required");
+        var requiredValues = required.EnumerateArray().Select(e => e.GetString()).ToArray();
+        requiredValues.Should().Contain("firstName");
+        requiredValues.Should().Contain("email");
+    }
+
+    /// <summary>
+    /// Regression: parent DTO should still have its own validation applied
+    /// when it contains nested objects.
+    /// </summary>
+    [Fact]
+    public async Task ParentDto_WithNestedObject_ShouldHaveOwnValidation()
+    {
+        var schemas = await GetSchemasAsync();
+
+        var request = schemas.GetProperty("TestRequestWithNested");
+        var props = request.GetProperty("properties");
+
+        // Name: NotEmpty + MaximumLength(100) => minLength: 1, maxLength: 100
+        var name = props.GetProperty("name");
+        name.GetProperty("minLength").GetInt32().Should().Be(1);
+        name.GetProperty("maxLength").GetInt32().Should().Be(100);
+
+        // Required should contain "name"
+        var required = request.GetProperty("required");
+        var requiredValues = required.EnumerateArray().Select(e => e.GetString()).ToArray();
+        requiredValues.Should().Contain("name");
+    }
+
+    /// <summary>
+    /// Regression: nested object property should remain a $ref, not be inlined.
+    /// </summary>
+    [Fact]
+    public async Task NestedObjectProperty_ShouldRemainRef()
+    {
+        var schemas = await GetSchemasAsync();
+
+        var request = schemas.GetProperty("TestRequestWithNested");
+        var account = request.GetProperty("properties").GetProperty("account");
+
+        // Account should be a $ref, not an inline object
+        account.TryGetProperty("$ref", out var refValue).Should().BeTrue(
+            "Nested object property should be a $ref");
+        refValue.GetString().Should().Contain("TestCreateAccount");
+    }
+
+    /// <summary>
+    /// Regression: enum property should not cause errors after schema transformer changes.
+    /// </summary>
+    [Fact]
+    public async Task EnumProperty_ShouldStillWork()
+    {
+        var schemas = await GetSchemasAsync();
+
+        schemas.TryGetProperty("TestCustomerType", out _).Should().BeTrue();
+
+        // Customer should still have validation despite enum property
+        var customer = schemas.GetProperty("TestCustomer");
+        customer.GetProperty("properties").GetProperty("firstName")
+            .GetProperty("minLength").GetInt32().Should().Be(1);
+    }
+
+    /// <summary>
+    /// Regression: query parameters should not pollute component schemas.
+    /// </summary>
+    [Fact]
+    public async Task QueryParameters_ShouldNotAppearInComponentSchemas()
+    {
+        var schemas = await GetSchemasAsync();
+
+        // TestQueryParameters should NOT appear in component schemas
+        // (it's expanded into individual parameters by [AsParameters])
+        schemas.TryGetProperty("TestQueryParameters", out _).Should().BeFalse(
+            "Query parameter container type should not appear in component schemas");
     }
 
     [Fact]
