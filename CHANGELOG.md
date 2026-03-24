@@ -1,3 +1,13 @@
+# Changes in 7.1.4-beta
+- Added: `FluentValidationOperationTransformer` (`IOpenApiOperationTransformer`) for `MicroElements.AspNetCore.OpenApi.FluentValidation` (Issue #200)
+  - Query parameters with `[AsParameters]` now receive validation constraints (min/max, required, pattern, etc.)
+  - Supports container type resolution with fallback via reflection for `[AsParameters]`
+  - Copies validation constraints from schema properties to parameter schemas
+  - Registered automatically via `AddFluentValidationRules()`
+- Fixed: Nested DTOs in request body not receiving validation constraints (Issue #200)
+  - `FluentValidationSchemaTransformer` skipped all property-level schemas, but for nested object types this was the only transformer call
+  - Now processes property-level schemas for complex types using the property type's validator
+
 # Changes in 7.1.3
 - Fixed: `$ref` replaced with inline schema copy when using `SetValidator` with nested object types (Issue #198)
   - `ResolveRefProperty` (introduced in 7.1.2 for BigInteger isolation) replaced all `$ref` properties with copies, destroying reference structure in the OpenAPI document
