@@ -354,12 +354,18 @@ namespace MicroElements.OpenApi
             if (copy.ExclusiveMinimum != original.ExclusiveMinimum) return true;
             if (copy.ExclusiveMaximum != original.ExclusiveMaximum) return true;
             if (copy.Type != original.Type) return true;
+            if (copy.Format != original.Format) return true;
 
             // Check Required collection changes
             var copyReq = copy.Required;
             var origReq = original.Required;
             if (copyReq?.Count != origReq?.Count) return true;
             if (copyReq != null && origReq != null && !copyReq.SetEquals(origReq)) return true;
+
+            // Check AllOf collection changes (Pattern rule with UseAllOfForMultipleRules)
+            var copyAllOfCount = copy.AllOf?.Count ?? 0;
+            var origAllOfCount = original.AllOf?.Count ?? 0;
+            if (copyAllOfCount != origAllOfCount) return true;
 
             return false;
         }
