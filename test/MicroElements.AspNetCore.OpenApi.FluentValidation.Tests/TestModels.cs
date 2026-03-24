@@ -54,6 +54,83 @@ public class TestOrderValidator : AbstractValidator<TestOrder>
     }
 }
 
+// Issue #200: Query parameters with [AsParameters]
+public class TestQueryParameters
+{
+    public int Skip { get; set; }
+    public int Take { get; set; }
+}
+
+public class TestQueryParametersValidator : AbstractValidator<TestQueryParameters>
+{
+    public TestQueryParametersValidator()
+    {
+        RuleFor(x => x.Skip).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.Take).InclusiveBetween(1, 100);
+    }
+}
+
+// Issue #200: Nested DTOs in request body
+public record TestRequestWithNested
+{
+    public string Name { get; init; } = string.Empty;
+    public required TestCreateAccount Account { get; init; }
+}
+
+public record TestCreateAccount
+{
+    public string Email { get; init; } = string.Empty;
+    public string Username { get; init; } = string.Empty;
+}
+
+public class TestRequestWithNestedValidator : AbstractValidator<TestRequestWithNested>
+{
+    public TestRequestWithNestedValidator()
+    {
+        RuleFor(x => x.Name).NotEmpty().MaximumLength(100);
+    }
+}
+
+public class TestCreateAccountValidator : AbstractValidator<TestCreateAccount>
+{
+    public TestCreateAccountValidator()
+    {
+        RuleFor(x => x.Email).NotEmpty().EmailAddress();
+        RuleFor(x => x.Username).NotEmpty().MaximumLength(50);
+    }
+}
+
+public class TestFilterParams
+{
+    public int MinAge { get; set; }
+    public int MaxAge { get; set; }
+}
+
+public class TestFilterParamsValidator : AbstractValidator<TestFilterParams>
+{
+    public TestFilterParamsValidator()
+    {
+        RuleFor(x => x.MinAge).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.MaxAge).LessThanOrEqualTo(200);
+    }
+}
+
+// Issue #200: Collection constraints (MinItems/MaxItems)
+public class TestCollectionModel
+{
+    public List<string> Tags { get; set; } = new();
+    public List<int> Scores { get; set; } = new();
+}
+
+public class TestCollectionModelValidator : AbstractValidator<TestCollectionModel>
+{
+    public TestCollectionModelValidator()
+    {
+        RuleFor(x => x.Tags).NotEmpty(); // minItems: 1
+        RuleFor(x => x.Scores).NotEmpty(); // minItems: 1
+    }
+}
+
 // BigInteger model for Issue #146
 public class TestBigIntegerModel
 {
