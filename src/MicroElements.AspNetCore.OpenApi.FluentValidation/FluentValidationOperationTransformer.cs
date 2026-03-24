@@ -5,8 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text.Json;
-using System.Text.Json.Serialization.Metadata;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentValidation;
@@ -81,6 +79,9 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
 
         private void ApplyRulesToParameters(OpenApiOperation operation, OpenApiOperationTransformerContext context)
         {
+            // Group parameters by container type to avoid redundant validator lookups and schema builds.
+            var parameterGroups = new Dictionary<Type, (IValidator Validator, OpenApiSchema Schema)>();
+
             foreach (var operationParameter in operation.Parameters)
             {
                 var apiParameterDescription = context.Description.ParameterDescriptions
@@ -102,79 +103,97 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
                 if (parameterType == null)
                     continue;
 
-                var validator = _validatorRegistry.GetValidator(parameterType);
-                if (validator == null)
-                    continue;
-
-                // Build a temporary schema for the container type to apply rules
-                var schema = BuildSchemaForType(parameterType);
-                if (schema.Properties == null || schema.Properties.Count == 0)
-                    continue;
-
-                var schemaPropertyName = operationParameter.Name;
-
-                // For nested [FromQuery] parameters (e.g., "operation.op"), use only the leaf name
-                var dotIndex = schemaPropertyName.LastIndexOf('.');
-                if (dotIndex >= 0)
-                    schemaPropertyName = schemaPropertyName.Substring(dotIndex + 1);
-
-                // Find matching property in schema
-                var apiProperty = OpenApiSchemaCompatibility.GetProperties(schema)
-                    .FirstOrDefault(property => property.Key.EqualsIgnoreAll(schemaPropertyName));
-                if (apiProperty.Key != null)
+                // Reuse validator and schema for the same container type
+                if (!parameterGroups.TryGetValue(parameterType, out var cached))
                 {
-                    schemaPropertyName = apiProperty.Key;
-                }
-                else
-                {
-                    var propertyInfo = parameterType.GetProperty(schemaPropertyName);
-                    if (propertyInfo != null && _schemaGenerationOptions.NameResolver != null)
-                    {
-                        schemaPropertyName = _schemaGenerationOptions.NameResolver.GetPropertyName(propertyInfo);
-                    }
+                    var validator = _validatorRegistry.GetValidator(parameterType);
+                    if (validator == null)
+                        continue;
+
+                    var schema = BuildSchemaForType(parameterType);
+                    if (schema.Properties == null || schema.Properties.Count == 0)
+                        continue;
+
+                    cached = (validator, schema);
+                    parameterGroups[parameterType] = cached;
                 }
 
-                var schemaProvider = new AspNetCoreSchemaProvider(null, _logger);
-                var schemaContext = new AspNetCoreSchemaGenerationContext(
-                    schema: schema,
-                    schemaType: parameterType,
-                    rules: _rules,
-                    schemaGenerationOptions: _schemaGenerationOptions,
-                    schemaProvider: schemaProvider);
+                ApplyRulesToParameter(operationParameter, parameterType, cached.Validator, cached.Schema);
+            }
+        }
 
-                FluentValidationSchemaBuilder.ApplyRulesToSchema(
-                    schemaType: parameterType,
-                    schemaPropertyNames: new[] { schemaPropertyName },
-                    validator: validator,
-                    logger: _logger,
-                    schemaGenerationContext: schemaContext);
-
-                // Copy required flag
-                if (OpenApiSchemaCompatibility.RequiredContains(schema, schemaPropertyName))
-                {
+        private void ApplyRulesToParameter(
 #if OPENAPI_V2
-                    if (operationParameter is OpenApiParameter openApiParameter)
-                        openApiParameter.Required = true;
+            IOpenApiParameter operationParameter,
 #else
-                    operationParameter.Required = true;
+            OpenApiParameter operationParameter,
 #endif
-                }
+            Type parameterType,
+            IValidator validator,
+            OpenApiSchema schema)
+        {
+            var schemaPropertyName = operationParameter.Name;
 
-                // Copy validation constraints from schema property to parameter schema
-#if OPENAPI_V2
-                var parameterSchema = operationParameter.Schema as OpenApiSchema;
-#else
-                var parameterSchema = operationParameter.Schema;
-#endif
-                if (parameterSchema != null)
+            // For nested [FromQuery] parameters (e.g., "operation.op"), use only the leaf name
+            var dotIndex = schemaPropertyName.LastIndexOf('.');
+            if (dotIndex >= 0)
+                schemaPropertyName = schemaPropertyName.Substring(dotIndex + 1);
+
+            // Find matching property in schema
+            var apiProperty = OpenApiSchemaCompatibility.GetProperties(schema)
+                .FirstOrDefault(property => property.Key.EqualsIgnoreAll(schemaPropertyName));
+            if (apiProperty.Key != null)
+            {
+                schemaPropertyName = apiProperty.Key;
+            }
+            else
+            {
+                var propertyInfo = parameterType.GetProperty(schemaPropertyName);
+                if (propertyInfo != null && _schemaGenerationOptions.NameResolver != null)
                 {
-                    if (OpenApiSchemaCompatibility.TryGetProperty(schema, schemaPropertyName.ToLowerCamelCase(), out var property)
-                        || OpenApiSchemaCompatibility.TryGetProperty(schema, schemaPropertyName, out property))
+                    schemaPropertyName = _schemaGenerationOptions.NameResolver.GetPropertyName(propertyInfo);
+                }
+            }
+
+            var schemaProvider = new AspNetCoreSchemaProvider(null, _logger);
+            var schemaContext = new AspNetCoreSchemaGenerationContext(
+                schema: schema,
+                schemaType: parameterType,
+                rules: _rules,
+                schemaGenerationOptions: _schemaGenerationOptions,
+                schemaProvider: schemaProvider);
+
+            FluentValidationSchemaBuilder.ApplyRulesToSchema(
+                schemaType: parameterType,
+                schemaPropertyNames: new[] { schemaPropertyName },
+                validator: validator,
+                logger: _logger,
+                schemaGenerationContext: schemaContext);
+
+            // Copy required flag
+            if (OpenApiSchemaCompatibility.RequiredContains(schema, schemaPropertyName))
+            {
+#if OPENAPI_V2
+                if (operationParameter is OpenApiParameter openApiParameter)
+                    openApiParameter.Required = true;
+#else
+                operationParameter.Required = true;
+#endif
+            }
+
+            // Copy validation constraints from schema property to parameter schema
+#if OPENAPI_V2
+            var parameterSchema = operationParameter.Schema as OpenApiSchema;
+#else
+            var parameterSchema = operationParameter.Schema;
+#endif
+            if (parameterSchema != null)
+            {
+                if (OpenApiSchemaCompatibility.TryGetProperty(schema, schemaPropertyName, out var property))
+                {
+                    if (property != null)
                     {
-                        if (property != null)
-                        {
-                            CopyValidationProperties(property, parameterSchema);
-                        }
+                        CopyValidationProperties(property, parameterSchema);
                     }
                 }
             }
@@ -216,15 +235,15 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
 
 #if OPENAPI_V2
             if (underlyingType == typeof(int) || underlyingType == typeof(long) || underlyingType == typeof(short) || underlyingType == typeof(byte))
-                schema.Type = Microsoft.OpenApi.JsonSchemaType.Integer;
+                schema.Type = JsonSchemaType.Integer;
             else if (underlyingType == typeof(float) || underlyingType == typeof(double) || underlyingType == typeof(decimal))
-                schema.Type = Microsoft.OpenApi.JsonSchemaType.Number;
+                schema.Type = JsonSchemaType.Number;
             else if (underlyingType == typeof(string))
-                schema.Type = Microsoft.OpenApi.JsonSchemaType.String;
+                schema.Type = JsonSchemaType.String;
             else if (underlyingType == typeof(bool))
-                schema.Type = Microsoft.OpenApi.JsonSchemaType.Boolean;
+                schema.Type = JsonSchemaType.Boolean;
             else
-                schema.Type = Microsoft.OpenApi.JsonSchemaType.String;
+                schema.Type = JsonSchemaType.String;
 #else
             if (underlyingType == typeof(int) || underlyingType == typeof(long) || underlyingType == typeof(short) || underlyingType == typeof(byte))
                 schema.Type = "integer";
@@ -246,6 +265,8 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
         {
             if (source.MinLength != null) target.MinLength = source.MinLength;
             if (source.MaxLength != null) target.MaxLength = source.MaxLength;
+            if (source.MinItems != null) target.MinItems = source.MinItems;
+            if (source.MaxItems != null) target.MaxItems = source.MaxItems;
             if (source.Pattern != null) target.Pattern = source.Pattern;
             if (source.Minimum != null) target.Minimum = source.Minimum;
             if (source.Maximum != null) target.Maximum = source.Maximum;
@@ -256,11 +277,18 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
 
         /// <summary>
         /// Resolves the container type for a parameter by inspecting [AsParameters] on method parameters.
+        /// Supports nested parameter paths (e.g., "address.city") by using the leaf property name.
         /// </summary>
         private static Type? ResolveContainerType(string parameterName, MethodInfo? methodInfo)
         {
             if (methodInfo == null)
                 return null;
+
+            // For nested paths like "address.city", use the leaf name for property matching
+            var leafName = parameterName;
+            var dotIndex = leafName.LastIndexOf('.');
+            if (dotIndex >= 0)
+                leafName = leafName.Substring(dotIndex + 1);
 
             foreach (var param in methodInfo.GetParameters())
             {
@@ -269,7 +297,7 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
 
                 var paramType = param.ParameterType;
                 var property = paramType.GetProperties()
-                    .FirstOrDefault(p => p.Name.Equals(parameterName, StringComparison.OrdinalIgnoreCase));
+                    .FirstOrDefault(p => p.Name.Equals(leafName, StringComparison.OrdinalIgnoreCase));
 
                 if (property != null)
                     return paramType;
