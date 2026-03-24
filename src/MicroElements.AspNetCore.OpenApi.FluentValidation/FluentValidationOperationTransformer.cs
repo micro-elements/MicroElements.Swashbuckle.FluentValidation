@@ -306,7 +306,10 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
                 }
                 else
                 {
-                    // Nested case: walk path segments to find the container of the leaf property
+                    // Nested case: walk path segments to find the container of the leaf property.
+                    // Note: ASP.NET Core minimal APIs do not currently emit dot-path parameters
+                    // for nested [AsParameters] types. This branch is defensive code for potential
+                    // future framework support or MVC controller scenarios.
                     // e.g., "Filter.MinAge" => find Filter on paramType, return Filter's type
                     var currentType = paramType;
                     for (int i = 0; i < segments.Length - 1; i++)

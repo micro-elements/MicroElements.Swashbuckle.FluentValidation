@@ -100,13 +100,6 @@ public class TestCreateAccountValidator : AbstractValidator<TestCreateAccount>
     }
 }
 
-// Issue #200: Nested query parameters (dot-path, e.g. "Filter.MinAge")
-public class TestNestedQueryParameters
-{
-    [Microsoft.AspNetCore.Mvc.FromQuery]
-    public TestFilterParams Filter { get; set; } = new();
-}
-
 public class TestFilterParams
 {
     public int MinAge { get; set; }
