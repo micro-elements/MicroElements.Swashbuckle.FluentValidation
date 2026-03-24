@@ -1,3 +1,9 @@
+# Changes in 7.1.3
+- Fixed: `$ref` replaced with inline schema copy when using `SetValidator` with nested object types (Issue #198)
+  - `ResolveRefProperty` (introduced in 7.1.2 for BigInteger isolation) replaced all `$ref` properties with copies, destroying reference structure in the OpenAPI document
+  - Fix: snapshot `$ref` properties before rule application, restore them afterwards if no validation constraints were added by rules
+  - BigInteger per-model constraints (Issue #146) continue to work correctly
+
 # Changes in 7.1.2
 - Added: `BigInteger` support for min/max validation constraints in OpenAPI schema generation (Issue #146)
   - `IsNumeric()` and `NumericToDecimal()` now handle `BigInteger` values
