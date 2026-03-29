@@ -1,4 +1,4 @@
-# Changes in 7.1.4-beta
+# Changes in 7.1.4
 - Added: `FluentValidationOperationTransformer` (`IOpenApiOperationTransformer`) for `MicroElements.AspNetCore.OpenApi.FluentValidation` (Issue #200)
   - Query parameters with `[AsParameters]` now receive validation constraints (min/max, required, pattern, etc.)
   - Supports container type resolution with fallback via reflection for `[AsParameters]`
