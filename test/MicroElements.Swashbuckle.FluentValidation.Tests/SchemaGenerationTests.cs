@@ -744,5 +744,91 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
                 }
             }
         }
+
     }
+}
+
+namespace MicroElements.Swashbuckle.FluentValidation.Tests
+{
+    using FluentAssertions;
+    using FluentValidation;
+    using MicroElements.OpenApi;
+    using MicroElements.OpenApi.FluentValidation;
+    using Samples;
+    using global::Swashbuckle.AspNetCore.SwaggerGen;
+    using Xunit;
+
+    /// <summary>
+    /// Tests for ConditionalRulesMode (Issue #203).
+    /// </summary>
+    public class ConditionalRulesTests
+    {
+    /// <summary>
+    /// Issue #203: ConditionalRulesMode.Exclude (default) should skip rules with .When().
+    /// </summary>
+    [Fact]
+    public void ConditionalRulesMode_Exclude_Should_Skip_Conditional_Rules()
+    {
+        var schemaRepository = new SchemaRepository();
+        var validator = new InlineValidator<Customer>();
+
+        // Conditional rule — should be excluded by default
+        validator.RuleFor(x => x.Discount)
+            .GreaterThan(0)
+            .When(x => x.Id == 1);
+
+        var schema = schemaRepository.GenerateSchemaForValidator(validator);
+
+        // Discount should have no minimum because the rule has .When()
+        schema.GetProperty("Discount")!.GetMinimum().Should().BeNull();
+    }
+
+    /// <summary>
+    /// Issue #203: ConditionalRulesMode.Include should include rules with .When() in schema.
+    /// </summary>
+    [Fact]
+    public void ConditionalRulesMode_Include_Should_Include_Conditional_Rules()
+    {
+        var schemaRepository = new SchemaRepository();
+        var validator = new InlineValidator<Customer>();
+
+        // Conditional rule — should be included when ConditionalRules = Include
+        validator.RuleFor(x => x.Discount)
+            .GreaterThan(0)
+            .When(x => x.Id == 1);
+
+        var schema = schemaRepository.GenerateSchemaForValidator(
+            validator,
+            configureSchemaGenerationOptions: options =>
+            {
+                options.ConditionalRules = ConditionalRulesMode.Include;
+            });
+
+        schema.GetProperty("Discount")!.GetMinimum().Should().Be(0);
+    }
+
+    /// <summary>
+    /// Issue #203: ConditionalRulesMode should also work for component-level conditions (.WhenAsync on individual validator).
+    /// </summary>
+    [Fact]
+    public void ConditionalRulesMode_Include_Should_Include_Component_Level_Conditional_Rules()
+    {
+        var schemaRepository = new SchemaRepository();
+        var validator = new InlineValidator<Customer>();
+
+        // Component-level async condition
+        validator.RuleFor(x => x.Surname)
+            .NotEmpty()
+            .WhenAsync((x, _) => System.Threading.Tasks.Task.FromResult(x.Id == 1));
+
+        var schema = schemaRepository.GenerateSchemaForValidator(
+            validator,
+            configureSchemaGenerationOptions: options =>
+            {
+                options.ConditionalRules = ConditionalRulesMode.Include;
+            });
+
+        schema.GetProperty("Surname")!.MinLength.Should().Be(1);
+    }
+}
 }

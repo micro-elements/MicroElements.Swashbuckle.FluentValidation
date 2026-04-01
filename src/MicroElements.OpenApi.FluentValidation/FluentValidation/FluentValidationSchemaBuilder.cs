@@ -74,6 +74,17 @@ namespace MicroElements.OpenApi.FluentValidation
                                         rule.Apply(ruleContext);
 
                                         logger.LogDebug("Rule '{RuleName}' applied for property '{SchemaTypeName}.{SchemaPropertyName}'", rule.Name, schemaTypeName, schemaPropertyName);
+
+                                        if (schemaGenerationOptions.ConditionalRules == ConditionalRulesMode.IncludeWithWarning
+                                            && !validationRuleContext.ValidationRule.HasNoCondition())
+                                        {
+                                            logger.LogWarning(
+                                                "Conditional validation rule '{RuleName}' included in schema for '{SchemaTypeName}.{SchemaPropertyName}'. The .When()/.Unless() condition cannot be represented in OpenAPI schema.",
+                                                rule.Name,
+                                                schemaTypeName,
+                                                schemaPropertyName);
+                                        }
+
                                         schema!.AddRuleHistoryItem(ruleHistoryItem);
                                     }
                                     else

@@ -25,8 +25,13 @@ namespace MicroElements.OpenApi.FluentValidation
             // ReSharper disable once NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
             options.ValidatorSearch ??= ValidatorSearchSettings.Default;
             options.ValidatorFilter ??= new Condition<ValidatorContext>(context => context.Validator.CanValidateInstancesOfType(context.TypeContext.TypeToValidate));
-            options.RuleFilter ??= new Condition<ValidationRuleContext>(context => context.ValidationRule.HasNoCondition());
-            options.RuleComponentFilter ??= new Condition<RuleComponentContext>(context => context.RuleComponent.HasNoCondition());
+            options.RuleFilter ??= options.ConditionalRules == ConditionalRulesMode.Exclude
+                ? new Condition<ValidationRuleContext>(context => context.ValidationRule.HasNoCondition())
+                : Condition.Empty<ValidationRuleContext>();
+
+            options.RuleComponentFilter ??= options.ConditionalRules == ConditionalRulesMode.Exclude
+                ? new Condition<RuleComponentContext>(context => context.RuleComponent.HasNoCondition())
+                : Condition.Empty<RuleComponentContext>();
 
             return options;
         }
@@ -49,6 +54,7 @@ namespace MicroElements.OpenApi.FluentValidation
             options.RuleFilter = other.RuleFilter;
             options.RuleComponentFilter = other.RuleComponentFilter;
             options.RemoveUnusedQuerySchemas = other.RemoveUnusedQuerySchemas;
+            options.ConditionalRules = other.ConditionalRules;
             return options;
         }
     }

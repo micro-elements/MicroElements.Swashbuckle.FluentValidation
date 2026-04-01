@@ -65,6 +65,12 @@ namespace MicroElements.OpenApi.FluentValidation
         /// Default: true. Set to false to preserve these schemas for use in custom DocumentFilters.
         /// </summary>
         bool RemoveUnusedQuerySchemas { get; }
+
+        /// <summary>
+        /// Gets a value indicating how conditional validation rules (<c>.When()</c>, <c>.Unless()</c>) are handled during schema generation.
+        /// Default: <see cref="ConditionalRulesMode.Exclude"/>.
+        /// </summary>
+        ConditionalRulesMode ConditionalRules { get; }
     }
 
     /// <summary>
@@ -113,6 +119,9 @@ namespace MicroElements.OpenApi.FluentValidation
 
         /// <inheritdoc />
         public bool RemoveUnusedQuerySchemas { get; set; } = true;
+
+        /// <inheritdoc />
+        public ConditionalRulesMode ConditionalRules { get; set; } = ConditionalRulesMode.Exclude;
 
         /// <summary>
         /// Sets values that compatible with FluentValidation.
@@ -178,4 +187,25 @@ namespace MicroElements.OpenApi.FluentValidation
     /// <param name="RuleComponent">Rule component.</param>
     public record RuleComponentContext(ValidatorContext ValidatorContext, IRuleComponent RuleComponent)
         : ValidatorContext(ValidatorContext.TypeContext, ValidatorContext.Validator);
+
+    /// <summary>
+    /// Specifies how conditional validation rules (<c>.When()</c>, <c>.Unless()</c>) are handled during schema generation.
+    /// </summary>
+    public enum ConditionalRulesMode
+    {
+        /// <summary>
+        /// Exclude rules with <c>.When()</c>/<c>.Unless()</c> conditions from the schema (default, backward-compatible).
+        /// </summary>
+        Exclude,
+
+        /// <summary>
+        /// Include rules with <c>.When()</c>/<c>.Unless()</c> conditions in the schema.
+        /// </summary>
+        Include,
+
+        /// <summary>
+        /// Include rules with <c>.When()</c>/<c>.Unless()</c> conditions in the schema and log a warning for each.
+        /// </summary>
+        IncludeWithWarning,
+    }
 }

@@ -1,3 +1,10 @@
+# Changes in 7.1.5
+- Added: `ConditionalRulesMode` option to control how `.When()`/`.Unless()` conditional rules are handled during schema generation (Issue #203)
+  - `Exclude` (default): conditional rules are excluded from the schema (backward-compatible, existing behavior)
+  - `Include`: conditional rules are included in the schema (useful when `.When()` is a null-guard and constraints should still appear)
+  - `IncludeWithWarning`: same as `Include` but logs a warning for each conditional rule included
+  - Usage: `options.ConditionalRules = ConditionalRulesMode.Include;`
+
 # Changes in 7.1.4
 - Added: `FluentValidationOperationTransformer` (`IOpenApiOperationTransformer`) for `MicroElements.AspNetCore.OpenApi.FluentValidation` (Issue #200)
   - Query parameters with `[AsParameters]` now receive validation constraints (min/max, required, pattern, etc.)
