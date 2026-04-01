@@ -85,6 +85,10 @@ public class ConditionalRulesTests
     /// <summary>
     /// Issue #203: ConditionalRulesMode.IncludeWithWarning should include component-level conditional rules.
     /// </summary>
+    /// <remarks>
+    /// TODO: This test only verifies the schema is correct. It does not assert that a warning is logged.
+    /// To verify warning emission, inject a test ILoggerFactory (e.g., Microsoft.Extensions.Logging.Testing).
+    /// </remarks>
     [Fact]
     public void ConditionalRulesMode_IncludeWithWarning_Should_Include_Component_Level_Conditional_Rules()
     {

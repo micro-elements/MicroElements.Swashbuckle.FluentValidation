@@ -77,6 +77,8 @@ namespace MicroElements.OpenApi.FluentValidation
 
                                         if (schemaGenerationOptions.ConditionalRules == ConditionalRulesMode.IncludeWithWarning)
                                         {
+                                            // Each IRuleComponent holds a distinct IPropertyValidator instance;
+                                            // reference equality is intentional — propertyValidator was projected from component.Validator in GetValidators().
                                             var component = validationRuleContext.ValidationRule.Components
                                                 .FirstOrDefault(c => c.Validator == propertyValidator);
                                             var isConditional = !validationRuleContext.ValidationRule.HasNoCondition()
