@@ -70,6 +70,11 @@ namespace MicroElements.OpenApi.FluentValidation
         /// Gets a value indicating how conditional validation rules (<c>.When()</c>, <c>.Unless()</c>) are handled during schema generation.
         /// Default: <see cref="ConditionalRulesMode.Exclude"/>.
         /// </summary>
+        /// <remarks>
+        /// Applied during <see cref="SchemaGenerationOptionsExtensions.FillDefaultValues"/> as defaults
+        /// for <see cref="RuleFilter"/> and <see cref="RuleComponentFilter"/>.
+        /// Has no effect if those filters are already set explicitly.
+        /// </remarks>
         ConditionalRulesMode ConditionalRules { get; }
     }
 
