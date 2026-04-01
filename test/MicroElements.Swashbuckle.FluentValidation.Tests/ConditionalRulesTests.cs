@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using FluentValidation;
 using MicroElements.OpenApi;
+using MicroElements.OpenApi.Core;
 using MicroElements.OpenApi.FluentValidation;
 using MicroElements.Swashbuckle.FluentValidation.Tests.Samples;
 using Swashbuckle.AspNetCore.SwaggerGen;
@@ -58,10 +59,6 @@ public class ConditionalRulesTests
     /// <summary>
     /// Issue #203: ConditionalRulesMode.IncludeWithWarning should include conditional rules in schema.
     /// </summary>
-    /// <remarks>
-    /// TODO: This test only verifies the schema is correct. It does not assert that a warning is logged.
-    /// To verify warning emission, inject a test ILoggerFactory (e.g., Microsoft.Extensions.Logging.Testing).
-    /// </remarks>
     [Fact]
     public void ConditionalRulesMode_IncludeWithWarning_Should_Include_Conditional_Rules()
     {
@@ -85,10 +82,6 @@ public class ConditionalRulesTests
     /// <summary>
     /// Issue #203: ConditionalRulesMode.IncludeWithWarning should include component-level conditional rules.
     /// </summary>
-    /// <remarks>
-    /// TODO: This test only verifies the schema is correct. It does not assert that a warning is logged.
-    /// To verify warning emission, inject a test ILoggerFactory (e.g., Microsoft.Extensions.Logging.Testing).
-    /// </remarks>
     [Fact]
     public void ConditionalRulesMode_IncludeWithWarning_Should_Include_Component_Level_Conditional_Rules()
     {
@@ -130,5 +123,51 @@ public class ConditionalRulesTests
             });
 
         schema.GetProperty("Surname")!.MinLength.Should().Be(1);
+    }
+
+    /// <summary>
+    /// Issue #203: ConditionalRulesMode.Exclude should also skip component-level .WhenAsync() conditions.
+    /// </summary>
+    [Fact]
+    public void ConditionalRulesMode_Exclude_Should_Skip_Component_Level_Conditional_Rules()
+    {
+        var schemaRepository = new SchemaRepository();
+        var validator = new InlineValidator<Customer>();
+
+        validator.RuleFor(x => x.Surname)
+            .NotEmpty()
+            .WhenAsync((x, _) => Task.FromResult(x.Id == 1));
+
+        var schema = schemaRepository.GenerateSchemaForValidator(validator);
+
+        schema.GetProperty("Surname")!.MinLength.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Issue #203: Custom RuleFilter takes precedence over ConditionalRules setting.
+    /// When RuleFilter is set explicitly, ConditionalRules has no effect (including no warnings).
+    /// </summary>
+    [Fact]
+    public void Custom_RuleFilter_Should_Override_ConditionalRules()
+    {
+        var schemaRepository = new SchemaRepository();
+        var validator = new InlineValidator<Customer>();
+
+        // Rule with condition — would normally be excluded by Exclude or included by IncludeWithWarning
+        validator.RuleFor(x => x.Discount)
+            .GreaterThan(0)
+            .When(x => x.Id == 1);
+
+        // Custom RuleFilter that excludes everything — overrides ConditionalRules
+        var schema = schemaRepository.GenerateSchemaForValidator(
+            validator,
+            configureSchemaGenerationOptions: options =>
+            {
+                options.ConditionalRules = ConditionalRulesMode.IncludeWithWarning;
+                options.RuleFilter = new Condition<ValidationRuleContext>(_ => false);
+            });
+
+        // Custom filter rejected everything, so no minimum should be set
+        schema.GetProperty("Discount")!.GetMinimum().Should().BeNull();
     }
 }

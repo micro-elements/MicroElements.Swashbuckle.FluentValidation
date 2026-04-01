@@ -4,6 +4,7 @@
 using System;
 using MicroElements.OpenApi.Core;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace MicroElements.OpenApi.FluentValidation
 {
@@ -25,13 +26,19 @@ namespace MicroElements.OpenApi.FluentValidation
             // ReSharper disable once NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
             options.ValidatorSearch ??= ValidatorSearchSettings.Default;
             options.ValidatorFilter ??= new Condition<ValidatorContext>(context => context.Validator.CanValidateInstancesOfType(context.TypeContext.TypeToValidate));
-            options.RuleFilter ??= options.ConditionalRules == ConditionalRulesMode.Exclude
-                ? new Condition<ValidationRuleContext>(context => context.ValidationRule.HasNoCondition())
-                : Condition.Empty<ValidationRuleContext>();
+            options.RuleFilter ??= options.ConditionalRules switch
+            {
+                ConditionalRulesMode.Exclude => new Condition<ValidationRuleContext>(context => context.ValidationRule.HasNoCondition()),
+                ConditionalRulesMode.IncludeWithWarning => CreateLoggingRuleFilter(serviceProvider),
+                _ => Condition.Empty<ValidationRuleContext>(),
+            };
 
-            options.RuleComponentFilter ??= options.ConditionalRules == ConditionalRulesMode.Exclude
-                ? new Condition<RuleComponentContext>(context => context.RuleComponent.HasNoCondition())
-                : Condition.Empty<RuleComponentContext>();
+            options.RuleComponentFilter ??= options.ConditionalRules switch
+            {
+                ConditionalRulesMode.Exclude => new Condition<RuleComponentContext>(context => context.RuleComponent.HasNoCondition()),
+                ConditionalRulesMode.IncludeWithWarning => CreateLoggingComponentFilter(serviceProvider),
+                _ => Condition.Empty<RuleComponentContext>(),
+            };
 
             return options;
         }
@@ -56,6 +63,36 @@ namespace MicroElements.OpenApi.FluentValidation
             options.RemoveUnusedQuerySchemas = other.RemoveUnusedQuerySchemas;
             options.ConditionalRules = other.ConditionalRules;
             return options;
+        }
+
+        private static ICondition<ValidationRuleContext> CreateLoggingRuleFilter(IServiceProvider? serviceProvider)
+        {
+            var logger = serviceProvider?.GetService<ILoggerFactory>()?.CreateLogger("MicroElements.OpenApi.FluentValidation.ConditionalRules");
+            return new Condition<ValidationRuleContext>(context =>
+            {
+                if (!context.ValidationRule.HasNoCondition())
+                {
+                    logger?.LogWarning(
+                        "Conditional validation rule for '{PropertyName}' included in schema. The .When()/.Unless() condition cannot be represented in OpenAPI schema.",
+                        context.ValidationRule.PropertyName);
+                }
+
+                return true;
+            });
+        }
+
+        private static ICondition<RuleComponentContext> CreateLoggingComponentFilter(IServiceProvider? serviceProvider)
+        {
+            var logger = serviceProvider?.GetService<ILoggerFactory>()?.CreateLogger("MicroElements.OpenApi.FluentValidation.ConditionalRules");
+            return new Condition<RuleComponentContext>(context =>
+            {
+                if (!context.RuleComponent.HasNoCondition())
+                {
+                    logger?.LogWarning("Conditional validation rule component included in schema. The .When()/.Unless() condition cannot be represented in OpenAPI schema.");
+                }
+
+                return true;
+            });
         }
     }
 }

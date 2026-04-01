@@ -74,26 +74,6 @@ namespace MicroElements.OpenApi.FluentValidation
                                         rule.Apply(ruleContext);
 
                                         logger.LogDebug("Rule '{RuleName}' applied for property '{SchemaTypeName}.{SchemaPropertyName}'", rule.Name, schemaTypeName, schemaPropertyName);
-
-                                        if (schemaGenerationOptions.ConditionalRules == ConditionalRulesMode.IncludeWithWarning)
-                                        {
-                                            // Each IRuleComponent holds a distinct IPropertyValidator instance;
-                                            // reference equality is intentional — propertyValidator was projected from component.Validator in GetValidators().
-                                            var component = validationRuleContext.ValidationRule.Components
-                                                .FirstOrDefault(c => c.Validator == propertyValidator);
-                                            var isConditional = !validationRuleContext.ValidationRule.HasNoCondition()
-                                                || (component != null && !component.HasNoCondition());
-
-                                            if (isConditional)
-                                            {
-                                                logger.LogWarning(
-                                                    "Conditional validation rule '{RuleName}' included in schema for '{SchemaTypeName}.{SchemaPropertyName}'. The .When()/.Unless() condition cannot be represented in OpenAPI schema.",
-                                                    rule.Name,
-                                                    schemaTypeName,
-                                                    schemaPropertyName);
-                                            }
-                                        }
-
                                         schema!.AddRuleHistoryItem(ruleHistoryItem);
                                     }
                                     else
