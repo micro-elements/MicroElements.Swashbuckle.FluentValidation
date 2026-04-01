@@ -58,6 +58,10 @@ public class ConditionalRulesTests
     /// <summary>
     /// Issue #203: ConditionalRulesMode.IncludeWithWarning should include conditional rules in schema.
     /// </summary>
+    /// <remarks>
+    /// TODO: This test only verifies the schema is correct. It does not assert that a warning is logged.
+    /// To verify warning emission, inject a test ILoggerFactory (e.g., Microsoft.Extensions.Logging.Testing).
+    /// </remarks>
     [Fact]
     public void ConditionalRulesMode_IncludeWithWarning_Should_Include_Conditional_Rules()
     {
@@ -76,6 +80,29 @@ public class ConditionalRulesTests
             });
 
         schema.GetProperty("Discount")!.GetMinimum().Should().Be(0);
+    }
+
+    /// <summary>
+    /// Issue #203: ConditionalRulesMode.IncludeWithWarning should include component-level conditional rules.
+    /// </summary>
+    [Fact]
+    public void ConditionalRulesMode_IncludeWithWarning_Should_Include_Component_Level_Conditional_Rules()
+    {
+        var schemaRepository = new SchemaRepository();
+        var validator = new InlineValidator<Customer>();
+
+        validator.RuleFor(x => x.Surname)
+            .NotEmpty()
+            .WhenAsync((x, _) => Task.FromResult(x.Id == 1));
+
+        var schema = schemaRepository.GenerateSchemaForValidator(
+            validator,
+            configureSchemaGenerationOptions: options =>
+            {
+                options.ConditionalRules = ConditionalRulesMode.IncludeWithWarning;
+            });
+
+        schema.GetProperty("Surname")!.MinLength.Should().Be(1);
     }
 
     /// <summary>

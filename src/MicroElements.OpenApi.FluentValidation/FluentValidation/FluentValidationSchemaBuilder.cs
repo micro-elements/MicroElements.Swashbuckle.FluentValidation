@@ -75,15 +75,21 @@ namespace MicroElements.OpenApi.FluentValidation
 
                                         logger.LogDebug("Rule '{RuleName}' applied for property '{SchemaTypeName}.{SchemaPropertyName}'", rule.Name, schemaTypeName, schemaPropertyName);
 
-                                        if (schemaGenerationOptions.ConditionalRules == ConditionalRulesMode.IncludeWithWarning
-                                            && (!validationRuleContext.ValidationRule.HasNoCondition()
-                                                || validationRuleContext.ValidationRule.Components.Any(c => !c.HasNoCondition())))
+                                        if (schemaGenerationOptions.ConditionalRules == ConditionalRulesMode.IncludeWithWarning)
                                         {
-                                            logger.LogWarning(
-                                                "Conditional validation rule '{RuleName}' included in schema for '{SchemaTypeName}.{SchemaPropertyName}'. The .When()/.Unless() condition cannot be represented in OpenAPI schema.",
-                                                rule.Name,
-                                                schemaTypeName,
-                                                schemaPropertyName);
+                                            var component = validationRuleContext.ValidationRule.Components
+                                                .FirstOrDefault(c => c.Validator == propertyValidator);
+                                            var isConditional = !validationRuleContext.ValidationRule.HasNoCondition()
+                                                || (component != null && !component.HasNoCondition());
+
+                                            if (isConditional)
+                                            {
+                                                logger.LogWarning(
+                                                    "Conditional validation rule '{RuleName}' included in schema for '{SchemaTypeName}.{SchemaPropertyName}'. The .When()/.Unless() condition cannot be represented in OpenAPI schema.",
+                                                    rule.Name,
+                                                    schemaTypeName,
+                                                    schemaPropertyName);
+                                            }
                                         }
 
                                         schema!.AddRuleHistoryItem(ruleHistoryItem);
