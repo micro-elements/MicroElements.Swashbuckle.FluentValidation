@@ -4,6 +4,11 @@
   - `Include`: conditional rules are included in the schema (useful when `.When()` is a null-guard and constraints should still appear)
   - `IncludeWithWarning`: same as `Include` but logs a warning for each conditional rule included
   - Usage: `options.ConditionalRules = ConditionalRulesMode.Include;`
+- Fixed: Multiple `.Matches()` rules on one property displayed incorrectly — only the first pattern shown, property duplicated (Issue #204)
+  - Multiple patterns were placed into separate `allOf` subschemas, which Swagger UI/Redoc/Scalar collapse, keeping only the first `pattern`
+  - Now multiple `.Matches()` rules are combined into a single `pattern` via lookahead assertions (e.g. `(?=[\s\S]*(?:[a-z]))(?=[\s\S]*(?:[A-Z]))`), preserving `.Matches()` semantics and rendering correctly
+  - Applied to all providers: Swashbuckle, `MicroElements.AspNetCore.OpenApi.FluentValidation`, and NSwag (NSwag previously kept only the last pattern)
+  - Changed: `SchemaGenerationOptions.UseAllOfForMultipleRules` default `true` → `false`; set it to `true` to keep the legacy `allOf` representation
 
 # Changes in 7.1.4
 - Added: `FluentValidationOperationTransformer` (`IOpenApiOperationTransformer`) for `MicroElements.AspNetCore.OpenApi.FluentValidation` (Issue #200)

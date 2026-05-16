@@ -23,5 +23,6 @@ app.MapGet("/api/search", ([AsParameters] TestQueryParameters query) => Results.
 app.MapGet("/api/filter", ([AsParameters] TestFilterParams filter) => Results.Ok(filter));
 app.MapPost("/api/request", (TestRequestWithNested dto) => Results.Ok(dto));
 app.MapPost("/api/collections", (TestCollectionModel model) => Results.Ok(model));
+app.MapPost("/api/password", (TestPasswordModel model) => Results.Ok(model));
 
 app.Run();

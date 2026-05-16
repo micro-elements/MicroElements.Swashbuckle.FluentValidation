@@ -24,7 +24,10 @@ namespace MicroElements.OpenApi.FluentValidation
         bool SetNotNullableIfMinimumGreaterThenZero { get; }
 
         /// <summary>
-        /// Gets a value indicating whether schema generator should use AllOf for multiple rules (for example for multiple patterns).
+        /// Gets a value indicating whether schema generator should use <c>allOf</c> for multiple patterns.
+        /// When <see langword="false"/> (default) multiple <c>.Matches()</c> rules are combined into a single
+        /// <c>pattern</c> via lookahead assertions, which renders correctly in Swagger UI, Redoc and Scalar.
+        /// When <see langword="true"/> each pattern is placed into a separate <c>allOf</c> subschema.
         /// </summary>
         bool UseAllOfForMultipleRules { get; }
 
@@ -96,10 +99,13 @@ namespace MicroElements.OpenApi.FluentValidation
         public bool SetNotNullableIfMinimumGreaterThenZero { get; set; } = false;
 
         /// <summary>
-        /// Gets or sets a value indicating whether schema generator should use AllOf for multiple rules (for example for multiple patterns).
-        /// Default: true.
+        /// Gets or sets a value indicating whether schema generator should use <c>allOf</c> for multiple patterns.
+        /// When <see langword="false"/> (default) multiple <c>.Matches()</c> rules are combined into a single
+        /// <c>pattern</c> via lookahead assertions, which renders correctly in Swagger UI, Redoc and Scalar.
+        /// When <see langword="true"/> each pattern is placed into a separate <c>allOf</c> subschema.
+        /// Default: false.
         /// </summary>
-        public bool UseAllOfForMultipleRules { get; set; } = true;
+        public bool UseAllOfForMultipleRules { get; set; } = false;
 
         /// <summary>
         /// Gets or sets the validator search strategy.

@@ -145,7 +145,10 @@ namespace MicroElements.NSwag.FluentValidation
                         var regularExpressionValidator = (IRegularExpressionValidator) context.PropertyValidator;
 
                         var schema = context.Schema.Schema;
-                        schema.Properties[context.PropertyKey].Pattern = regularExpressionValidator.Expression;
+                        var schemaProperty = schema.Properties[context.PropertyKey];
+
+                        // Combine multiple patterns into a single 'pattern' (renders correctly in Swagger UI/Redoc/Scalar).
+                        schemaProperty.Pattern = PatternCombiner.Combine(schemaProperty.Pattern, regularExpressionValidator.Expression);
                     },
                 },
                 new FluentValidationRule("Comparison")
