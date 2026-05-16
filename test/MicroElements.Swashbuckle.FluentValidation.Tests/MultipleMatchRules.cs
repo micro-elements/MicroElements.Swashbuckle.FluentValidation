@@ -67,6 +67,9 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             var schema = new SchemaRepository().GenerateSchemaForValidator(new PhoneEntity.Validator());
             var numberProp = schema.GetProperty(nameof(PhoneEntity.MobilePhoneNumber))!;
             numberProp.GetTypeString().Should().Be("string");
+
+            // Two .Matches() rules are combined into a single 'pattern'; anchored patterns are preserved.
+            numberProp.Pattern.Should().Be("(?=[\\s\\S]*(?:^3))(?=[\\s\\S]*(?:^\\d*$))");
         }
 
         private class CreateUserRequest

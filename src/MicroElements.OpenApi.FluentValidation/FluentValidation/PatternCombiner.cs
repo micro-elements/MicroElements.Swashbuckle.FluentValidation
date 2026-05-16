@@ -23,6 +23,8 @@ namespace MicroElements.OpenApi.FluentValidation
         /// Used to detect a pattern already combined by this class.
         /// The full prefix (not just <c>"(?="</c>) is matched on purpose, so a user-supplied
         /// pattern that merely starts with a lookahead is not mistaken for combiner output.
+        /// Accepted edge case: a user pattern that itself begins with exactly this prefix is
+        /// still treated as combiner output, producing a valid but slightly less strict result.
         /// </summary>
         private const string LookaheadPrefix = "(?=[\\s\\S]*(?:";
 
@@ -30,13 +32,16 @@ namespace MicroElements.OpenApi.FluentValidation
         /// Combines an existing <c>pattern</c> with an additional regular expression.
         /// </summary>
         /// <param name="existing">The current <c>pattern</c> value, or <see langword="null"/> if none was set.</param>
-        /// <param name="newPattern">The additional regular expression to combine.</param>
+        /// <param name="newPattern">The additional regular expression to combine. A null or empty value is a no-op.</param>
         /// <returns>
         /// <paramref name="newPattern"/> as is when there is no existing pattern;
         /// otherwise a single regular expression that requires both to match.
         /// </returns>
         public static string Combine(string? existing, string newPattern)
         {
+            if (string.IsNullOrEmpty(newPattern))
+                return existing ?? string.Empty;
+
             if (string.IsNullOrEmpty(existing))
                 return newPattern;
 

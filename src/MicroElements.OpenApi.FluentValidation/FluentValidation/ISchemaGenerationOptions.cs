@@ -28,6 +28,7 @@ namespace MicroElements.OpenApi.FluentValidation
         /// When <see langword="false"/> (default) multiple <c>.Matches()</c> rules are combined into a single
         /// <c>pattern</c> via lookahead assertions, which renders correctly in Swagger UI, Redoc and Scalar.
         /// When <see langword="true"/> each pattern is placed into a separate <c>allOf</c> subschema.
+        /// Note: the NSwag provider always combines patterns and ignores this option.
         /// </summary>
         bool UseAllOfForMultipleRules { get; }
 
