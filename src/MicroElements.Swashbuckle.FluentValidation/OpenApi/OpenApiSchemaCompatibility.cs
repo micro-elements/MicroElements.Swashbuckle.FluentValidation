@@ -356,11 +356,17 @@ namespace MicroElements.OpenApi
             if (copy.Type != original.Type) return true;
             if (copy.Format != original.Format) return true;
 
-            // Check Required collection changes
+            // Check Required collection changes — directionally.
+            // The required set of a referenced object schema belongs on the shared component (it is applied
+            // there via SetValidator / ChildRules), and the inline snapshot taken on the parent may be stale
+            // relative to it. Issue #198 (comment 4601720562): with ChildRules / an inline child validator the
+            // nested type has no standalone validator, so its component schema is generated empty and only gains
+            // its Required AFTER the inline snapshot. A plain count/SetEquals check then saw the divergence and
+            // (wrongly) kept the inline copy, orphaning the component. Only block restoration when the inline
+            // copy carries a required entry the component lacks (the copy is authoritative for that field).
             var copyReq = copy.Required;
             var origReq = original.Required;
-            if (copyReq?.Count != origReq?.Count) return true;
-            if (copyReq != null && origReq != null && !copyReq.SetEquals(origReq)) return true;
+            if (copyReq is { Count: > 0 } && (origReq == null || !copyReq.IsSubsetOf(origReq))) return true;
 
             // Check AllOf collection changes (Pattern rule with UseAllOfForMultipleRules)
             var copyAllOfCount = copy.AllOf?.Count ?? 0;
