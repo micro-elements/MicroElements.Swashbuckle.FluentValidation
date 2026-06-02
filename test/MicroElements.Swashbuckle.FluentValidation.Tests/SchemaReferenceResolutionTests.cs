@@ -250,5 +250,149 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             minB.Should().Be(500, "ModelB minimum should be 500");
             maxB.Should().Be(1000, "ModelB maximum should be 1000");
         }
+
+        /// <summary>
+        /// Issue #198 (comment 4601720562 by jrgcubano): nested object with a child validator
+        /// that adds MULTIPLE constraints (Email format + MaximumLength) should still keep the
+        /// parent property as a $ref, and the child component schema must NOT become an orphan.
+        /// https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/issues/198#issuecomment-4601720562
+        /// </summary>
+        public class CreateUserRequest
+        {
+            public CreateUserParams User { get; set; }
+        }
+
+        public class CreateUserParams
+        {
+            public string Email { get; set; }
+
+            public string Name { get; set; }
+        }
+
+        public class CreateUserRequestValidator : AbstractValidator<CreateUserRequest>
+        {
+            public CreateUserRequestValidator()
+            {
+                RuleFor(a => a.User).NotEmpty().SetValidator(new CreateUserParamsValidator());
+            }
+        }
+
+        public class CreateUserParamsValidator : AbstractValidator<CreateUserParams>
+        {
+            public CreateUserParamsValidator()
+            {
+                RuleFor(a => a.Email).NotEmpty().EmailAddress();
+                RuleFor(a => a.Name).NotEmpty().MaximumLength(510);
+            }
+        }
+
+        [Fact]
+        public void SetValidator_With_MultiConstraint_Child_Should_Preserve_Ref()
+        {
+            // Arrange
+            var schemaRepository = new SchemaRepository();
+            var schemaGenerator = SchemaGenerator(new CreateUserRequestValidator(), new CreateUserParamsValidator());
+
+            // Act
+            var referenceSchema = schemaGenerator.GenerateSchema(typeof(CreateUserRequest), schemaRepository);
+            var requestSchema = schemaRepository.GetSchema(referenceSchema.GetRefId()!);
+
+            // Assert: CreateUserRequest schema should have "User" in required
+            requestSchema.Required.Should().Contain("User");
+
+            // Assert: CreateUserParams component schema should exist
+            schemaRepository.Schemas.Should().ContainKey("CreateUserParams");
+
+            // Assert: CreateUserRequest.properties["User"] should remain a $ref, not an inline copy
+            var userProp = requestSchema.Properties["User"];
+#if OPENAPI_V2
+            userProp.Should().BeOfType<OpenApiSchemaReference>(
+                "CreateUserRequest.properties['user'] should be a $ref to CreateUserParams, not an inline copy (Issue #198 comment)");
+#else
+            userProp.Reference.Should().NotBeNull(
+                "CreateUserRequest.properties['user'] should be a $ref to CreateUserParams, not an inline copy (Issue #198 comment)");
+#endif
+
+            // Assert: the child component schema keeps ALL its constraints
+            var paramsSchema = schemaRepository.Schemas["CreateUserParams"] as OpenApiSchema;
+            paramsSchema.Should().NotBeNull();
+            OpenApiSchemaCompatibility.GetProperty(paramsSchema!, "Email", schemaRepository)!.Format.Should().Be("email");
+            OpenApiSchemaCompatibility.GetProperty(paramsSchema!, "Name", schemaRepository)!.MaxLength.Should().Be(510);
+
+            // Assert: the required set lives on the child component (this is exactly what the orphan bug dropped)
+            paramsSchema!.Required.Should().Contain("Email").And.Contain("Name");
+        }
+
+        /// <summary>
+        /// Issue #198 (comment 4601720562): a nested object whose constraints are defined inline via
+        /// ChildRules (so the child type has NO standalone validator) must still keep the parent property
+        /// as a $ref, and the child component schema must NOT become an orphan.
+        /// Before the fix, the inline child component gained its Required only after the parent's inline
+        /// snapshot was taken, so the stale Required diverged and defeated ref restoration.
+        /// https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/issues/198#issuecomment-4601720562
+        /// </summary>
+        public class ChildRulesRequest
+        {
+            public ChildRulesParams User { get; set; }
+        }
+
+        public class ChildRulesParams
+        {
+            public string Email { get; set; }
+
+            public string Name { get; set; }
+        }
+
+        // NOTE: there is intentionally NO ChildRulesParamsValidator — the child constraints are inline.
+        public class ChildRulesRequestValidator : AbstractValidator<ChildRulesRequest>
+        {
+            public ChildRulesRequestValidator()
+            {
+                RuleFor(a => a.User)
+                    .NotEmpty()
+                    .ChildRules(u =>
+                    {
+                        u.RuleFor(c => c.Email).NotEmpty().EmailAddress();
+                        u.RuleFor(c => c.Name).NotEmpty().MaximumLength(510);
+                    });
+            }
+        }
+
+        [Fact]
+        public void ChildRules_Inline_Should_Preserve_Ref_For_Nested_Object()
+        {
+            // Arrange: only the request validator exists; the child type has no standalone validator.
+            var schemaRepository = new SchemaRepository();
+            var schemaGenerator = SchemaGenerator(new ChildRulesRequestValidator());
+
+            // Act
+            var referenceSchema = schemaGenerator.GenerateSchema(typeof(ChildRulesRequest), schemaRepository);
+            var requestSchema = schemaRepository.GetSchema(referenceSchema.GetRefId()!);
+
+            // Assert: request schema should have "User" in required
+            requestSchema.Required.Should().Contain("User");
+
+            // Assert: the child component schema should exist
+            schemaRepository.Schemas.Should().ContainKey("ChildRulesParams");
+
+            // Assert: User should remain a $ref, not an inline copy (and so ChildRulesParams is not orphaned)
+            var userProp = requestSchema.Properties["User"];
+#if OPENAPI_V2
+            userProp.Should().BeOfType<OpenApiSchemaReference>(
+                "ChildRulesRequest.properties['user'] should be a $ref to ChildRulesParams, not an inline copy (Issue #198 comment)");
+#else
+            userProp.Reference.Should().NotBeNull(
+                "ChildRulesRequest.properties['user'] should be a $ref to ChildRulesParams, not an inline copy (Issue #198 comment)");
+#endif
+
+            // Assert: the child component keeps ALL the inline ChildRules constraints
+            var paramsSchema = schemaRepository.Schemas["ChildRulesParams"] as OpenApiSchema;
+            paramsSchema.Should().NotBeNull();
+            OpenApiSchemaCompatibility.GetProperty(paramsSchema!, "Email", schemaRepository)!.Format.Should().Be("email");
+            OpenApiSchemaCompatibility.GetProperty(paramsSchema!, "Name", schemaRepository)!.MaxLength.Should().Be(510);
+
+            // Assert: the required set lives on the child component (this is exactly what the orphan bug dropped)
+            paramsSchema!.Required.Should().Contain("Email").And.Contain("Name");
+        }
     }
 }
