@@ -114,8 +114,8 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
                     }
                     else
                     {
-                        // Set new pattern
-                        schemaProperty.Pattern = regularExpressionValidator.Expression;
+                        // Combine multiple patterns into a single 'pattern' (renders correctly in Swagger UI/Redoc/Scalar).
+                        schemaProperty.Pattern = PatternCombiner.Combine(schemaProperty.Pattern, regularExpressionValidator.Expression);
                     }
                 });
 

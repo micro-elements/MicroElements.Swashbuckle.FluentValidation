@@ -131,6 +131,26 @@ public class TestCollectionModelValidator : AbstractValidator<TestCollectionMode
     }
 }
 
+// Issue #204: multiple .Matches() rules on one property
+public class TestPasswordModel
+{
+    public string Password { get; set; } = string.Empty;
+}
+
+public class TestPasswordModelValidator : AbstractValidator<TestPasswordModel>
+{
+    public TestPasswordModelValidator()
+    {
+        RuleFor(x => x.Password)
+            .NotEmpty()
+            .MinimumLength(8)
+            .MaximumLength(256)
+            .Matches("[a-z]")
+            .Matches("[A-Z]")
+            .Matches("[0-9]");
+    }
+}
+
 // BigInteger model for Issue #146
 public class TestBigIntegerModel
 {

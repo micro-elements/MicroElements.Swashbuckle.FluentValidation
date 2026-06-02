@@ -24,7 +24,11 @@ namespace MicroElements.OpenApi.FluentValidation
         bool SetNotNullableIfMinimumGreaterThenZero { get; }
 
         /// <summary>
-        /// Gets a value indicating whether schema generator should use AllOf for multiple rules (for example for multiple patterns).
+        /// Gets a value indicating whether schema generator should use <c>allOf</c> for multiple patterns.
+        /// When <see langword="false"/> (default) multiple <c>.Matches()</c> rules are combined into a single
+        /// <c>pattern</c> via lookahead assertions, which renders correctly in Swagger UI, Redoc and Scalar.
+        /// When <see langword="true"/> each pattern is placed into a separate <c>allOf</c> subschema.
+        /// Note: the NSwag provider always combines patterns and ignores this option.
         /// </summary>
         bool UseAllOfForMultipleRules { get; }
 
@@ -65,6 +69,17 @@ namespace MicroElements.OpenApi.FluentValidation
         /// Default: true. Set to false to preserve these schemas for use in custom DocumentFilters.
         /// </summary>
         bool RemoveUnusedQuerySchemas { get; }
+
+        /// <summary>
+        /// Gets a value indicating how conditional validation rules (<c>.When()</c>, <c>.Unless()</c>) are handled during schema generation.
+        /// Default: <see cref="ConditionalRulesMode.Exclude"/>.
+        /// </summary>
+        /// <remarks>
+        /// Applied during <see cref="SchemaGenerationOptionsExtensions.FillDefaultValues"/> as defaults
+        /// for <see cref="RuleFilter"/> and <see cref="RuleComponentFilter"/>.
+        /// Has no effect if those filters are already set explicitly.
+        /// </remarks>
+        ConditionalRulesMode ConditionalRules { get; }
     }
 
     /// <summary>
@@ -85,10 +100,13 @@ namespace MicroElements.OpenApi.FluentValidation
         public bool SetNotNullableIfMinimumGreaterThenZero { get; set; } = false;
 
         /// <summary>
-        /// Gets or sets a value indicating whether schema generator should use AllOf for multiple rules (for example for multiple patterns).
-        /// Default: true.
+        /// Gets or sets a value indicating whether schema generator should use <c>allOf</c> for multiple patterns.
+        /// When <see langword="false"/> (default) multiple <c>.Matches()</c> rules are combined into a single
+        /// <c>pattern</c> via lookahead assertions, which renders correctly in Swagger UI, Redoc and Scalar.
+        /// When <see langword="true"/> each pattern is placed into a separate <c>allOf</c> subschema.
+        /// Default: false.
         /// </summary>
-        public bool UseAllOfForMultipleRules { get; set; } = true;
+        public bool UseAllOfForMultipleRules { get; set; } = false;
 
         /// <summary>
         /// Gets or sets the validator search strategy.
@@ -113,6 +131,9 @@ namespace MicroElements.OpenApi.FluentValidation
 
         /// <inheritdoc />
         public bool RemoveUnusedQuerySchemas { get; set; } = true;
+
+        /// <inheritdoc />
+        public ConditionalRulesMode ConditionalRules { get; set; } = ConditionalRulesMode.Exclude;
 
         /// <summary>
         /// Sets values that compatible with FluentValidation.
@@ -178,4 +199,25 @@ namespace MicroElements.OpenApi.FluentValidation
     /// <param name="RuleComponent">Rule component.</param>
     public record RuleComponentContext(ValidatorContext ValidatorContext, IRuleComponent RuleComponent)
         : ValidatorContext(ValidatorContext.TypeContext, ValidatorContext.Validator);
+
+    /// <summary>
+    /// Specifies how conditional validation rules (<c>.When()</c>, <c>.Unless()</c>) are handled during schema generation.
+    /// </summary>
+    public enum ConditionalRulesMode
+    {
+        /// <summary>
+        /// Exclude rules with <c>.When()</c>/<c>.Unless()</c> conditions from the schema (default, backward-compatible).
+        /// </summary>
+        Exclude,
+
+        /// <summary>
+        /// Include rules with <c>.When()</c>/<c>.Unless()</c> conditions in the schema.
+        /// </summary>
+        Include,
+
+        /// <summary>
+        /// Include rules with <c>.When()</c>/<c>.Unless()</c> conditions in the schema and log a warning for each.
+        /// </summary>
+        IncludeWithWarning,
+    }
 }

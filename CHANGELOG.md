@@ -1,3 +1,19 @@
+# Changes in 7.1.6
+- Fixed: `$ref` still replaced with an inline copy (and the child component left orphaned) when nested object constraints come from `ChildRules` or an inline child validator (Issue #198, comment 4601720562)
+  - The 7.1.3 fix restored unmodified `$ref`s, but when the nested type had no standalone validator its component schema gained its `Required` only after the parent's inline snapshot, so the stale `Required` diverged and defeated the restore check — leaving an inline copy and an orphaned component
+  - Fix: the `Required` comparison in `HasValidationConstraintChanges` is now directional — restoration is only blocked when the inline copy carries a required entry the component lacks
+  - `SetValidator` (with a standalone child validator) was already correct; `BigInteger`/enum per-model constraints (Issues #146/#176) continue to work
+- Added: `ConditionalRulesMode` option to control how `.When()`/`.Unless()` conditional rules are handled during schema generation (Issue #203)
+  - `Exclude` (default): conditional rules are excluded from the schema (backward-compatible, existing behavior)
+  - `Include`: conditional rules are included in the schema (useful when `.When()` is a null-guard and constraints should still appear)
+  - `IncludeWithWarning`: same as `Include` but logs a warning for each conditional rule included
+  - Usage: `options.ConditionalRules = ConditionalRulesMode.Include;`
+- Fixed: Multiple `.Matches()` rules on one property displayed incorrectly — only the first pattern shown, property duplicated (Issue #204)
+  - Multiple patterns were placed into separate `allOf` subschemas, which Swagger UI/Redoc/Scalar collapse, keeping only the first `pattern`
+  - Now multiple `.Matches()` rules are combined into a single `pattern` via lookahead assertions (e.g. `(?=[\s\S]*(?:[a-z]))(?=[\s\S]*(?:[A-Z]))`), preserving `.Matches()` semantics and rendering correctly
+  - Applied to all providers: Swashbuckle, `MicroElements.AspNetCore.OpenApi.FluentValidation`, and NSwag (NSwag previously kept only the last pattern)
+  - Changed: `SchemaGenerationOptions.UseAllOfForMultipleRules` default `true` → `false`; set it to `true` to keep the legacy `allOf` representation
+
 # Changes in 7.1.4
 - Added: `FluentValidationOperationTransformer` (`IOpenApiOperationTransformer`) for `MicroElements.AspNetCore.OpenApi.FluentValidation` (Issue #200)
   - Query parameters with `[AsParameters]` now receive validation constraints (min/max, required, pattern, etc.)

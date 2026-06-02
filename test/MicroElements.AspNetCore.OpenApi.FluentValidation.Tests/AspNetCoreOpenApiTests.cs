@@ -330,6 +330,25 @@ public class AspNetCoreOpenApiTests : IClassFixture<AspNetCoreOpenApiTests.TestW
         scores.GetProperty("minItems").GetInt32().Should().Be(1);
     }
 
+    /// <summary>
+    /// Issue #204: multiple <c>.Matches()</c> rules on one property are combined
+    /// into a single <c>pattern</c> instead of separate <c>allOf</c> subschemas.
+    /// </summary>
+    [Fact]
+    public async Task MultipleMatchRules_ShouldCombineIntoSinglePattern()
+    {
+        var schemas = await GetSchemasAsync();
+
+        var model = schemas.GetProperty("TestPasswordModel");
+        var password = model.GetProperty("properties").GetProperty("password");
+
+        password.GetProperty("pattern").GetString()
+            .Should().Be("(?=[\\s\\S]*(?:[a-z]))(?=[\\s\\S]*(?:[A-Z]))(?=[\\s\\S]*(?:[0-9]))");
+
+        password.TryGetProperty("allOf", out _).Should().BeFalse(
+            "patterns are merged into a single 'pattern'");
+    }
+
     [Fact]
     public void TransformerCanResolveWithoutScope()
     {

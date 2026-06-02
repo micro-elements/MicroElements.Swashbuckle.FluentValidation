@@ -744,5 +744,6 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
                 }
             }
         }
+
     }
 }
