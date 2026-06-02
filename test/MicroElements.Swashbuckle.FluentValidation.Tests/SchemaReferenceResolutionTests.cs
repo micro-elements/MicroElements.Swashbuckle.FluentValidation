@@ -313,11 +313,14 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
                 "CreateUserRequest.properties['user'] should be a $ref to CreateUserParams, not an inline copy (Issue #198 comment)");
 #endif
 
-            // Assert: the child component schema keeps its constraints
+            // Assert: the child component schema keeps ALL its constraints
             var paramsSchema = schemaRepository.Schemas["CreateUserParams"] as OpenApiSchema;
             paramsSchema.Should().NotBeNull();
-            var emailProp = OpenApiSchemaCompatibility.GetProperty(paramsSchema!, "Email", schemaRepository);
-            emailProp!.Format.Should().Be("email");
+            OpenApiSchemaCompatibility.GetProperty(paramsSchema!, "Email", schemaRepository)!.Format.Should().Be("email");
+            OpenApiSchemaCompatibility.GetProperty(paramsSchema!, "Name", schemaRepository)!.MaxLength.Should().Be(510);
+
+            // Assert: the required set lives on the child component (this is exactly what the orphan bug dropped)
+            paramsSchema!.Required.Should().Contain("Email").And.Contain("Name");
         }
 
         /// <summary>
@@ -382,11 +385,14 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
                 "ChildRulesRequest.properties['user'] should be a $ref to ChildRulesParams, not an inline copy (Issue #198 comment)");
 #endif
 
-            // Assert: the child component keeps the inline ChildRules constraints
+            // Assert: the child component keeps ALL the inline ChildRules constraints
             var paramsSchema = schemaRepository.Schemas["ChildRulesParams"] as OpenApiSchema;
             paramsSchema.Should().NotBeNull();
-            var emailProp = OpenApiSchemaCompatibility.GetProperty(paramsSchema!, "Email", schemaRepository);
-            emailProp!.Format.Should().Be("email");
+            OpenApiSchemaCompatibility.GetProperty(paramsSchema!, "Email", schemaRepository)!.Format.Should().Be("email");
+            OpenApiSchemaCompatibility.GetProperty(paramsSchema!, "Name", schemaRepository)!.MaxLength.Should().Be(510);
+
+            // Assert: the required set lives on the child component (this is exactly what the orphan bug dropped)
+            paramsSchema!.Required.Should().Contain("Email").And.Contain("Name");
         }
     }
 }
