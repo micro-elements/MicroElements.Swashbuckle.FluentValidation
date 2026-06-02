@@ -3,8 +3,6 @@
   - The 7.1.3 fix restored unmodified `$ref`s, but when the nested type had no standalone validator its component schema gained its `Required` only after the parent's inline snapshot, so the stale `Required` diverged and defeated the restore check — leaving an inline copy and an orphaned component
   - Fix: the `Required` comparison in `HasValidationConstraintChanges` is now directional — restoration is only blocked when the inline copy carries a required entry the component lacks
   - `SetValidator` (with a standalone child validator) was already correct; `BigInteger`/enum per-model constraints (Issues #146/#176) continue to work
-
-# Changes in 7.1.5
 - Added: `ConditionalRulesMode` option to control how `.When()`/`.Unless()` conditional rules are handled during schema generation (Issue #203)
   - `Exclude` (default): conditional rules are excluded from the schema (backward-compatible, existing behavior)
   - `Include`: conditional rules are included in the schema (useful when `.When()` is a null-guard and constraints should still appear)
