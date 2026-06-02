@@ -30,16 +30,15 @@ If you find MicroElements.Swashbuckle.FluentValidation useful, please consider f
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
     <PropertyGroup>
-        <TargetFramework>net7.0</TargetFramework>
+        <TargetFramework>net8.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="FluentValidation.AspNetCore" Version="11.2.2" />
-        <PackageReference Include="MicroElements.Swashbuckle.FluentValidation" Version="6.0.0" />
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="7.0.2" />
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
+        <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.1" />
+        <PackageReference Include="MicroElements.Swashbuckle.FluentValidation" Version="7.1.6" />
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="8.1.1" />
     </ItemGroup>
     
 </Project>
@@ -89,9 +88,9 @@ app.Run();
 #### Reference packages in your web project
 
 ```xml
-<PackageReference Include="FluentValidation.AspNetCore" Version="11.1.0" />
-<PackageReference Include="MicroElements.Swashbuckle.FluentValidation" Version="6.0.0" />
-<PackageReference Include="Swashbuckle.AspNetCore" Version="6.3.0" />
+<PackageReference Include="FluentValidation.AspNetCore" Version="11.3.1" />
+<PackageReference Include="MicroElements.Swashbuckle.FluentValidation" Version="7.1.6" />
+<PackageReference Include="Swashbuckle.AspNetCore" Version="8.1.1" />
 ```
 
 #### Change Startup.cs
@@ -166,6 +165,9 @@ public void Configure(IApplicationBuilder app, IHostingEnvironment env)
 | [3.1.0, 4.2.1)                             | [5.2.0, 6.0.0)         | >=8.3.0          |
 | [4.2.0, 5.0.0)                             | [5.5.1, 7.0.0)         | [9.0.0, 10)      |
 | [5.0.0, 6.0.0)                             | [6.3.0, 7.0.0)         | [10.0.0, 12)     |
+| [7.0.0, 8.0.0)                             | [8.0.0, 11.0.0)        | [11.0.0, 13)     |
+
+> .NET 8/9 use Swashbuckle 8.x (Microsoft.OpenApi 1.x); .NET 10 uses Swashbuckle 10.x (Microsoft.OpenApi 2.x).
 
 ## Sample application
 
@@ -274,6 +276,53 @@ internal class CustomerAddressValidator : AbstractValidator<Customer>
     {
         RuleFor(customer => customer.Address).Length(20, 250);
     }
+}
+```
+
+### Nested objects (`SetValidator` / `ChildRules`)
+
+Rules for a nested object are applied to the **child component schema**, and the parent property keeps a `$ref` to it. Both a standalone child validator (`SetValidator`) and inline `ChildRules` are supported (inline `ChildRules` `$ref` preservation was fixed in **7.1.6**, see [#198](https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/issues/198)):
+
+```csharp
+public class CreateUserRequest
+{
+    public CreateUserParams User { get; set; }
+}
+
+public class CreateUserParams
+{
+    public string Email { get; set; }
+    public string Name { get; set; }
+}
+
+public class CreateUserRequestValidator : AbstractValidator<CreateUserRequest>
+{
+    public CreateUserRequestValidator()
+    {
+        // Inline child rules — no separate validator class required
+        RuleFor(x => x.User)
+            .NotEmpty()
+            .ChildRules(user =>
+            {
+                user.RuleFor(u => u.Email).NotEmpty().EmailAddress();
+                user.RuleFor(u => u.Name).NotEmpty().MaximumLength(510);
+            });
+
+        // Equivalent with a standalone validator:
+        // RuleFor(x => x.User).NotEmpty().SetValidator(new CreateUserParamsValidator());
+    }
+}
+```
+
+The `Email`/`Name` constraints (and `required`) end up on the `CreateUserParams` component, while the parent stays a reference:
+
+```json
+"CreateUserRequest": {
+  "required": [ "user" ],
+  "type": "object",
+  "properties": {
+    "user": { "$ref": "#/components/schemas/CreateUserParams" }
+  }
 }
 ```
 
