@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using MicroElements.OpenApi;
 using MicroElements.OpenApi.Core;
 using MicroElements.OpenApi.FluentValidation;
@@ -173,7 +174,11 @@ namespace MicroElements.Swashbuckle.FluentValidation
                             logger: _logger,
                             schemaGenerationContext: schemaContext);
 
-                        if (OpenApiSchemaCompatibility.RequiredContains(schema, schemaPropertyName))
+                        // Issue #209: a required leaf is only a required parameter when the WHOLE dot-path
+                        // is required. For a flattened nested [FromQuery] parameter (e.g. "OptionalSubType.SubProperty")
+                        // an optional ancestor (e.g. an optional nested object) must keep the parameter optional.
+                        if (OpenApiSchemaCompatibility.RequiredContains(schema, schemaPropertyName)
+                            && IsParameterPathRequired(operationParameter.Name, context, schemaProvider))
                         {
 #if OPENAPI_V2
                             // In OpenApi 2.x, IOpenApiParameter.Required is read-only
@@ -244,6 +249,125 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Determines whether a (possibly nested) operation parameter may be marked as required.
+        /// For a flattened nested [FromQuery] parameter (e.g. "OptionalSubType.SubProperty") the leaf
+        /// is a required parameter only when EVERY ancestor segment of the dot-path is itself required.
+        /// If any ancestor (e.g. an optional nested object) is not required, the parameter stays optional.
+        /// Issue #209.
+        /// </summary>
+        private bool IsParameterPathRequired(string parameterName, OperationFilterContext context, SwashbuckleSchemaProvider schemaProvider)
+        {
+            // Flat parameter: no ancestors to verify.
+            if (parameterName.IndexOf('.') < 0)
+                return true;
+
+            var segments = parameterName.Split('.');
+
+            // Resolve the root [FromQuery]/[AsParameters] type from the action method by matching the first segment.
+            var currentType = ResolveRootType(segments[0], context.MethodInfo);
+
+            // If the root type cannot be determined, preserve the prior behavior (mark required).
+            if (currentType == null)
+                return true;
+
+            // Walk every ancestor segment (all but the leaf); leaf requiredness is handled by the caller.
+            // Resolving ancestor requiredness registers the ancestor (container) schemas in the repository,
+            // exactly like the leaf container is registered above. Those unused [FromQuery] container schemas
+            // are removed by the Issue #180 cleanup when RemoveUnusedQuerySchemas is enabled. We must NOT
+            // remove them mid-loop: Swashbuckle's generator remembers already-generated types and would not
+            // re-register the component on the next GetSchemaForType call, leaving an unresolvable $ref.
+            for (int i = 0; i < segments.Length - 1; i++)
+            {
+                if (!IsPropertyRequiredInType(currentType, segments[i], context, schemaProvider))
+                    return false;
+
+                var propertyInfo = currentType.GetProperty(segments[i], BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+                if (propertyInfo == null)
+                    return true; // path does not map to a real property — preserve prior behavior
+
+                currentType = propertyInfo.PropertyType;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Finds the action parameter type that exposes <paramref name="firstSegment"/> as a property.
+        /// This is the root container of a flattened nested [FromQuery] parameter.
+        /// Limitation: if several action parameters expose a property with the same name, the first
+        /// match wins. This is an unlikely edge case; a wrong guess only affects the required flag and
+        /// the conservative fallbacks keep prior behavior.
+        /// </summary>
+        private static Type? ResolveRootType(string firstSegment, MethodInfo? methodInfo)
+        {
+            if (methodInfo == null)
+                return null;
+
+            foreach (var parameter in methodInfo.GetParameters())
+            {
+                if (parameter.ParameterType.GetProperty(firstSegment, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase) != null)
+                    return parameter.ParameterType;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Checks whether <paramref name="propertyName"/> is required in <paramref name="containerType"/>,
+        /// combining the generated schema (native required, e.g. the C# 'required' modifier) with the
+        /// FluentValidation rules (NotNull/NotEmpty) of the container type's validator.
+        /// </summary>
+        private bool IsPropertyRequiredInType(Type containerType, string propertyName, OperationFilterContext context, SwashbuckleSchemaProvider schemaProvider)
+        {
+            OpenApiSchema schema = schemaProvider.GetSchemaForType(containerType);
+
+            // No properties to reason about — treat the ancestor as not required (safe-to-optional default,
+            // intentionally the opposite of IsParameterPathRequired's "assume required" fallback: there we
+            // could not resolve the path at all and keep prior behavior, here we positively know the type
+            // exposes nothing to require against).
+            if (schema.Properties == null || schema.Properties.Count == 0)
+                return false;
+
+            // Resolve the schema property key (handles camelCase / PascalCase differences).
+            var resolvedName = OpenApiSchemaCompatibility.GetProperties(schema)
+                .Select(property => property.Key)
+                .FirstOrDefault(key => key.EqualsIgnoreAll(propertyName)) ?? propertyName;
+
+            // GetSchemaForType runs the FluentValidationRules schema filter during generation, so the
+            // requiredness (native 'required' modifier + NotNull/NotEmpty rules) is usually already present.
+            // Check first to avoid the write side effect of re-applying rules on a shared cached schema.
+            if (OpenApiSchemaCompatibility.RequiredContains(schema, resolvedName))
+                return true;
+
+            // Fallback for setups whose schema generator has no FluentValidationRules filter: apply the
+            // container validator's rules explicitly, then re-check. _validatorRegistry is non-null here —
+            // ApplyInternal returns early when it is null, before any parameter processing.
+            var validator = _validatorRegistry!.GetValidator(containerType);
+            if (validator != null)
+            {
+                var schemaContext = new SchemaGenerationContext(
+                    schemaRepository: context.SchemaRepository,
+                    schemaGenerator: context.SchemaGenerator,
+                    schema: schema,
+                    schemaType: containerType,
+                    rules: _rules,
+                    schemaGenerationOptions: _schemaGenerationOptions,
+                    schemaProvider: schemaProvider);
+
+                FluentValidationSchemaBuilder.ApplyRulesToSchema(
+                    schemaType: containerType,
+                    schemaPropertyNames: new[] { resolvedName },
+                    validator: validator,
+                    logger: _logger,
+                    schemaGenerationContext: schemaContext);
+
+                return OpenApiSchemaCompatibility.RequiredContains(schema, resolvedName);
+            }
+
+            return false;
         }
 
         private void ApplyRulesToRequestBody(OpenApiOperation operation, OperationFilterContext context, SwashbuckleSchemaProvider schemaProvider)
