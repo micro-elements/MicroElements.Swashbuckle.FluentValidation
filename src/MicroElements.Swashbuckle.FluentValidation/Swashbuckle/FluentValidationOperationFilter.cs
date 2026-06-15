@@ -274,6 +274,11 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 return true;
 
             // Walk every ancestor segment (all but the leaf); leaf requiredness is handled by the caller.
+            // Resolving ancestor requiredness registers the ancestor (container) schemas in the repository,
+            // exactly like the leaf container is registered above. Those unused [FromQuery] container schemas
+            // are removed by the Issue #180 cleanup when RemoveUnusedQuerySchemas is enabled. We must NOT
+            // remove them mid-loop: Swashbuckle's generator remembers already-generated types and would not
+            // re-register the component on the next GetSchemaForType call, leaving an unresolvable $ref.
             for (int i = 0; i < segments.Length - 1; i++)
             {
                 if (!IsPropertyRequiredInType(currentType, segments[i], context, schemaProvider))
@@ -292,6 +297,9 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <summary>
         /// Finds the action parameter type that exposes <paramref name="firstSegment"/> as a property.
         /// This is the root container of a flattened nested [FromQuery] parameter.
+        /// Limitation: if several action parameters expose a property with the same name, the first
+        /// match wins. This is an unlikely edge case; a wrong guess only affects the required flag and
+        /// the conservative fallbacks keep prior behavior.
         /// </summary>
         private static Type? ResolveRootType(string firstSegment, MethodInfo? methodInfo)
         {
@@ -315,6 +323,11 @@ namespace MicroElements.Swashbuckle.FluentValidation
         private bool IsPropertyRequiredInType(Type containerType, string propertyName, OperationFilterContext context, SwashbuckleSchemaProvider schemaProvider)
         {
             OpenApiSchema schema = schemaProvider.GetSchemaForType(containerType);
+
+            // No properties to reason about — treat the ancestor as not required (safe-to-optional default,
+            // intentionally the opposite of IsParameterPathRequired's "assume required" fallback: there we
+            // could not resolve the path at all and keep prior behavior, here we positively know the type
+            // exposes nothing to require against).
             if (schema.Properties == null || schema.Properties.Count == 0)
                 return false;
 
@@ -323,6 +336,15 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 .Select(property => property.Key)
                 .FirstOrDefault(key => key.EqualsIgnoreAll(propertyName)) ?? propertyName;
 
+            // GetSchemaForType runs the FluentValidationRules schema filter during generation, so the
+            // requiredness (native 'required' modifier + NotNull/NotEmpty rules) is usually already present.
+            // Check first to avoid the write side effect of re-applying rules on a shared cached schema.
+            if (OpenApiSchemaCompatibility.RequiredContains(schema, resolvedName))
+                return true;
+
+            // Fallback for setups whose schema generator has no FluentValidationRules filter: apply the
+            // container validator's rules explicitly, then re-check. _validatorRegistry is non-null here —
+            // ApplyInternal returns early when it is null, before any parameter processing.
             var validator = _validatorRegistry!.GetValidator(containerType);
             if (validator != null)
             {
@@ -341,9 +363,11 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     validator: validator,
                     logger: _logger,
                     schemaGenerationContext: schemaContext);
+
+                return OpenApiSchemaCompatibility.RequiredContains(schema, resolvedName);
             }
 
-            return OpenApiSchemaCompatibility.RequiredContains(schema, resolvedName);
+            return false;
         }
 
         private void ApplyRulesToRequestBody(OpenApiOperation operation, OperationFilterContext context, SwashbuckleSchemaProvider schemaProvider)
