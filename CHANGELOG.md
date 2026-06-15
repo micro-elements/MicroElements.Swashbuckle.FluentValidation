@@ -1,3 +1,11 @@
+# Changes in 7.1.7
+- Fixed: A required leaf property inside an **optional** nested type bound via `[FromQuery]` was wrongly marked as a required parameter (Issue #209)
+  - The 7.1.1 fix (Issue #162) made nested `[FromQuery]` validation match the leaf property name, but `FluentValidationOperationFilter` then set `required` based solely on the leaf type, ignoring whether the ancestor segment of the dot-path was optional
+  - Because two nested properties of the same leaf type share one schema/validator (e.g. `OptionalSubType.SubProperty` and `RequiredSubType.SubProperty`), a `NotEmpty()` on the leaf marked **both** flattened parameters as required
+  - Fix: a flattened nested parameter is now marked `required` only when **every** ancestor segment of the dot-path is required — resolved from the action's root `[FromQuery]` type, combining the native schema `required` (e.g. the C# `required` modifier) with FluentValidation `NotNull`/`NotEmpty` rules
+  - Value constraints (e.g. `minLength`) still apply to an optional nested parameter when it is provided
+  - When the root container type cannot be resolved, prior behavior is preserved (no regression for existing nested-parameter scenarios)
+
 # Changes in 7.1.6
 - Fixed: `$ref` still replaced with an inline copy (and the child component left orphaned) when nested object constraints come from `ChildRules` or an inline child validator (Issue #198, comment 4601720562)
   - The 7.1.3 fix restored unmodified `$ref`s, but when the nested type had no standalone validator its component schema gained its `Required` only after the parent's inline snapshot, so the stale `Required` diverged and defeated the restore check — leaving an inline copy and an orphaned component
