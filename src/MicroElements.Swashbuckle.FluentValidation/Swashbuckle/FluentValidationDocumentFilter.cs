@@ -203,7 +203,18 @@ namespace MicroElements.Swashbuckle.FluentValidation
             foreach (var item in schemasForParameters)
             {
                 var itemParameterDescription = item.ParameterDescription;
-                var schemaPropertyName = itemParameterDescription?.ModelMetadata?.BinderModelName ?? itemParameterDescription?.Name;
+                var fullParameterName = itemParameterDescription?.ModelMetadata?.BinderModelName ?? itemParameterDescription?.Name;
+
+                // Issue #211/#213: For a flattened nested [FromQuery] parameter only copy the nested type's
+                // value constraints when the SetValidator/ChildRules chain from the ROOT validator actually
+                // reaches the leaf container. Otherwise FluentValidation never enforces them at runtime.
+                if (fullParameterName != null && fullParameterName.IndexOf('.') >= 0
+                    && !IsNestedValidationReachable(fullParameterName, item.ApiDescription))
+                {
+                    continue;
+                }
+
+                var schemaPropertyName = fullParameterName;
 
                 // For nested [FromQuery] parameters (e.g., "operation.op"), use only the leaf property name.
                 if (schemaPropertyName != null)
@@ -251,6 +262,41 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 {
                     schemaRepositorySchemas.Remove(schemaId);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Issue #211/#213: checks that a flattened nested [FromQuery] parameter's leaf type is actually
+        /// validated — i.e. the SetValidator/ChildRules chain from the root validator reaches the leaf container.
+        /// </summary>
+        private bool IsNestedValidationReachable(string parameterName, ApiDescription? apiDescription)
+        {
+            try
+            {
+                var segments = parameterName.Split('.');
+
+                var methodInfo = apiDescription != null ? AsParametersHelper.GetMethodInfo(apiDescription) : null;
+                var rootType = AsParametersHelper.ResolveRootType(segments[0], methodInfo);
+
+                // Cannot resolve the root container — preserve prior behavior.
+                if (rootType == null)
+                    return true;
+
+                var rootValidator = _validatorRegistry?.GetValidator(rootType);
+
+                // No validator for the bound type — runtime validates nothing along this path.
+                if (rootValidator == null)
+                    return false;
+
+                var ancestorMembers = new string[segments.Length - 1];
+                Array.Copy(segments, ancestorMembers, segments.Length - 1);
+
+                return FluentValidationExtensions.IsNestedValidationWired(rootValidator, ancestorMembers, _schemaGenerationOptions);
+            }
+            catch (Exception e)
+            {
+                _logger.LogDebug(e, "Could not determine nested validation reachability for parameter '{ParameterName}'; assuming reachable.", parameterName);
+                return true;
             }
         }
 

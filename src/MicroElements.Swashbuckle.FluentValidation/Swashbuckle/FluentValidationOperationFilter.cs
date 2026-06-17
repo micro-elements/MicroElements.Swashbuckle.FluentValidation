@@ -275,7 +275,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 var segments = parameterName.Split('.');
 
                 // Resolve the root [FromQuery]/[AsParameters] type from the action method by matching the first segment.
-                var rootType = ResolveRootType(segments[0], context.MethodInfo);
+                var rootType = AsParametersHelper.ResolveRootType(segments[0], context.MethodInfo);
 
                 // Cannot resolve the root container (e.g. a synthetic MethodInfo in tests) — preserve prior behavior.
                 if (rootType == null)
@@ -319,7 +319,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             var segments = parameterName.Split('.');
 
             // Resolve the root [FromQuery]/[AsParameters] type from the action method by matching the first segment.
-            var currentType = ResolveRootType(segments[0], context.MethodInfo);
+            var currentType = AsParametersHelper.ResolveRootType(segments[0], context.MethodInfo);
 
             // If the root type cannot be determined, preserve the prior behavior (mark required).
             if (currentType == null)
@@ -344,27 +344,6 @@ namespace MicroElements.Swashbuckle.FluentValidation
             }
 
             return true;
-        }
-
-        /// <summary>
-        /// Finds the action parameter type that exposes <paramref name="firstSegment"/> as a property.
-        /// This is the root container of a flattened nested [FromQuery] parameter.
-        /// Limitation: if several action parameters expose a property with the same name, the first
-        /// match wins. This is an unlikely edge case; a wrong guess only affects the required flag and
-        /// the conservative fallbacks keep prior behavior.
-        /// </summary>
-        private static Type? ResolveRootType(string firstSegment, MethodInfo? methodInfo)
-        {
-            if (methodInfo == null)
-                return null;
-
-            foreach (var parameter in methodInfo.GetParameters())
-            {
-                if (parameter.ParameterType.GetProperty(firstSegment, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase) != null)
-                    return parameter.ParameterType;
-            }
-
-            return null;
         }
 
         /// <summary>

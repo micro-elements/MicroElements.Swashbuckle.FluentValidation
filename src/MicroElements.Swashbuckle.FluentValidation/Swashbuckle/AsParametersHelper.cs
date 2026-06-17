@@ -41,11 +41,35 @@ namespace MicroElements.Swashbuckle.FluentValidation
         }
 
         /// <summary>
-        /// Extracts MethodInfo from an ApiDescription via ActionDescriptor.EndpointMetadata.
-        /// Used by DocumentFilter which does not have direct MethodInfo access.
+        /// Finds the action parameter type that exposes <paramref name="firstSegment"/> as a property — the
+        /// root container of a flattened nested [FromQuery] parameter. Unlike <see cref="ResolveContainerType"/>
+        /// this does not require an [AsParameters] attribute (MVC [FromQuery] types are plain parameters).
+        /// Returns null when no parameter exposes such a property. Issue #209/#211.
+        /// </summary>
+        internal static Type? ResolveRootType(string firstSegment, MethodInfo? methodInfo)
+        {
+            if (methodInfo == null)
+                return null;
+
+            foreach (var parameter in methodInfo.GetParameters())
+            {
+                if (parameter.ParameterType.GetProperty(firstSegment, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase) != null)
+                    return parameter.ParameterType;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Extracts MethodInfo from an ApiDescription. For MVC controllers the action method lives on
+        /// <see cref="Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor"/>; for minimal APIs
+        /// it is exposed via EndpointMetadata. Used by DocumentFilter which has no direct MethodInfo access.
         /// </summary>
         internal static MethodInfo? GetMethodInfo(ApiDescription apiDescription)
         {
+            if (apiDescription.ActionDescriptor is Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor controllerActionDescriptor)
+                return controllerActionDescriptor.MethodInfo;
+
             return apiDescription.ActionDescriptor?.EndpointMetadata?
                 .OfType<MethodInfo>()
                 .FirstOrDefault();
