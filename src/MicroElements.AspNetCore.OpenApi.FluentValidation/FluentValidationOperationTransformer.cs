@@ -79,6 +79,8 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
 
         private void ApplyRulesToParameters(OpenApiOperation operation, OpenApiOperationTransformerContext context)
         {
+            var methodInfo = GetMethodInfo(context.Description);
+
             // Group parameters by container type to avoid redundant validator lookups and schema builds.
             var parameterGroups = new Dictionary<Type, (IValidator Validator, OpenApiSchema Schema)>();
 
@@ -91,14 +93,9 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
                 if (modelMetadata == null)
                     continue;
 
-                var parameterType = modelMetadata.ContainerType;
-
                 // Fallback: resolve container type from [AsParameters] attribute
-                if (parameterType == null)
-                {
-                    var methodInfo = GetMethodInfo(context.Description);
-                    parameterType = ResolveContainerType(operationParameter.Name, methodInfo);
-                }
+                var parameterType = modelMetadata.ContainerType
+                    ?? ResolveContainerType(operationParameter.Name, methodInfo);
 
                 if (parameterType == null)
                     continue;
@@ -118,7 +115,21 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
                     parameterGroups[parameterType] = cached;
                 }
 
-                ApplyRulesToParameter(operationParameter, parameterType, cached.Validator, cached.Schema);
+                // Issue #211: For a flattened nested [FromQuery] parameter (e.g. "RequiredSubType.SubProperty")
+                // only reflect the nested type's validation when it is actually reachable from the ROOT validator
+                // via SetValidator/ChildRules. FluentValidation never auto-validates a child object from DI, so an
+                // unwired nested validator would document constraints that runtime validation never enforces.
+                if (operationParameter.Name.IndexOf('.') >= 0
+                    && !IsNestedValidationReachable(operationParameter.Name, methodInfo))
+                {
+                    continue;
+                }
+
+                // Issue #209: a flattened nested parameter may be marked required only when EVERY ancestor
+                // segment of the dot-path is itself required.
+                var pathRequired = IsParameterPathRequired(operationParameter.Name, methodInfo);
+
+                ApplyRulesToParameter(operationParameter, parameterType, cached.Validator, cached.Schema, pathRequired);
             }
         }
 
@@ -130,7 +141,8 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
 #endif
             Type parameterType,
             IValidator validator,
-            OpenApiSchema schema)
+            OpenApiSchema schema,
+            bool pathRequired)
         {
             var schemaPropertyName = operationParameter.Name;
 
@@ -170,8 +182,8 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
                 logger: _logger,
                 schemaGenerationContext: schemaContext);
 
-            // Copy required flag
-            if (OpenApiSchemaCompatibility.RequiredContains(schema, schemaPropertyName))
+            // Copy required flag (Issue #209: only when the whole dot-path is required)
+            if (pathRequired && OpenApiSchemaCompatibility.RequiredContains(schema, schemaPropertyName))
             {
 #if OPENAPI_V2
                 if (operationParameter is OpenApiParameter openApiParameter)
@@ -339,10 +351,140 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
         }
 
         /// <summary>
-        /// Extracts MethodInfo from an ApiDescription.
+        /// Finds the action parameter type that exposes <paramref name="firstSegment"/> as a property — the
+        /// root container of a flattened nested [FromQuery] parameter. Unlike <see cref="ResolveContainerType"/>
+        /// this does not require an [AsParameters] attribute (MVC [FromQuery] types are plain parameters).
+        /// </summary>
+        private static Type? ResolveRootType(string firstSegment, MethodInfo? methodInfo)
+        {
+            if (methodInfo == null)
+                return null;
+
+            foreach (var parameter in methodInfo.GetParameters())
+            {
+                if (parameter.ParameterType.GetProperty(firstSegment, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase) != null)
+                    return parameter.ParameterType;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Issue #211: checks that a flattened nested parameter's leaf type is actually validated — i.e. the
+        /// SetValidator/ChildRules chain from the root validator reaches the leaf container. If the chain is
+        /// broken (no SetValidator), the nested rules are not enforced at runtime and must not appear in the doc.
+        /// </summary>
+        private bool IsNestedValidationReachable(string parameterName, MethodInfo? methodInfo)
+        {
+            try
+            {
+                var segments = parameterName.Split('.');
+
+                var rootType = ResolveRootType(segments[0], methodInfo);
+
+                // Cannot resolve the root container — preserve prior behavior.
+                if (rootType == null)
+                    return true;
+
+                var rootValidator = _validatorRegistry.GetValidator(rootType);
+
+                // No validator for the bound type — runtime validates nothing along this path.
+                if (rootValidator == null)
+                    return false;
+
+                var ancestorMembers = new string[segments.Length - 1];
+                Array.Copy(segments, ancestorMembers, segments.Length - 1);
+
+                return FluentValidationExtensions.IsNestedValidationWired(rootValidator, ancestorMembers, _schemaGenerationOptions);
+            }
+            catch (Exception e)
+            {
+                // A dynamic SetValidator(ctx => ...) factory may throw when probed with a fake context.
+                // Such a member IS wired, so fall back to prior behavior (reachable).
+                _logger.LogDebug(e, "Could not determine nested validation reachability for parameter '{ParameterName}'; assuming reachable.", parameterName);
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Issue #209: a flattened nested parameter is required only when EVERY ancestor segment of the dot-path
+        /// is itself required. Resolved from the action's root container type; leaf requiredness is handled by the caller.
+        /// </summary>
+        private bool IsParameterPathRequired(string parameterName, MethodInfo? methodInfo)
+        {
+            if (parameterName.IndexOf('.') < 0)
+                return true;
+
+            var segments = parameterName.Split('.');
+
+            var currentType = ResolveRootType(segments[0], methodInfo);
+
+            // If the root type cannot be determined, preserve the prior behavior (mark required).
+            if (currentType == null)
+                return true;
+
+            for (int i = 0; i < segments.Length - 1; i++)
+            {
+                if (!IsPropertyRequiredInType(currentType, segments[i]))
+                    return false;
+
+                var propertyInfo = currentType.GetProperty(segments[i], BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+                if (propertyInfo == null)
+                    return true; // path does not map to a real property — preserve prior behavior
+
+                currentType = propertyInfo.PropertyType;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Checks whether <paramref name="propertyName"/> is required in <paramref name="containerType"/> by
+        /// applying the container validator's FluentValidation rules (NotNull/NotEmpty) to a built schema.
+        /// </summary>
+        private bool IsPropertyRequiredInType(Type containerType, string propertyName)
+        {
+            var schema = BuildSchemaForType(containerType);
+
+            if (schema.Properties == null || schema.Properties.Count == 0)
+                return false;
+
+            var resolvedName = OpenApiSchemaCompatibility.GetProperties(schema)
+                .Select(property => property.Key)
+                .FirstOrDefault(key => key.EqualsIgnoreAll(propertyName)) ?? propertyName;
+
+            var validator = _validatorRegistry.GetValidator(containerType);
+            if (validator == null)
+                return false;
+
+            var schemaProvider = new AspNetCoreSchemaProvider(null, _logger);
+            var schemaContext = new AspNetCoreSchemaGenerationContext(
+                schema: schema,
+                schemaType: containerType,
+                rules: _rules,
+                schemaGenerationOptions: _schemaGenerationOptions,
+                schemaProvider: schemaProvider);
+
+            FluentValidationSchemaBuilder.ApplyRulesToSchema(
+                schemaType: containerType,
+                schemaPropertyNames: new[] { resolvedName },
+                validator: validator,
+                logger: _logger,
+                schemaGenerationContext: schemaContext);
+
+            return OpenApiSchemaCompatibility.RequiredContains(schema, resolvedName);
+        }
+
+        /// <summary>
+        /// Extracts MethodInfo from an ApiDescription. For MVC controllers the action method lives on
+        /// <see cref="Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor"/>; for minimal APIs
+        /// it is exposed via EndpointMetadata.
         /// </summary>
         private static MethodInfo? GetMethodInfo(Microsoft.AspNetCore.Mvc.ApiExplorer.ApiDescription apiDescription)
         {
+            if (apiDescription.ActionDescriptor is Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor controllerActionDescriptor)
+                return controllerActionDescriptor.MethodInfo;
+
             return apiDescription.ActionDescriptor?.EndpointMetadata?
                 .OfType<MethodInfo>()
                 .FirstOrDefault();

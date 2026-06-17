@@ -349,6 +349,45 @@ public class AspNetCoreOpenApiTests : IClassFixture<AspNetCoreOpenApiTests.TestW
             "patterns are merged into a single 'pattern'");
     }
 
+    /// <summary>
+    /// Issue #213: nested [FromQuery] validation in the native OpenAPI transformer must follow the
+    /// SetValidator/ChildRules chain (#211) and the ancestor-required rule (#209).
+    /// </summary>
+    [Fact]
+    public async Task NestedFromQuery_FollowsWiringAndAncestorRequired()
+    {
+        var client = _factory.CreateClient();
+        var response = await client.GetAsync("/openapi/v1.json");
+        response.EnsureSuccessStatusCode();
+        var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+
+        var parameters = doc.RootElement.GetProperty("paths")
+            .GetProperty("/api/nested-filter").GetProperty("get").GetProperty("parameters");
+
+        JsonElement Param(string prefix) => parameters.EnumerateArray()
+            .First(p => p.GetProperty("name").GetString()!
+                .StartsWith(prefix + ".", StringComparison.OrdinalIgnoreCase));
+
+        static bool IsRequired(JsonElement p) => p.TryGetProperty("required", out var r) && r.GetBoolean();
+        static bool HasMinLength(JsonElement p) =>
+            p.TryGetProperty("schema", out var s) && s.TryGetProperty("minLength", out _);
+
+        // Wired (SetValidator) + required ancestor -> required parameter with the value constraint.
+        var wired = Param("RequiredSubWired");
+        IsRequired(wired).Should().BeTrue(because: "RequiredSubWired is required and wired via SetValidator");
+        HasMinLength(wired).Should().BeTrue();
+
+        // Required ancestor but NOT wired -> no constraints leak (#211).
+        var unwired = Param("RequiredSubUnwired");
+        IsRequired(unwired).Should().BeFalse(because: "RequiredSubUnwired has no SetValidator, so SubProperty is never validated (#211)");
+        HasMinLength(unwired).Should().BeFalse(because: "an unwired nested validator must not leak value constraints (#211)");
+
+        // Wired but optional ancestor -> value constraint applies, but not required (#209).
+        var optional = Param("OptionalSubWired");
+        IsRequired(optional).Should().BeFalse(because: "OptionalSubWired is optional, so the nested leaf must not be required (#209)");
+        HasMinLength(optional).Should().BeTrue(because: "the wired NotEmpty still constrains the value when provided");
+    }
+
     [Fact]
     public void TransformerCanResolveWithoutScope()
     {

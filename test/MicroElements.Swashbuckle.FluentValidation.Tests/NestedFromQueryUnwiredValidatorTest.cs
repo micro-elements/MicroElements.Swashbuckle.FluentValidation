@@ -9,6 +9,7 @@ using MicroElements.OpenApi.FluentValidation;
 using MicroElements.Swashbuckle.FluentValidation.Generation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
+using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Options;
 #if !OPENAPI_V2
@@ -341,6 +342,102 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
                 validatorRegistry: validatorRegistry,
                 schemaGenerationOptions: new OptionsWrapper<SchemaGenerationOptions>(schemaGenerationOptions))
                 .Apply(operation, context);
+
+            return paramSchema;
+        }
+
+        // ----- Experimental DocumentFilter (Issue #213) -----
+
+        /// <summary>
+        /// Issue #213: the experimental DocumentFilter must also skip copying value constraints for a
+        /// flattened nested parameter whose nested validation is not wired from the root validator.
+        /// </summary>
+        [Fact]
+        public void DocumentFilter_Unwired_Nested_Validator_Should_Not_Copy_Constraints()
+        {
+            var paramSchema = RunDocumentFilter(
+                new IValidator[] { new UnwiredFilterTypeValidator(), new FilterSubTypeValidator() },
+                typeof(NestedFromQueryUnwiredValidatorTest).GetMethod(nameof(GetUnwired))!);
+
+            paramSchema.MinLength.Should().BeNull(
+                because: "unwired nested validation must not leak value constraints via DocumentFilter (#211/#213)");
+        }
+
+        /// <summary>Counterpart: a wired nested validator still has its value constraints copied by the DocumentFilter.</summary>
+        [Fact]
+        public void DocumentFilter_Wired_Nested_Validator_Should_Copy_Constraints()
+        {
+            var paramSchema = RunDocumentFilter(
+                new IValidator[] { new WiredFilterTypeValidator(), new FilterSubTypeValidator() },
+                typeof(NestedFromQueryUnwiredValidatorTest).GetMethod(nameof(GetWired))!);
+
+            paramSchema.MinLength.Should().Be(1,
+                because: "the wired nested NotEmpty constrains the parameter value");
+        }
+
+        /// <summary>
+        /// Builds a single-operation document with the nested "RequiredSubType.SubProperty" query parameter and
+        /// runs <see cref="FluentValidationDocumentFilter"/>. The MethodInfo is exposed via a ControllerActionDescriptor
+        /// so the reachability walk can resolve the root [FromQuery] type.
+        /// </summary>
+        private OpenApiSchema RunDocumentFilter(IValidator[] validators, MethodInfo methodInfo)
+        {
+            var schemaGeneratorOptions = new SchemaGeneratorOptions();
+            var schemaRepository = new SchemaRepository();
+            var schemaGenerator = SchemaGenerator(validators);
+
+            var schemaGenerationOptions = new SchemaGenerationOptions
+            {
+                NameResolver = new SystemTextJsonNameResolver(),
+                SchemaIdSelector = schemaGeneratorOptions.SchemaIdSelector,
+            };
+
+            var validatorRegistry = new ValidatorRegistry(
+                validators,
+                new OptionsWrapper<SchemaGenerationOptions>(schemaGenerationOptions));
+
+            var subPropMetadata = new EmptyModelMetadataProvider()
+                .GetMetadataForProperty(typeof(FilterSubType), nameof(FilterSubType.SubProperty));
+
+            var apiDescription = new ApiDescription
+            {
+                RelativePath = "api/test",
+                ActionDescriptor = new ControllerActionDescriptor { MethodInfo = methodInfo },
+            };
+            apiDescription.ParameterDescriptions.Add(new ApiParameterDescription
+            {
+                Name = "RequiredSubType.SubProperty",
+                ModelMetadata = subPropMetadata,
+                Source = BindingSource.Query,
+            });
+
+            var paramSchema = new OpenApiSchema { Type = "string" };
+            var swaggerDoc = new OpenApiDocument
+            {
+                Paths = new OpenApiPaths
+                {
+                    ["/api/test"] = new OpenApiPathItem
+                    {
+                        Operations = new Dictionary<OperationType, OpenApiOperation>
+                        {
+                            [OperationType.Get] = new OpenApiOperation
+                            {
+                                Parameters = new List<OpenApiParameter>
+                                {
+                                    new OpenApiParameter { Name = "RequiredSubType.SubProperty", In = ParameterLocation.Query, Schema = paramSchema },
+                                },
+                            },
+                        },
+                    },
+                },
+            };
+
+            var documentFilterContext = new DocumentFilterContext(new[] { apiDescription }, schemaGenerator, schemaRepository);
+
+            new FluentValidationDocumentFilter(
+                validatorRegistry: validatorRegistry,
+                schemaGenerationOptions: new OptionsWrapper<SchemaGenerationOptions>(schemaGenerationOptions))
+                .Apply(swaggerDoc, documentFilterContext);
 
             return paramSchema;
         }

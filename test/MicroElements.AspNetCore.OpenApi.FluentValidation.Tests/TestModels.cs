@@ -151,6 +151,42 @@ public class TestPasswordModelValidator : AbstractValidator<TestPasswordModel>
     }
 }
 
+// Issue #213: nested [FromQuery] validation must follow the SetValidator/ChildRules chain (#209 + #211).
+public sealed record TestNestedFilter
+{
+    // Wired (SetValidator) + required ancestor -> leaf is a required parameter.
+    public required TestNestedSub RequiredSubWired { get; init; }
+
+    // Required ancestor but NOT wired -> leaf must NOT be constrained (#211).
+    public required TestNestedSub RequiredSubUnwired { get; init; }
+
+    // Wired but optional ancestor -> leaf constrained (minLength) but NOT required (#209).
+    public TestNestedSub? OptionalSubWired { get; init; }
+}
+
+public sealed record TestNestedSub
+{
+    public string? SubProperty { get; init; }
+}
+
+public sealed class TestNestedFilterValidator : AbstractValidator<TestNestedFilter>
+{
+    public TestNestedFilterValidator()
+    {
+        RuleFor(x => x.RequiredSubWired).NotNull().SetValidator(new TestNestedSubValidator());
+        RuleFor(x => x.RequiredSubUnwired).NotNull(); // no SetValidator — unwired (#211)
+        RuleFor(x => x.OptionalSubWired!).SetValidator(new TestNestedSubValidator());
+    }
+}
+
+public sealed class TestNestedSubValidator : AbstractValidator<TestNestedSub>
+{
+    public TestNestedSubValidator()
+    {
+        RuleFor(x => x.SubProperty).NotEmpty();
+    }
+}
+
 // BigInteger model for Issue #146
 public class TestBigIntegerModel
 {

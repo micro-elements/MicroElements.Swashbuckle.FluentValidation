@@ -8,6 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddValidatorsFromAssemblyContaining<TestMarker>();
 builder.Services.AddFluentValidationRulesToOpenApi();
+builder.Services.AddControllers();
 builder.Services.AddOpenApi(options =>
 {
     options.AddFluentValidationRules();
@@ -16,6 +17,7 @@ builder.Services.AddOpenApi(options =>
 var app = builder.Build();
 
 app.MapOpenApi();
+app.MapControllers();
 app.MapPost("/api/customers", (TestCustomer customer) => Results.Ok(customer));
 app.MapPost("/api/orders", (TestOrder order) => Results.Ok(order));
 app.MapPost("/api/biginteger", (TestBigIntegerModel model) => Results.Ok(model));
