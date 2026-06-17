@@ -250,6 +250,43 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
         }
 
         /// <summary>
+        /// No validator is registered for the root [FromQuery] type (only the leaf container has one).
+        /// Runtime would run no validation for this path, so the parameter must stay unconstrained.
+        /// (Behavioral change vs prior versions — see CHANGELOG.)
+        /// </summary>
+        [Fact]
+        public void No_Root_Validator_Should_Not_Constrain_Query_Parameter()
+        {
+            var paramSchema = RunOperationFilter(
+                new IValidator[] { new FilterSubTypeValidator() }, // no validator for FilterType (the root)
+                typeof(NestedFromQueryUnwiredValidatorTest).GetMethod(nameof(GetUnwired))!,
+                typeof(FilterSubType), nameof(FilterSubType.SubProperty), "RequiredSubType.SubProperty",
+                out var operation);
+
+            operation.Parameters[0].Required.Should().BeFalse(
+                because: "without a validator for the root [FromQuery] type FluentValidation runs no validation for this path");
+            paramSchema.MinLength.Should().BeNull();
+        }
+
+        /// <summary>
+        /// camelCase parameter names (as produced by the default ASP.NET Core naming convention) must
+        /// still match the PascalCase rule property names via EqualsIgnoreAll when walking the chain.
+        /// </summary>
+        [Fact]
+        public void CamelCase_Parameter_Name_Wired_Should_Constrain_Query_Parameter()
+        {
+            var paramSchema = RunOperationFilter(
+                new IValidator[] { new WiredFilterTypeValidator(), new FilterSubTypeValidator() },
+                typeof(NestedFromQueryUnwiredValidatorTest).GetMethod(nameof(GetWired))!,
+                typeof(FilterSubType), nameof(FilterSubType.SubProperty), "requiredSubType.subProperty",
+                out var operation);
+
+            operation.Parameters[0].Required.Should().BeTrue(
+                because: "the camelCase 'requiredSubType' segment must match the PascalCase rule via EqualsIgnoreAll");
+            paramSchema.MinLength.Should().Be(1);
+        }
+
+        /// <summary>
         /// Builds an operation with a single nested dot-path query parameter (sharing the leaf container's
         /// metadata, as Swashbuckle produces) and runs <see cref="FluentValidationOperationFilter"/>.
         /// </summary>
