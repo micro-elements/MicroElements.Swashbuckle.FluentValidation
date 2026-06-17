@@ -1,4 +1,8 @@
 # Changes in 7.1.7
+- Fixed: A validator for a nested type bound via `[FromQuery]` was reflected in the OpenAPI document even when it was **not** wired into the root validator via `SetValidator`/`ChildRules` (Issue #211)
+  - `FluentValidationOperationFilter` resolved the leaf container's validator directly from the registry (by `ModelMetadata.ContainerType`), so a nested `NotEmpty()` marked the flattened parameter (e.g. `RequiredSubType.SubProperty`) as `required` even though FluentValidation never validates an unwired child object — the OpenAPI doc claimed `required`, but the API accepted requests without it
+  - Fix: for a flattened nested parameter, nested rules are now applied only when the `SetValidator`/`ChildRules` chain from the action's root `[FromQuery]` validator actually reaches the leaf container; otherwise the parameter is left unconstrained, matching runtime behavior
+  - When the root container type cannot be resolved, prior behavior is preserved (no regression for existing nested-parameter scenarios)
 - Fixed: A required leaf property inside an **optional** nested type bound via `[FromQuery]` was wrongly marked as a required parameter (Issue #209)
   - The 7.1.1 fix (Issue #162) made nested `[FromQuery]` validation match the leaf property name, but `FluentValidationOperationFilter` then set `required` based solely on the leaf type, ignoring whether the ancestor segment of the dot-path was optional
   - Because two nested properties of the same leaf type share one schema/validator (e.g. `OptionalSubType.SubProperty` and `RequiredSubType.SubProperty`), a `NotEmpty()` on the leaf marked **both** flattened parameters as required

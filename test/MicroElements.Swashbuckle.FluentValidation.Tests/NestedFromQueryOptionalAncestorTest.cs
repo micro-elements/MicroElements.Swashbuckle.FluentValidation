@@ -44,7 +44,10 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
         {
             public FilterTypeValidator()
             {
-                RuleFor(x => x.RequiredSubType).NotNull();
+                // SetValidator wires the child so SubProperty's rules are actually enforced at runtime
+                // (Issue #211): the operation filter only reflects nested rules when the chain is wired.
+                RuleFor(x => x.RequiredSubType).NotNull().SetValidator(new FilterSubTypeValidator());
+                RuleFor(x => x.OptionalSubType!).SetValidator(new FilterSubTypeValidator());
             }
         }
 
@@ -82,7 +85,8 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
         {
             public DeepRootValidator()
             {
-                RuleFor(x => x.RequiredMiddle).NotNull();
+                RuleFor(x => x.RequiredMiddle).NotNull().SetValidator(new DeepMiddleValidator());
+                RuleFor(x => x.OptionalMiddle!).SetValidator(new DeepMiddleValidator());
             }
         }
 
@@ -90,7 +94,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
         {
             public DeepMiddleValidator()
             {
-                RuleFor(x => x.RequiredLeaf).NotNull();
+                RuleFor(x => x.RequiredLeaf).NotNull().SetValidator(new DeepLeafValidator());
             }
         }
 
@@ -121,7 +125,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
         {
             public FvOnlyRootValidator()
             {
-                RuleFor(x => x.Sub).NotNull();
+                RuleFor(x => x.Sub!).NotNull().SetValidator(new FvOnlySubValidator());
             }
         }
 
