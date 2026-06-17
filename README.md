@@ -330,6 +330,15 @@ The `Email`/`Name` constraints (and `required`) end up on the `CreateUserParams`
 
 MicroElements.Swashbuckle.FluentValidation updates swagger schema for operation parameters bounded to validatable models.
 
+### Nested `[FromQuery]` parameters
+
+When a `[FromQuery]` model has nested objects, ASP.NET Core flattens them into dot-path parameters (e.g. `RequiredSubType.SubProperty`). The validation rules for such a nested parameter are reflected in the OpenAPI document **only when they are actually enforced at runtime**:
+
+- The nested validator must be wired from the **root** validator via `SetValidator`/`ChildRules` (since [7.1.7](https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/issues/211)). FluentValidation never auto-validates a child object just because a validator for it is registered in DI — so an unwired nested validator no longer leaks `required`/length/pattern constraints onto the parameter.
+- A nested parameter is marked `required` only when **every** ancestor segment of the dot-path is required (see [#209](https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/issues/209)).
+
+> **Note:** if there is **no** validator registered for the root `[FromQuery]` type (only a leaf/child validator), the flattened nested parameter is left unconstrained — matching the default runtime, where no validation runs without a root validator. If you instead validate the child manually in the controller (e.g. `new SubValidator().Validate(filter.Child)`), those constraints cannot be detected statically and so are not reflected in the schema — register/wire a validator for the root type if you want them documented.
+
 ## Defining rules dynamically from database
 
 See BlogValidator in sample.
