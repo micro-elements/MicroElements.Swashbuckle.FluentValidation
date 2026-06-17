@@ -131,6 +131,17 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     if (validator == null)
                         continue;
 
+                    // Issue #211: For a flattened nested [FromQuery] parameter (e.g. "RequiredSubType.SubProperty")
+                    // only reflect the nested type's validation when it is actually reachable from the ROOT
+                    // validator via SetValidator/ChildRules. FluentValidation never auto-validates a child object
+                    // from DI, so an unwired nested validator would document constraints (required, MinLength, ...)
+                    // that runtime validation never enforces.
+                    if (operationParameter.Name.IndexOf('.') >= 0
+                        && !IsNestedValidationReachable(operationParameter.Name, context))
+                    {
+                        continue;
+                    }
+
                     OpenApiSchema schema = schemaProvider.GetSchemaForType(parameterType);
 
                     if (schema.Properties != null && schema.Properties.Count > 0)
@@ -248,6 +259,47 @@ namespace MicroElements.Swashbuckle.FluentValidation
                         context.SchemaRepository.Schemas.Remove(schemaId);
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// Issue #211: checks that a flattened nested [FromQuery] parameter's leaf type is actually validated —
+        /// i.e. the SetValidator/ChildRules chain from the root [FromQuery] validator reaches the leaf container.
+        /// If the chain is broken (no SetValidator), the nested rules are not enforced at runtime and must not
+        /// appear in the OpenAPI document.
+        /// </summary>
+        private bool IsNestedValidationReachable(string parameterName, OperationFilterContext context)
+        {
+            try
+            {
+                var segments = parameterName.Split('.');
+
+                // Resolve the root [FromQuery]/[AsParameters] type from the action method by matching the first segment.
+                var rootType = ResolveRootType(segments[0], context.MethodInfo);
+
+                // Cannot resolve the root container (e.g. a synthetic MethodInfo in tests) — preserve prior behavior.
+                if (rootType == null)
+                    return true;
+
+                var rootValidator = _validatorRegistry!.GetValidator(rootType);
+
+                // No validator for the bound [FromQuery] type — runtime validates nothing along this path.
+                if (rootValidator == null)
+                    return false;
+
+                // Ancestors are every segment except the leaf; the leaf's own rules live in its container validator.
+                var ancestorMembers = new string[segments.Length - 1];
+                Array.Copy(segments, ancestorMembers, segments.Length - 1);
+
+                return FluentValidationExtensions.IsNestedValidationWired(rootValidator, ancestorMembers, _schemaGenerationOptions);
+            }
+            catch (Exception e)
+            {
+                // A dynamic SetValidator(ctx => ...) factory may throw when probed with a fake context.
+                // Such a member IS wired, so fall back to prior behavior (reachable) and never let one
+                // problematic validator skip the whole operation's parameters.
+                _logger.LogDebug(e, "Could not determine nested validation reachability for parameter '{ParameterName}'; assuming reachable.", parameterName);
+                return true;
             }
         }
 
