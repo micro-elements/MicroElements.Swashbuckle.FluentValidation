@@ -1,4 +1,4 @@
-# Changes in 7.2.0
+# Changes in 7.1.8-beta.1
 - Added: media type (content type) and file size validation for `IFormFile` uploads (Issue #216)
   - New File-level FluentValidation rules in `MicroElements.OpenApi.FluentValidation` (namespace `MicroElements.OpenApi.FluentValidation.FileUpload`): `.FileContentType(params string[])`, `.MaxFileSize(long)`, `.MinFileSize(long)`, `.FileSizeBetween(long, long)` on `IRuleBuilder<T, IFormFile>`. They both enforce validation at runtime and surface metadata for OpenAPI generation
   - Root cause: rules on nested `IFormFile` members (`RuleFor(x => x.File.Length)` / `RuleFor(x => x.File.ContentType)`) are named `File.Length` / `File.ContentType` and never match the flat schema property `File`, so they were silently dropped; and `Must(...)` is opaque so allowed content types could not be reflected. Use the new File-level rules instead
