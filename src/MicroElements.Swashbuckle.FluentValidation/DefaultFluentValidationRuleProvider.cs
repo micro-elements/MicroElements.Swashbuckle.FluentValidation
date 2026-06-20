@@ -7,6 +7,7 @@ using FluentValidation.Validators;
 using MicroElements.OpenApi;
 using MicroElements.OpenApi.Core;
 using MicroElements.OpenApi.FluentValidation;
+using MicroElements.OpenApi.FluentValidation.FileUpload;
 using Microsoft.Extensions.Options;
 #if !OPENAPI_V2
 using Microsoft.OpenApi.Models;
@@ -156,6 +157,28 @@ namespace MicroElements.Swashbuckle.FluentValidation
                             OpenApiSchemaCompatibility.SetExclusiveMaximum(schemaProperty, true);
                         }
                     }
+                });
+
+            yield return new FluentValidationRule("FileContentType")
+                .WithCondition(validator => validator is IFileContentTypeValidator)
+                .WithApply(context =>
+                {
+                    // Content types are emitted as encoding.contentType by the operation filter (machine-readable).
+                    // Also surface them in the description so the constraint is visible in every UI / backend.
+                    var meta = (IFileContentTypeValidator)context.PropertyValidator;
+                    context.Property.Description = FileUploadDescription.Append(
+                        context.Property.Description, FileUploadDescription.FormatContentTypeNote(meta));
+                });
+
+            yield return new FluentValidationRule("FileSize")
+                .WithCondition(validator => validator is IFileSizeValidator)
+                .WithApply(context =>
+                {
+                    // OpenAPI has no standard byte-size keyword, so the limit is surfaced as a description note.
+                    var meta = (IFileSizeValidator)context.PropertyValidator;
+                    var note = FileUploadDescription.FormatSizeNote(meta);
+                    if (note != null)
+                        context.Property.Description = FileUploadDescription.Append(context.Property.Description, note);
                 });
 
             yield return new FluentValidationRule("Between")
