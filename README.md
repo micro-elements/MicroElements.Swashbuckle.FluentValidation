@@ -224,15 +224,18 @@ Available rules: `.FileContentType(params string[])`, `.MaxFileSize(long)`, `.Mi
 
 Backend support:
 
-| Backend | `encoding.contentType` | size & content types in `description` |
+| Backend | size & content types in `description` | machine-readable `encoding.contentType` |
 |---|---|---|
-| Swashbuckle | ✅ (net8/9 = OpenAPI 3.0; net10 = OpenAPI 3.1) | ✅ |
-| NSwag | ✅ via `FluentValidationOperationProcessor` (serialized as `encodingType` — a known NSwag limitation) | ✅ |
-| Microsoft.AspNetCore.OpenApi | ❌ (out of scope — structural) | ✅ |
+| Swashbuckle | ✅ | ✅ (net8/9 = OpenAPI 3.0; net10 = OpenAPI 3.1) |
+| NSwag | ✅ | ✅ via `FluentValidationOperationProcessor` (serialized as `encodingType` — a known NSwag limitation) |
+| Microsoft.AspNetCore.OpenApi | ✅ | ❌ not emitted (see note) |
+
+The issue scenario — making the generated OpenAPI document reflect the allowed content types and size limit — works on **all three** backends via the file part `description`. Only the extra machine-readable `encoding.contentType` field differs.
 
 Notes:
 - File **size** has no standard OpenAPI/JSON-Schema byte keyword, so it is documented in `description` only (annotation, not enforced by consumers; enforcement stays server-side via FluentValidation).
 - NSwag requires registering the operation processor: `settings.OperationProcessors.Add(serviceProvider.GetService<FluentValidationOperationProcessor>())` (see the NSwag sample).
+- Microsoft.AspNetCore.OpenApi: `encoding.contentType` is not emitted — its `IOpenApiOperationTransformer` does not write the multipart request body, and on net9 the transformer context cannot resolve a `$ref`'d form schema. On net10 the file part is emitted as a `$ref` to a shared `IFormFile` component, so the `description` is shared across all `IFormFile` endpoints (differing per-endpoint content-type rules would accumulate on that one component).
 
 ## Extensibility
 

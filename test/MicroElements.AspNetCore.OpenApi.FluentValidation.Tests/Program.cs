@@ -26,5 +26,6 @@ app.MapGet("/api/filter", ([AsParameters] TestFilterParams filter) => Results.Ok
 app.MapPost("/api/request", (TestRequestWithNested dto) => Results.Ok(dto));
 app.MapPost("/api/collections", (TestCollectionModel model) => Results.Ok(model));
 app.MapPost("/api/password", (TestPasswordModel model) => Results.Ok(model));
+app.MapPost("/api/upload", ([Microsoft.AspNetCore.Mvc.FromForm] UploadImageRequest request) => Results.Ok()).DisableAntiforgery();
 
 app.Run();
