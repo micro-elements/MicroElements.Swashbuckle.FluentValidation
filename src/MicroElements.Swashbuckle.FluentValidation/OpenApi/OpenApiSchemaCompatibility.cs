@@ -32,6 +32,14 @@ namespace MicroElements.OpenApi
         }
 
         /// <summary>
+        /// Checks if schema is a binary string (an uploaded file part: type string, format binary).
+        /// </summary>
+        public static bool IsBinaryFormat(OpenApiSchema schema)
+        {
+            return IsStringType(schema) && schema.Format == "binary";
+        }
+
+        /// <summary>
         /// Checks if schema type is array.
         /// </summary>
         public static bool IsArrayType(OpenApiSchema schema)

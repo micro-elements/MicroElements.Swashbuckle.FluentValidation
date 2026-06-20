@@ -3,9 +3,29 @@
 
 using System.Numerics;
 using FluentValidation;
+using MicroElements.OpenApi.FluentValidation.FileUpload;
+using Microsoft.AspNetCore.Http;
 
 // Marker class for WebApplicationFactory
 public class TestMarker;
+
+// ----- Issue #216: file upload spike model -----
+
+public class UploadImageRequest
+{
+    public IFormFile File { get; set; } = default!;
+}
+
+public class UploadImageRequestValidator : AbstractValidator<UploadImageRequest>
+{
+    public UploadImageRequestValidator()
+    {
+        RuleFor(x => x.File)
+            .NotNull()
+            .FileContentType("image/jpeg", "image/png")
+            .MaxFileSize(2 * 1024 * 1024);
+    }
+}
 
 // ----- Models -----
 

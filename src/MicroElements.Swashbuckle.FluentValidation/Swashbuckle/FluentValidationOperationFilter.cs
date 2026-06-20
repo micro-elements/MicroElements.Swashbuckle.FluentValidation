@@ -5,9 +5,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using FluentValidation;
 using MicroElements.OpenApi;
 using MicroElements.OpenApi.Core;
 using MicroElements.OpenApi.FluentValidation;
+using MicroElements.OpenApi.FluentValidation.FileUpload;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -481,6 +483,53 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     validator: validator,
                     logger: _logger,
                     schemaGenerationContext: schemaContext);
+
+                // Issue #216: emit encoding.contentType for IFormFile parts restricted via .FileContentType(...).
+                // Only multipart/form-data carries per-part media types (application/x-www-form-urlencoded does not).
+                if (string.Equals(contentType.Key, "multipart/form-data", StringComparison.OrdinalIgnoreCase))
+                {
+                    ApplyFileContentTypeEncoding(contentType.Value, resolvedSchema, parameterType, validator, context.SchemaRepository);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Issue #216: writes <c>encoding.&lt;part&gt;.contentType</c> for every binary file part that a
+        /// <c>.FileContentType(...)</c> rule restricts. Part keys are taken verbatim from the rendered schema and
+        /// matched to the rule name-insensitively. Content types reach this method via the SAME filtered rule
+        /// traversal the schema pipeline uses, so a conditional rule is included/excluded consistently.
+        /// </summary>
+        private void ApplyFileContentTypeEncoding(
+            OpenApiMediaType mediaType,
+            OpenApiSchema resolvedSchema,
+            Type parameterType,
+            IValidator validator,
+            SchemaRepository schemaRepository)
+        {
+            if (resolvedSchema.Properties == null || resolvedSchema.Properties.Count == 0)
+                return;
+
+            var contentTypeRules = FileUploadIntrospection
+                .GetFileContentTypeValidators(validator, parameterType, _schemaGenerationOptions)
+                .ToList();
+            if (contentTypeRules.Count == 0)
+                return;
+
+            foreach (var partKey in resolvedSchema.Properties.Keys)
+            {
+                var partSchema = OpenApiSchemaCompatibility.GetProperty(resolvedSchema, partKey, schemaRepository);
+                if (partSchema == null || !OpenApiSchemaCompatibility.IsBinaryFormat(partSchema))
+                    continue;
+
+                var allowed = contentTypeRules
+                    .Where(rule => rule.MemberName.EqualsIgnoreAll(partKey))
+                    .Select(rule => rule.Meta.AllowedContentTypes)
+                    .FirstOrDefault();
+                if (allowed == null || allowed.Count == 0)
+                    continue;
+
+                mediaType.Encoding ??= new Dictionary<string, OpenApiEncoding>();
+                mediaType.Encoding[partKey] = new OpenApiEncoding { ContentType = string.Join(", ", allowed) };
             }
         }
     }

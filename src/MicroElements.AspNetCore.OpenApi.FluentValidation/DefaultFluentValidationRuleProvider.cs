@@ -7,6 +7,7 @@ using FluentValidation.Validators;
 using MicroElements.OpenApi;
 using MicroElements.OpenApi.Core;
 using MicroElements.OpenApi.FluentValidation;
+using MicroElements.OpenApi.FluentValidation.FileUpload;
 using Microsoft.Extensions.Options;
 #if !OPENAPI_V2
 using Microsoft.OpenApi.Models;
@@ -156,6 +157,27 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
                             OpenApiSchemaCompatibility.SetExclusiveMaximum(schemaProperty, true);
                         }
                     }
+                });
+
+            yield return new FluentValidationRule("FileContentType")
+                .WithCondition(validator => validator is IFileContentTypeValidator)
+                .WithApply(context =>
+                {
+                    // Encoding.contentType is out of scope for this backend (the operation transformer cannot
+                    // mutate the multipart request body); surface the allowed types in the description instead.
+                    var meta = (IFileContentTypeValidator)context.PropertyValidator;
+                    context.Property.Description = FileUploadDescription.Append(
+                        context.Property.Description, FileUploadDescription.FormatContentTypeNote(meta));
+                });
+
+            yield return new FluentValidationRule("FileSize")
+                .WithCondition(validator => validator is IFileSizeValidator)
+                .WithApply(context =>
+                {
+                    var meta = (IFileSizeValidator)context.PropertyValidator;
+                    var note = FileUploadDescription.FormatSizeNote(meta);
+                    if (note != null)
+                        context.Property.Description = FileUploadDescription.Append(context.Property.Description, note);
                 });
 
             yield return new FluentValidationRule("Between")

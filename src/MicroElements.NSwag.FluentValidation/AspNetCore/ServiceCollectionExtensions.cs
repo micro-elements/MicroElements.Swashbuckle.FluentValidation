@@ -32,6 +32,9 @@ namespace MicroElements.NSwag.FluentValidation.AspNetCore
             // Add the FluentValidationSchemaProcessor as a scoped service
             services.AddScoped<FluentValidationSchemaProcessor>();
 
+            // Issue #216: Add the FluentValidationOperationProcessor (emits multipart/form-data file content types).
+            services.AddScoped<FluentValidationOperationProcessor>();
+
             // Adds default IValidatorRegistry
             services.TryAdd(new ServiceDescriptor(typeof(IValidatorRegistry), typeof(ServiceProviderValidatorRegistry), registrationOptions.ServiceLifetime));
 

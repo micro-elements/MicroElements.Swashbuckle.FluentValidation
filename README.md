@@ -182,6 +182,61 @@ See sample project: https://github.com/micro-elements/MicroElements.Swashbuckle.
 * IComparisonValidator (GreaterThan, GreaterThanOrEqual, LessThan, LessThanOrEqual)
 * IBetweenValidator (InclusiveBetween, ExclusiveBetween)
 
+## File uploads (media types & size) — Issue #216
+
+Validation rules written on nested `IFormFile` members (e.g. `RuleFor(x => x.File.ContentType)` /
+`RuleFor(x => x.File.Length)`) are **not** reflected in the OpenAPI document: FluentValidation names them
+`File.ContentType` / `File.Length`, which never match the flat `File` schema property, and `Must(...)` carries
+no introspectable metadata. Use the dedicated File-level rules instead:
+
+```csharp
+using MicroElements.OpenApi.FluentValidation.FileUpload;
+
+public class UploadProductImageRequestValidator : AbstractValidator<UploadProductImageRequest>
+{
+    public UploadProductImageRequestValidator()
+    {
+        RuleFor(x => x.File)
+            .NotNull()                                    // required
+            .FileContentType("image/jpeg", "image/png")   // allowed media types
+            .MaxFileSize(2 * 1024 * 1024);                // 2 MB
+    }
+}
+```
+
+These rules enforce the constraints at runtime **and** drive the OpenAPI output:
+
+```yaml
+multipart/form-data:
+  schema:
+    properties:
+      File:
+        type: string
+        format: binary
+        description: "Allowed content types: image/jpeg, image/png. Maximum file size: 2097152 bytes."
+  encoding:
+    File:
+      contentType: "image/jpeg, image/png"
+```
+
+Available rules: `.FileContentType(params string[])`, `.MaxFileSize(long)`, `.MinFileSize(long)`,
+`.FileSizeBetween(long, long)`.
+
+Backend support:
+
+| Backend | size & content types in `description` | machine-readable `encoding.contentType` |
+|---|---|---|
+| Swashbuckle | ✅ | ✅ (net8/9 = OpenAPI 3.0; net10 = OpenAPI 3.1) |
+| NSwag | ✅ | ✅ via `FluentValidationOperationProcessor` (serialized as `encodingType` — a known NSwag limitation) |
+| Microsoft.AspNetCore.OpenApi | ✅ | ❌ not emitted (see note) |
+
+The issue scenario — making the generated OpenAPI document reflect the allowed content types and size limit — works on **all three** backends via the file part `description`. Only the extra machine-readable `encoding.contentType` field differs.
+
+Notes:
+- File **size** has no standard OpenAPI/JSON-Schema byte keyword, so it is documented in `description` only (annotation, not enforced by consumers; enforcement stays server-side via FluentValidation).
+- NSwag requires registering the operation processor: `settings.OperationProcessors.Add(serviceProvider.GetService<FluentValidationOperationProcessor>())` (see the NSwag sample).
+- Microsoft.AspNetCore.OpenApi: `encoding.contentType` is not emitted — its `IOpenApiOperationTransformer` does not write the multipart request body, and on net9 the transformer context cannot resolve a `$ref`'d form schema. On net10 the file part is emitted as a `$ref` to a shared `IFormFile` component, so the `description` is shared across all `IFormFile` endpoints (differing per-endpoint content-type rules would accumulate on that one component).
+
 ## Extensibility
 
 You can register FluentValidationRule in ServiceCollection.
