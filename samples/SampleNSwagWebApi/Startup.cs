@@ -18,10 +18,15 @@ namespace SampleNSwagWebApi
                 
             services.AddOpenApiDocument((settings, serviceProvider) =>
             {
-                var fluentValidationSchemaProcessor = serviceProvider.CreateScope().ServiceProvider.GetService<FluentValidationSchemaProcessor>();
+                var scopedProvider = serviceProvider.CreateScope().ServiceProvider;
 
                 // Add the fluent validations schema processor
+                var fluentValidationSchemaProcessor = scopedProvider.GetService<FluentValidationSchemaProcessor>();
                 settings.SchemaSettings.SchemaProcessors.Add(fluentValidationSchemaProcessor);
+
+                // Issue #216: add the operation processor that emits multipart/form-data file content types
+                var fluentValidationOperationProcessor = scopedProvider.GetService<FluentValidationOperationProcessor>();
+                settings.OperationProcessors.Add(fluentValidationOperationProcessor);
             });
 
             // Register FV validators

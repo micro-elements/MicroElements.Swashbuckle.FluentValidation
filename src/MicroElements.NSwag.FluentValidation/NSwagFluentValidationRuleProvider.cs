@@ -7,6 +7,7 @@ using System.Linq;
 using FluentValidation.Validators;
 using MicroElements.OpenApi.Core;
 using MicroElements.OpenApi.FluentValidation;
+using MicroElements.OpenApi.FluentValidation.FileUpload;
 using Microsoft.Extensions.Options;
 using NJsonSchema;
 using NJsonSchema.Generation;
@@ -236,6 +237,30 @@ namespace MicroElements.NSwag.FluentValidation
                     {
                         var schema = context.Schema.Schema;
                         schema.Properties[context.PropertyKey].Pattern = "^[^@]+@[^@]+$"; // [^@] All chars except @
+                    },
+                },
+                new FluentValidationRule("FileContentType")
+                {
+                    // Content types are also emitted as encoding.contentType by FluentValidationOperationProcessor.
+                    // The description ensures the constraint is visible even where encoding is not consumed.
+                    Matches = propertyValidator => propertyValidator is IFileContentTypeValidator,
+                    Apply = context =>
+                    {
+                        var meta = (IFileContentTypeValidator) context.PropertyValidator;
+                        if (context.Schema.Schema.Properties.TryGetValue(context.PropertyKey, out var property))
+                            property.Description = FileUploadDescription.Append(property.Description, FileUploadDescription.FormatContentTypeNote(meta));
+                    },
+                },
+                new FluentValidationRule("FileSize")
+                {
+                    // OpenAPI has no standard byte-size keyword, so the limit is surfaced as a description note.
+                    Matches = propertyValidator => propertyValidator is IFileSizeValidator,
+                    Apply = context =>
+                    {
+                        var meta = (IFileSizeValidator) context.PropertyValidator;
+                        var note = FileUploadDescription.FormatSizeNote(meta);
+                        if (note != null && context.Schema.Schema.Properties.TryGetValue(context.PropertyKey, out var property))
+                            property.Description = FileUploadDescription.Append(property.Description, note);
                     },
                 },
             };
