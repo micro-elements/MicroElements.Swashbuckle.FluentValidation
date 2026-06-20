@@ -216,7 +216,7 @@ multipart/form-data:
         description: "Allowed content types: image/jpeg, image/png. Maximum file size: 2097152 bytes."
   encoding:
     File:
-      contentType: "image/jpeg,image/png"
+      contentType: "image/jpeg, image/png"
 ```
 
 Available rules: `.FileContentType(params string[])`, `.MaxFileSize(long)`, `.MinFileSize(long)`,

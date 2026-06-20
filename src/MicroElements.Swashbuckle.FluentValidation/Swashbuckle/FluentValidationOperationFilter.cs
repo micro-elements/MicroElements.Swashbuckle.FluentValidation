@@ -529,7 +529,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     continue;
 
                 mediaType.Encoding ??= new Dictionary<string, OpenApiEncoding>();
-                mediaType.Encoding[partKey] = new OpenApiEncoding { ContentType = string.Join(",", allowed) };
+                mediaType.Encoding[partKey] = new OpenApiEncoding { ContentType = string.Join(", ", allowed) };
             }
         }
     }

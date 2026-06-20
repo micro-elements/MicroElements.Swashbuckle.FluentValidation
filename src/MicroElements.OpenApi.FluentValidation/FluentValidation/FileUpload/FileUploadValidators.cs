@@ -85,23 +85,28 @@ namespace MicroElements.OpenApi.FluentValidation.FileUpload
             if (value is null)
                 return true;
 
-            if (MinSizeBytes is { } min && value.Length < min)
-            {
-                context.MessageFormatter.AppendArgument("MinSizeBytes", min);
-                return false;
-            }
+            var tooSmall = MinSizeBytes is { } min && value.Length < min;
+            var tooLarge = MaxSizeBytes is { } max && value.Length > max;
+            if (!tooSmall && !tooLarge)
+                return true;
 
-            if (MaxSizeBytes is { } max && value.Length > max)
-            {
-                context.MessageFormatter.AppendArgument("MaxSizeBytes", max);
-                return false;
-            }
+            // Surface both configured bounds so the (context-aware) message template can render them.
+            if (MinSizeBytes.HasValue)
+                context.MessageFormatter.AppendArgument("MinSizeBytes", MinSizeBytes.Value);
+            if (MaxSizeBytes.HasValue)
+                context.MessageFormatter.AppendArgument("MaxSizeBytes", MaxSizeBytes.Value);
 
-            return true;
+            return false;
         }
 
         /// <inheritdoc />
         protected override string GetDefaultMessageTemplate(string errorCode)
-            => "'{PropertyName}' has an invalid file size.";
+        {
+            if (MinSizeBytes.HasValue && MaxSizeBytes.HasValue)
+                return "'{PropertyName}' must be between {MinSizeBytes} and {MaxSizeBytes} bytes.";
+            if (MaxSizeBytes.HasValue)
+                return "'{PropertyName}' must not exceed {MaxSizeBytes} bytes.";
+            return "'{PropertyName}' must be at least {MinSizeBytes} bytes.";
+        }
     }
 }

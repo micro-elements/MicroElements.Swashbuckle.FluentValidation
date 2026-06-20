@@ -94,7 +94,7 @@ namespace MicroElements.NSwag.FluentValidation.Tests
             mediaType.Encoding.Should().ContainKey("File");
             // NSwag serializes EncodingType as the "encodingType" JSON field (a known NSwag limitation);
             // the value still carries the comma-joined allowed media types.
-            mediaType.Encoding["File"].EncodingType.Should().Be("image/jpeg,image/png");
+            mediaType.Encoding["File"].EncodingType.Should().Be("image/jpeg, image/png");
         }
 
         [Fact]

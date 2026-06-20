@@ -115,6 +115,34 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             fileProperty.Description.Should().BeNullOrEmpty();
         }
 
+        [Fact]
+        public void MinFileSize_Adds_Minimum_Size_Description()
+        {
+            var validator = new InlineValidator<UploadProductImageRequest>();
+            validator.RuleFor(x => x.File).MinFileSize(1024);
+
+            var schemaRepository = new SchemaRepository();
+            var referenceSchema = SchemaGenerator(validator).GenerateSchema(typeof(UploadProductImageRequest), schemaRepository);
+            var schema = schemaRepository.GetSchema(referenceSchema.GetRefId()!);
+            var fileProperty = schema.GetProperty(nameof(UploadProductImageRequest.File))!;
+
+            fileProperty.Description.Should().Contain("Minimum file size: 1024 bytes");
+        }
+
+        [Fact]
+        public void FileSizeBetween_Adds_Range_Description()
+        {
+            var validator = new InlineValidator<UploadProductImageRequest>();
+            validator.RuleFor(x => x.File).FileSizeBetween(1024, 2 * 1024 * 1024);
+
+            var schemaRepository = new SchemaRepository();
+            var referenceSchema = SchemaGenerator(validator).GenerateSchema(typeof(UploadProductImageRequest), schemaRepository);
+            var schema = schemaRepository.GetSchema(referenceSchema.GetRefId()!);
+            var fileProperty = schema.GetProperty(nameof(UploadProductImageRequest.File))!;
+
+            fileProperty.Description.Should().Contain("File size must be between 1024 and 2097152 bytes");
+        }
+
         // --- Operation-level output (encoding.contentType). v1 (Swashbuckle 8/9) object model. ---------------
 #if !OPENAPI_V2
         private static (OpenApiOperation Operation, OperationFilterContext Context, OpenApiMediaType MediaType) BuildMultipartOperation(
@@ -184,7 +212,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             CreateOperationFilter(new UploadProductImageRequestValidator()).Apply(operation, context);
 
             mediaType.Encoding.Should().ContainKey("File");
-            mediaType.Encoding["File"].ContentType.Should().Be("image/jpeg,image/png");
+            mediaType.Encoding["File"].ContentType.Should().Be("image/jpeg, image/png");
         }
 
         [Fact]

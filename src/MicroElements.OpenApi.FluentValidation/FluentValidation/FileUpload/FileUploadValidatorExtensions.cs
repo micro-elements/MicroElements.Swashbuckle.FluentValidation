@@ -93,6 +93,11 @@ namespace MicroElements.OpenApi.FluentValidation.FileUpload
             this IRuleBuilder<T, IFormFile> ruleBuilder,
             long minBytes,
             long maxBytes)
-            => ruleBuilder.SetValidator(new FileSizeValidator<T>(minSizeBytes: minBytes, maxSizeBytes: maxBytes));
+        {
+            if (maxBytes < minBytes)
+                throw new ArgumentException($"maxBytes ({maxBytes}) must be greater than or equal to minBytes ({minBytes}).", nameof(maxBytes));
+
+            return ruleBuilder.SetValidator(new FileSizeValidator<T>(minSizeBytes: minBytes, maxSizeBytes: maxBytes));
+        }
     }
 }

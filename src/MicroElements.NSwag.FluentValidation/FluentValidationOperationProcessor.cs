@@ -110,7 +110,7 @@ namespace MicroElements.NSwag.FluentValidation
                     if (!media.Encoding.TryGetValue(part.Key, out var encoding) || encoding == null)
                         media.Encoding[part.Key] = encoding = new OpenApiEncoding();
 
-                    encoding.EncodingType = string.Join(",", allowed);
+                    encoding.EncodingType = string.Join(", ", allowed);
                 }
             }
         }
