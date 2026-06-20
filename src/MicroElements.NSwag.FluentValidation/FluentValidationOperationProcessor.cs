@@ -100,16 +100,15 @@ namespace MicroElements.NSwag.FluentValidation
                     if (!partSchema.Type.HasFlag(JsonObjectType.String) || partSchema.Format != "binary")
                         continue;
 
-                    var match = contentTypeRules.FirstOrDefault(rule => rule.MemberName.EqualsIgnoreAll(part.Key));
-                    var allowed = match.Meta?.AllowedContentTypes;
+                    var allowed = contentTypeRules
+                        .Where(rule => rule.MemberName.EqualsIgnoreAll(part.Key))
+                        .Select(rule => rule.Meta.AllowedContentTypes)
+                        .FirstOrDefault();
                     if (allowed == null || allowed.Count == 0)
                         continue;
 
                     if (!media.Encoding.TryGetValue(part.Key, out var encoding) || encoding == null)
-                    {
-                        encoding = new OpenApiEncoding();
-                        media.Encoding[part.Key] = encoding;
-                    }
+                        media.Encoding[part.Key] = encoding = new OpenApiEncoding();
 
                     encoding.EncodingType = string.Join(",", allowed);
                 }

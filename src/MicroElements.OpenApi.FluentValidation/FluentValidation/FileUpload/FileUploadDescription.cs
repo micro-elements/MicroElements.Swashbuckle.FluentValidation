@@ -54,7 +54,7 @@ namespace MicroElements.OpenApi.FluentValidation.FileUpload
             if (string.IsNullOrEmpty(existing))
                 return note;
 
-            if (existing!.Contains(note, StringComparison.Ordinal))
+            if (existing.Contains(note, StringComparison.Ordinal))
                 return existing;
 
             return existing + " " + note;

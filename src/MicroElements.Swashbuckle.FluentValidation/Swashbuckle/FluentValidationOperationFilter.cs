@@ -515,14 +515,16 @@ namespace MicroElements.Swashbuckle.FluentValidation
             if (contentTypeRules.Count == 0)
                 return;
 
-            foreach (var partKey in resolvedSchema.Properties.Keys.ToArray())
+            foreach (var partKey in resolvedSchema.Properties.Keys)
             {
                 var partSchema = OpenApiSchemaCompatibility.GetProperty(resolvedSchema, partKey, schemaRepository);
                 if (partSchema == null || !OpenApiSchemaCompatibility.IsBinaryFormat(partSchema))
                     continue;
 
-                var match = contentTypeRules.FirstOrDefault(rule => rule.MemberName.EqualsIgnoreAll(partKey));
-                var allowed = match.Meta?.AllowedContentTypes;
+                var allowed = contentTypeRules
+                    .Where(rule => rule.MemberName.EqualsIgnoreAll(partKey))
+                    .Select(rule => rule.Meta.AllowedContentTypes)
+                    .FirstOrDefault();
                 if (allowed == null || allowed.Count == 0)
                     continue;
 

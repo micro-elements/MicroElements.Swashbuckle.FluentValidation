@@ -20,8 +20,8 @@ namespace MicroElements.OpenApi.FluentValidation.FileUpload
 
     /// <summary>
     /// Implemented by property validators that restrict the size (in bytes) of an uploaded file.
-    /// The OpenAPI layer reads the limits to emit a human-readable description and the
-    /// <c>x-fileSizeBytes</c> vendor extension on the file property (OpenAPI has no standard byte-size keyword).
+    /// The OpenAPI layer reads the limits to emit a human-readable description on the file property
+    /// (OpenAPI has no standard byte-size keyword).
     /// </summary>
     public interface IFileSizeValidator
     {
