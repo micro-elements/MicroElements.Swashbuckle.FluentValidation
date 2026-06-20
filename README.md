@@ -182,6 +182,58 @@ See sample project: https://github.com/micro-elements/MicroElements.Swashbuckle.
 * IComparisonValidator (GreaterThan, GreaterThanOrEqual, LessThan, LessThanOrEqual)
 * IBetweenValidator (InclusiveBetween, ExclusiveBetween)
 
+## File uploads (media types & size) — Issue #216
+
+Validation rules written on nested `IFormFile` members (e.g. `RuleFor(x => x.File.ContentType)` /
+`RuleFor(x => x.File.Length)`) are **not** reflected in the OpenAPI document: FluentValidation names them
+`File.ContentType` / `File.Length`, which never match the flat `File` schema property, and `Must(...)` carries
+no introspectable metadata. Use the dedicated File-level rules instead:
+
+```csharp
+using MicroElements.OpenApi.FluentValidation.FileUpload;
+
+public class UploadProductImageRequestValidator : AbstractValidator<UploadProductImageRequest>
+{
+    public UploadProductImageRequestValidator()
+    {
+        RuleFor(x => x.File)
+            .NotNull()                                    // required
+            .FileContentType("image/jpeg", "image/png")   // allowed media types
+            .MaxFileSize(2 * 1024 * 1024);                // 2 MB
+    }
+}
+```
+
+These rules enforce the constraints at runtime **and** drive the OpenAPI output:
+
+```yaml
+multipart/form-data:
+  schema:
+    properties:
+      File:
+        type: string
+        format: binary
+        description: "Allowed content types: image/jpeg, image/png. Maximum file size: 2097152 bytes."
+  encoding:
+    File:
+      contentType: "image/jpeg,image/png"
+```
+
+Available rules: `.FileContentType(params string[])`, `.MaxFileSize(long)`, `.MinFileSize(long)`,
+`.FileSizeBetween(long, long)`.
+
+Backend support:
+
+| Backend | `encoding.contentType` | size & content types in `description` |
+|---|---|---|
+| Swashbuckle | ✅ (net8/9 = OpenAPI 3.0; net10 = OpenAPI 3.1) | ✅ |
+| NSwag | ✅ via `FluentValidationOperationProcessor` (serialized as `encodingType` — a known NSwag limitation) | ✅ |
+| Microsoft.AspNetCore.OpenApi | ❌ (out of scope — structural) | ✅ |
+
+Notes:
+- File **size** has no standard OpenAPI/JSON-Schema byte keyword, so it is documented in `description` only (annotation, not enforced by consumers; enforcement stays server-side via FluentValidation).
+- NSwag requires registering the operation processor: `settings.OperationProcessors.Add(serviceProvider.GetService<FluentValidationOperationProcessor>())` (see the NSwag sample).
+
 ## Extensibility
 
 You can register FluentValidationRule in ServiceCollection.
