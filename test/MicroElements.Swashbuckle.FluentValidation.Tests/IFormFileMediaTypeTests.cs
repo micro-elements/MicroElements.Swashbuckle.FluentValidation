@@ -143,6 +143,16 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             fileProperty.Description.Should().Contain("File size must be between 1024 and 2097152 bytes");
         }
 
+        [Fact]
+        public void FileSizeBetween_Throws_When_Bounds_Inverted()
+        {
+            var validator = new InlineValidator<UploadProductImageRequest>();
+            System.Action act = () => validator.RuleFor(x => x.File).FileSizeBetween(2 * 1024 * 1024, 1024);
+
+            act.Should().Throw<System.ArgumentException>()
+                .WithMessage("*maxBytes*must be greater than or equal to*minBytes*");
+        }
+
         // --- Operation-level output (encoding.contentType). v1 (Swashbuckle 8/9) object model. ---------------
 #if !OPENAPI_V2
         private static (OpenApiOperation Operation, OperationFilterContext Context, OpenApiMediaType MediaType) BuildMultipartOperation(
