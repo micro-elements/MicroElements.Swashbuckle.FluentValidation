@@ -130,7 +130,9 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
                         continue;
 
                     mediaType.Encoding ??= new Dictionary<string, OpenApiEncoding>();
-                    mediaType.Encoding[partKey] = new OpenApiEncoding { ContentType = string.Join(", ", allowed) };
+                    if (!mediaType.Encoding.TryGetValue(partKey, out var encoding) || encoding == null)
+                        mediaType.Encoding[partKey] = encoding = new OpenApiEncoding();
+                    encoding.ContentType = string.Join(", ", allowed);
                 }
             }
         }

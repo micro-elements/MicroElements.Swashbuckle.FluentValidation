@@ -28,10 +28,11 @@ public class Issue216SpikeTests : IClassFixture<AspNetCoreOpenApiTests.TestWebAp
         response.EnsureSuccessStatusCode();
         var json = await response.Content.ReadAsStringAsync();
 
-        var doc = JsonDocument.Parse(json);
+        // Clone so the returned element does not depend on the disposed JsonDocument's pooled buffer.
+        using var doc = JsonDocument.Parse(json);
         return doc.RootElement.GetProperty("paths").GetProperty("/api/upload")
             .GetProperty("post").GetProperty("requestBody")
-            .GetProperty("content").GetProperty("multipart/form-data");
+            .GetProperty("content").GetProperty("multipart/form-data").Clone();
     }
 
     [Fact]
@@ -54,8 +55,10 @@ public class Issue216SpikeTests : IClassFixture<AspNetCoreOpenApiTests.TestWebAp
         multipart.TryGetProperty("encoding", out var encoding)
             .Should().BeTrue("the multipart media type should carry an encoding object for the file part");
 
-        // One file part; its encoding.contentType lists the allowed media types (comma-joined, spec-style).
-        var fileEncoding = encoding.EnumerateObject().Select(property => property.Value).First();
+        // The "File" part's encoding.contentType lists the allowed media types (comma-joined, spec-style).
+        var fileEncoding = encoding.EnumerateObject()
+            .First(property => property.Name.Equals("File", StringComparison.OrdinalIgnoreCase))
+            .Value;
         fileEncoding.GetProperty("contentType").GetString().Should().Be("image/jpeg, image/png");
     }
 }
