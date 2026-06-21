@@ -11,6 +11,7 @@ using FluentValidation;
 using MicroElements.OpenApi;
 using MicroElements.OpenApi.Core;
 using MicroElements.OpenApi.FluentValidation;
+using MicroElements.OpenApi.FluentValidation.FileUpload;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.Extensions.Logging;
@@ -68,6 +69,9 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
                 {
                     ApplyRulesToParameters(operation, context);
                 }
+
+                // Issue #216: emit multipart/form-data encoding.contentType for IFormFile parts.
+                ApplyRulesToRequestBody(operation, context);
             }
             catch (Exception e)
             {
@@ -75,6 +79,90 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
             }
 
             return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Issue #216: writes <c>encoding.&lt;part&gt;.contentType</c> for IFormFile parts restricted via
+        /// <c>.FileContentType(...)</c>. The part key is taken verbatim from the multipart schema and matched to the
+        /// rule name-insensitively, so it works whether the part schema is inline (net9) or a <c>$ref</c> (net10) —
+        /// only the property key is needed, never the resolved part schema.
+        /// </summary>
+        private void ApplyRulesToRequestBody(OpenApiOperation operation, OpenApiOperationTransformerContext context)
+        {
+#if OPENAPI_V2
+            var requestBody = operation.RequestBody as OpenApiRequestBody;
+#else
+            var requestBody = operation.RequestBody;
+#endif
+            if (requestBody?.Content == null)
+                return;
+
+            if (!requestBody.Content.TryGetValue("multipart/form-data", out var mediaType) || mediaType == null)
+                return;
+
+            var partKeys = GetFormPartKeys(mediaType.Schema, context);
+            if (partKeys.Count == 0)
+                return;
+
+            var methodInfo = GetMethodInfo(context.Description);
+            if (methodInfo == null)
+                return;
+
+            foreach (var parameter in methodInfo.GetParameters())
+            {
+                var validator = _validatorRegistry.GetValidator(parameter.ParameterType);
+                if (validator == null)
+                    continue;
+
+                var contentTypeRules = FileUploadIntrospection
+                    .GetFileContentTypeValidators(validator, parameter.ParameterType, _schemaGenerationOptions)
+                    .ToList();
+                if (contentTypeRules.Count == 0)
+                    continue;
+
+                foreach (var partKey in partKeys)
+                {
+                    var allowed = contentTypeRules
+                        .Where(rule => rule.MemberName.EqualsIgnoreAll(partKey))
+                        .Select(rule => rule.Meta.AllowedContentTypes)
+                        .FirstOrDefault();
+                    if (allowed == null || allowed.Count == 0)
+                        continue;
+
+                    mediaType.Encoding ??= new Dictionary<string, OpenApiEncoding>();
+                    mediaType.Encoding[partKey] = new OpenApiEncoding { ContentType = string.Join(", ", allowed) };
+                }
+            }
+        }
+
+        /// <summary>
+        /// Resolves the multipart form part names. The form schema is inline on net9 (and for some net10 endpoints),
+        /// but on net10 the whole body is often a <c>$ref</c> to a component whose <c>Target</c> is not yet resolved
+        /// when the operation transformer runs — so resolve that component from the document's registered schemas.
+        /// </summary>
+        private static IReadOnlyCollection<string> GetFormPartKeys(
+#if OPENAPI_V2
+            IOpenApiSchema? schema,
+#else
+            OpenApiSchema? schema,
+#endif
+            OpenApiOperationTransformerContext context)
+        {
+            if (schema?.Properties is { Count: > 0 })
+                return schema.Properties.Keys.ToList();
+
+#if OPENAPI_V2
+            if (schema is OpenApiSchemaReference schemaRef
+                && schemaRef.Reference?.Id is { } refId
+                && context.Document?.Components?.Schemas is { } componentSchemas
+                && componentSchemas.TryGetValue(refId, out var component)
+                && component.Properties is { Count: > 0 })
+            {
+                return component.Properties.Keys.ToList();
+            }
+#endif
+
+            return Array.Empty<string>();
         }
 
         private void ApplyRulesToParameters(OpenApiOperation operation, OpenApiOperationTransformerContext context)
