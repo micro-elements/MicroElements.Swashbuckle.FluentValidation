@@ -1,3 +1,7 @@
+# Changes in 7.1.8
+- Security (Issue #220): closed a transitive high-severity advisory in the published package. `Swashbuckle.AspNetCore.SwaggerGen` on the net10.0 target was bumped `10.0.0` → `10.2.1`, which resolves `Microsoft.OpenApi` to the patched `2.7.5` (was `2.3.0`). This clears **GHSA-v5pm-xwqc-g5wc / CVE-2026-49451** (CWE-674 uncontrolled recursion — a circular `$ref` schema could stack-overflow the OpenAPI reader). The net8.0/net9.0 targets use Swashbuckle 8.1.1 → Microsoft.OpenApi v1 and were never in the advisory range
+- Media type & file size validation for `IFormFile` uploads (Issue #216): stable rollup of everything in `7.1.8-beta.1` and `7.1.8-beta.2` below (new File-level rules `.FileContentType()`, `.MaxFileSize()`, `.MinFileSize()`, `.FileSizeBetween()`; Swashbuckle / NSwag / Microsoft.AspNetCore.OpenApi emit multipart `encoding.contentType` and description annotations)
+
 # Changes in 7.1.8-beta.2
 - All of `7.1.8-beta.1` below, plus: **Microsoft.AspNetCore.OpenApi** now also emits `encoding.contentType` for the file part (Issue #216) — the `FluentValidationOperationTransformer` writes `requestBody.content["multipart/form-data"].encoding.<part>.contentType` so UIs like Scalar/Swagger UI can show the accepted media types, not just the description. Works on net9.0 (inline form schema) and net10.0 (resolves the whole-body `$ref` component to find the part name)
 

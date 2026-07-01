@@ -18,7 +18,8 @@
   <Import Project="..\common.props" />
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
-    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="10.0.0" />
+    <!-- 10.2.1 pulls patched Microsoft.OpenApi >= 2.7.5 (GHSA-v5pm-xwqc-g5wc / CVE-2026-49451). See issue #220. -->
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="10.2.1" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net8.0' Or '$(TargetFramework)' == 'net9.0'">
