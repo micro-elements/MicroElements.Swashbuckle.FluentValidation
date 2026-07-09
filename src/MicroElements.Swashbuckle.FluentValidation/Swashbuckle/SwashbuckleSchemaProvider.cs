@@ -66,6 +66,25 @@ namespace MicroElements.Swashbuckle.FluentValidation
             }
 #endif
 
+            // Issue #223: when the same [FromQuery] DTO is shared by several endpoints, the per-operation
+            // Issue #180 cleanup removes the container schema from SchemaRepository.Schemas, but Swashbuckle
+            // still keeps the type in its internal reserved-ids map. For the 2nd+ endpoint, GenerateSchema then
+            // returns a bare $ref (no Properties) and the schema is no longer in Schemas, so the rules would be
+            // skipped. Recover the concrete schema by generating it into a throwaway repository — this is fully
+            // isolated: it never touches the shared repository or its reserved-id state.
+            if ((schema.Properties == null || schema.Properties.Count == 0) &&
+                !_schemaRepository.Schemas.ContainsKey(schemaId))
+            {
+                var throwawayRepository = new SchemaRepository();
+                _schemaGenerator.GenerateSchema(type, throwawayRepository);
+                if (throwawayRepository.Schemas.TryGetValue(schemaId, out var concrete)
+                    && concrete is OpenApiSchema concreteSchema
+                    && concreteSchema.Properties is { Count: > 0 })
+                {
+                    schema = concreteSchema;
+                }
+            }
+
             return schema;
         }
 
