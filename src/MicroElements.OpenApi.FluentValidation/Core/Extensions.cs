@@ -16,7 +16,15 @@ namespace MicroElements.OpenApi.Core
         /// <summary>
         /// Is supported swagger numeric type.
         /// </summary>
-        internal static bool IsNumeric(this object value) => value is int || value is long || value is float || value is double || value is decimal || value is BigInteger;
+        /// <remarks>
+        /// Issue #222: all integer primitives must be recognized. `short`/`byte`/`ushort`/`uint`/`ulong`/`sbyte`
+        /// bounds (e.g. from <c>InclusiveBetween((short)1, (short)99)</c>) were dropped because they were absent
+        /// here, so <c>minimum</c>/<c>maximum</c> were never emitted. <see cref="NumericToDecimal"/> already
+        /// converts them all via <see cref="Convert.ToDecimal(object)"/>.
+        /// </remarks>
+        internal static bool IsNumeric(this object value) =>
+            value is sbyte or byte or short or ushort or int or uint or long or ulong
+                or float or double or decimal or BigInteger;
 
         /// <summary>
         /// Convert numeric to decimal.
