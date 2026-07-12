@@ -394,6 +394,27 @@ When a `[FromQuery]` model has nested objects, ASP.NET Core flattens them into d
 
 > **Note:** if there is **no** validator registered for the root `[FromQuery]` type (only a leaf/child validator), the flattened nested parameter is left unconstrained — matching the default runtime, where no validation runs without a root validator. If you instead validate the child manually in the controller (e.g. `new SubValidator().Validate(filter.Child)`), those constraints cannot be detected statically and so are not reflected in the schema — register/wire a validator for the root type if you want them documented.
 
+## Document filter pipeline (`UseDocumentFilter`)
+
+Since 7.2.0 the library offers a supported alternative pipeline: a single document filter instead of the default schema + operation filters.
+
+```csharp
+services.AddFluentValidationRulesToSwagger(
+    configureRegistration: options => options.UseDocumentFilter = true);
+```
+
+The document filter processes the **whole document at once** — component schemas, operation parameters (including required-marking, [#209](https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/issues/209)), request bodies and `encoding.contentType` ([#216](https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/issues/216)) — and performs the unused-query-schema cleanup **once at the end**.
+
+Why opt in: the default pipeline runs per operation, so a DTO shared between several endpoints (or between `[FromQuery]` and `[FromBody]` bindings) used to hit per-operation state bugs ([#223](https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/issues/223), [#226](https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/issues/226)); those were fixed, but the net8.0/net9.0 targets keep a narrower guarantee (the healing API only exists in Swashbuckle 10+). Under the document filter this class of issue **cannot occur, on any target framework**.
+
+Caveats:
+
+- The default pipeline is unchanged — `UseDocumentFilter` is opt-in. A future major version may make it the default.
+- On net10.0 the cleanup also clears Swashbuckle's internal reserved-ids for the container types it processed; transitively registered child schemas are not covered. On net8.0/net9.0, a custom `IDocumentFilter` registered **after** this one that regenerates a removed `[FromQuery]` container type may still observe a reserved-but-removed schema state.
+- `ExperimentalUseDocumentFilter` still works as an obsolete alias and forwards to `UseDocumentFilter`.
+
+The `samples/MinimalApi` sample runs on this pipeline.
+
 ## Defining rules dynamically from database
 
 See BlogValidator in sample.

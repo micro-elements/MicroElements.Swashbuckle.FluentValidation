@@ -129,7 +129,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
         }
 #endif
 
-// OPENAPI_V2 (net10.0) port of the same scenario — ADR-006 Phase 1: the net10.0 target where the
+// OPENAPI_V2 (net10.0) port of the same scenario — the net10.0 target where the
 // state-healing cleanup (Issue #226) lives previously had no shared-DTO coverage at all.
 #if OPENAPI_V2
         [Fact]
