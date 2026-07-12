@@ -1,3 +1,13 @@
+# Changes in 7.2.0
+- Added: the document-filter pipeline is promoted from experimental to a **supported opt-in** (`RegistrationOptions.UseDocumentFilter`, default `false`; ADR-007). The document filter processes the whole document at once and performs the unused-query-schema cleanup once at the end, so per-operation shared-DTO state issues (#223/#226) cannot occur in this pipeline — **on all target frameworks**, including net8.0/net9.0 where the 7.1.11 healing API is unavailable
+  - Full functional parity with the default schema + operation filter pipeline: required-marking with the whole-dot-path check (#209), request bodies and `encoding.contentType` for `[FromForm]` (#216), multi-validator support, `allOf`/`oneOf`/`anyOf` traversal, `$ref` preservation for unmodified properties (#198, net10.0), and every operation of a multi-verb path is now processed (previously only the first)
+  - The #209 and #216 logic is extracted into internal components shared by both pipelines, so they cannot drift apart
+  - Robustness: the filter no longer fails the whole document generation on a throwing validator (top-level try/catch), falls back to `ServiceProviderValidatorRegistry` like the sibling filters, honors an injected `IFluentValidationRuleProvider` (new optional constructor parameter, appended last — source-compatible), and had its dead code, logging and nullability issues cleaned up
+  - On net10.0 the cleanup also heals Swashbuckle's reserved-ids for processed container types (`SchemaRepository.ReplaceSchemaId`), so custom document filters running afterwards can regenerate them
+  - `ExperimentalUseDocumentFilter` still works as an `[Obsolete]` alias forwarding to `UseDocumentFilter`
+  - The default pipeline is unchanged; a future major version may switch the default
+  - `samples/MinimalApi` now runs on the document-filter pipeline; README documents the option and its caveats
+
 # Changes in 7.1.11
 - Fixed: a DTO shared between a flattened `[FromQuery]`/`[AsParameters]` binding and a request body (`[FromBody]`/`[FromForm]`) in the same document could lose its FluentValidation rules, and the emitted document could contain a `$ref` to a removed component (Issue #226, ADR-006). net10.0 target only
   - Root cause: the Issue #180 cleanup left the container type "reserved-but-removed" in Swashbuckle's `SchemaRepository` (component removed, internal reserved-id kept). The 7.1.10 fix (#223) recovered the schema for *reading* constraint values, but a later `[FromBody]`/`[FromForm]` operation binding the same type made Swashbuckle emit a `$ref` to a component that no longer exists (confirmed empirically), and rules applied on the recovered throwaway instance never reached the document

@@ -160,7 +160,11 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 schemaGenerationContext: schemaGenerationContext);
         }
 
-        private void ProcessAllSchemas(OpenApiSchema schema, List<OpenApiSchema> schemas)
+        /// <summary>
+        /// Collects the schema itself plus embedded allOf/oneOf/anyOf schemas that have properties.
+        /// Shared with <see cref="FluentValidationDocumentFilter"/> (ADR-007 parity).
+        /// </summary>
+        internal static void ProcessAllSchemas(OpenApiSchema schema, List<OpenApiSchema> schemas)
         {
             schemas.Add(schema);
 

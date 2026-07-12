@@ -117,7 +117,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             if (_documentFilter == null)
             {
                 var logger = serviceProvider.GetService<ILoggerFactory>()?.CreateLogger(GetType());
-                logger?.LogWarning($"{nameof(TDocumentFilter)} should be registered in services. Hint: Use registration method '{nameof(ServiceCollectionExtensions.AddFluentValidationRulesToSwagger)}'");
+                logger?.LogWarning($"{typeof(TDocumentFilter).Name} should be registered in services. Hint: Use registration method '{nameof(ServiceCollectionExtensions.AddFluentValidationRulesToSwagger)}'");
             }
 
             // Last chance to create filter

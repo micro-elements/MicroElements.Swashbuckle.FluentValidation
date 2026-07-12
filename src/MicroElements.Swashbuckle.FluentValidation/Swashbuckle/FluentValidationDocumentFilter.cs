@@ -1,4 +1,4 @@
-﻿// Copyright (c) MicroElements. All rights reserved.
+// Copyright (c) MicroElements. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -20,17 +20,33 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 namespace MicroElements.Swashbuckle.FluentValidation
 {
     /// <summary>
-    /// Experimental document filter.
+    /// Document filter that applies FluentValidation rules for the whole document at once:
+    /// component schemas, operation parameters (including required-marking, Issue #209) and
+    /// request bodies (Issue #216), with the Issue #180 schema cleanup performed once at the
+    /// end of the document — so per-operation shared-DTO state issues (Issue #223/#226)
+    /// cannot occur in this pipeline. Enabled via <c>RegistrationOptions.UseDocumentFilter</c>.
     /// </summary>
     public class FluentValidationDocumentFilter : IDocumentFilter
     {
         private readonly ILogger _logger;
 
-        private readonly IValidatorRegistry? _validatorRegistry;
+        private readonly IValidatorRegistry _validatorRegistry;
 
         private readonly IReadOnlyList<IFluentValidationRule<OpenApiSchema>> _rules;
         private readonly SchemaGenerationOptions _schemaGenerationOptions;
+        private readonly ParameterRequiredResolver _requiredResolver;
+        private readonly RequestBodyRuleApplicator _requestBodyApplicator;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FluentValidationDocumentFilter"/> class.
+        /// </summary>
+        /// <param name="loggerFactory"><see cref="ILoggerFactory"/> for logging. Can be null.</param>
+        /// <param name="serviceProvider">Validator factory.</param>
+        /// <param name="validatorRegistry">Gets validators for a particular type.</param>
+        /// <param name="rules">External FluentValidation rules. External rule overrides default rule with the same name.</param>
+        /// <param name="schemaGenerationOptions">Schema generation options.</param>
+        /// <param name="nameResolver">Name resolver.</param>
+        /// <param name="fluentValidationRuleProvider">Rules provider. Appended last to keep positional call sites source-compatible (ADR-007).</param>
         public FluentValidationDocumentFilter(
             /* System services */
             ILoggerFactory? loggerFactory = null,
@@ -40,40 +56,73 @@ namespace MicroElements.Swashbuckle.FluentValidation
             IValidatorRegistry? validatorRegistry = null,
             IEnumerable<FluentValidationRule>? rules = null,
             IOptions<SchemaGenerationOptions>? schemaGenerationOptions = null,
-            INameResolver? nameResolver = null)
+            INameResolver? nameResolver = null,
+            IFluentValidationRuleProvider<OpenApiSchema>? fluentValidationRuleProvider = null)
         {
             // System services
-            _logger = loggerFactory?.CreateLogger(typeof(FluentValidationRules)) ?? NullLogger.Instance;
-
-            _logger.LogDebug("FluentValidationRules Created");
+            _logger = loggerFactory?.CreateLogger(typeof(FluentValidationDocumentFilter)) ?? NullLogger.Instance;
 
             // FluentValidation services
-            _validatorRegistry = validatorRegistry;
+            _validatorRegistry = validatorRegistry ?? new ServiceProviderValidatorRegistry(
+                serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider)),
+                schemaGenerationOptions);
 
             // MicroElements services
-            _rules = new DefaultFluentValidationRuleProvider(schemaGenerationOptions).GetRules().ToArray().OverrideRules(rules);
+            fluentValidationRuleProvider ??= new DefaultFluentValidationRuleProvider(schemaGenerationOptions);
+            _rules = fluentValidationRuleProvider.GetRules().ToArray().OverrideRules(rules);
             _schemaGenerationOptions = schemaGenerationOptions?.Value ?? new SchemaGenerationOptions();
+
+            // ADR-007: #209 and #216 logic is shared with FluentValidationOperationFilter so the pipelines cannot drift.
+            _requiredResolver = new ParameterRequiredResolver(_logger, _validatorRegistry, _rules, _schemaGenerationOptions);
+            _requestBodyApplicator = new RequestBodyRuleApplicator(_logger, _validatorRegistry, _rules, _schemaGenerationOptions);
+
+            _logger.LogDebug("FluentValidationDocumentFilter Created");
         }
 
-        record SchemaItem
+        private sealed record SchemaItem
         {
-            public Type ModelType { get; init; }
-            public string SchemaName { get; init; }
-            public OpenApiSchema Schema { get; init; }
+            public required Type ModelType { get; init; }
+
+            public required string SchemaName { get; init; }
+
+            public required OpenApiSchema Schema { get; init; }
         }
 
-        record ParameterItem
+        private sealed record ParameterItem
         {
-            public ApiDescription ApiDescription { get; init; }
-            public ApiParameterDescription ParameterDescription { get; init; }
-            public Type ModelType { get; init; }
-            public string SchemaName { get; init; }
-            public OpenApiSchema Schema { get; init; }
-            public OpenApiSchema ParameterSchema { get; init; }
+            public required ApiDescription ApiDescription { get; init; }
+
+            public required ApiParameterDescription ParameterDescription { get; init; }
+
+            public required Type ModelType { get; init; }
+
+            public required string SchemaName { get; init; }
+
+            public required OpenApiSchema Schema { get; init; }
+
+#if OPENAPI_V2
+            public IOpenApiParameter? Parameter { get; init; }
+#else
+            public OpenApiParameter? Parameter { get; init; }
+#endif
+
+            public OpenApiSchema? ParameterSchema { get; init; }
         }
 
         /// <inheritdoc />
         public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
+        {
+            try
+            {
+                ApplyInternal(swaggerDoc, context);
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning(0, e, "Error on apply FluentValidation rules to the document.");
+            }
+        }
+
+        private void ApplyInternal(OpenApiDocument swaggerDoc, DocumentFilterContext context)
         {
             var schemaRepositorySchemas = context.SchemaRepository.Schemas;
             var schemaIdSelector = _schemaGenerationOptions.SchemaIdSelector;
@@ -105,18 +154,58 @@ namespace MicroElements.Swashbuckle.FluentValidation
             var schemasForTypes = modelTypes
                 .Concat(containerTypes)
                 .Distinct()
-                .Select(modelType => new SchemaItem { ModelType = modelType })
-                .Select(item => item with { SchemaName = schemaIdSelector.Invoke(item.ModelType) })
-                .Select(item => item with { Schema = schemaProvider.GetSchemaForType(item.ModelType) })
+                .Select(modelType => new SchemaItem
+                {
+                    ModelType = modelType!,
+                    SchemaName = schemaIdSelector.Invoke(modelType!),
+                    Schema = schemaProvider.GetSchemaForType(modelType!),
+                })
                 .ToArray();
 
-            var schemasForParameters = apiDescriptions
-                .SelectMany(description => description.ParameterDescriptions)
-                .Where(description => description.ModelMetadata.ContainerType != null)
-                .Select(description => new ParameterItem { ParameterDescription = description, ModelType = description.ModelMetadata.ContainerType })
-                .Select(item => item with { SchemaName = schemaIdSelector.Invoke(item.ModelType) })
-                .Select(item => item with { Schema = schemaProvider.GetSchemaForType(item.ModelType) })
-                .ToArray();
+            // Maps an ApiDescription to ITS operation (path + HTTP method), so multi-verb paths
+            // are fully processed (each ApiDescription is one operation).
+#if OPENAPI_V2
+            OpenApiOperation? FindOperation(ApiDescription apiDescription)
+            {
+                var path = swaggerDoc.Paths.FirstOrDefault(pair => pair.Key.TrimStart('/') == apiDescription.RelativePath);
+                if (path.Value?.Operations is not { } operations)
+                    return null;
+
+                if (apiDescription.HttpMethod is { } httpMethod
+                    && operations.TryGetValue(new System.Net.Http.HttpMethod(httpMethod), out var operation))
+                {
+                    return operation as OpenApiOperation;
+                }
+
+                return operations.Values.FirstOrDefault() as OpenApiOperation;
+            }
+#else
+            OpenApiOperation? FindOperation(ApiDescription apiDescription)
+            {
+                var path = swaggerDoc.Paths.FirstOrDefault(pair => pair.Key.TrimStart('/') == apiDescription.RelativePath);
+                if (path.Value?.Operations is not { } operations)
+                    return null;
+
+                if (apiDescription.HttpMethod is { } httpMethod
+                    && Enum.TryParse<OperationType>(httpMethod, ignoreCase: true, out var operationType)
+                    && operations.TryGetValue(operationType, out var operation))
+                {
+                    return operation;
+                }
+
+                return operations.Values.FirstOrDefault();
+            }
+#endif
+
+#if OPENAPI_V2
+            IOpenApiParameter? FindParameter(ApiDescription apiDescription, ApiParameterDescription parameterDescription)
+#else
+            OpenApiParameter? FindParameter(ApiDescription apiDescription, ApiParameterDescription parameterDescription)
+#endif
+            {
+                var operation = FindOperation(apiDescription);
+                return operation?.Parameters?.FirstOrDefault(parameter => parameter.Name == parameterDescription.Name);
+            }
 
             IEnumerable<ParameterItem> GetParameters()
             {
@@ -129,81 +218,90 @@ namespace MicroElements.Swashbuckle.FluentValidation
                                 apiParameterDescription.Name, AsParametersHelper.GetMethodInfo(apiDescription));
                         if (containerType != null)
                         {
-                            var parameterItem = new ParameterItem
+                            var parameter = FindParameter(apiDescription, apiParameterDescription);
+#if OPENAPI_V2
+                            // Explicit cast-guard pattern (ADR-007): $ref-typed parameter schemas are skipped
+                            // gracefully, matching the operation filter's behavior.
+                            var parameterSchema = parameter?.Schema is OpenApiSchema concreteSchema ? concreteSchema : null;
+#else
+                            var parameterSchema = parameter?.Schema;
+#endif
+
+                            yield return new ParameterItem
                             {
                                 ApiDescription = apiDescription,
                                 ParameterDescription = apiParameterDescription,
                                 ModelType = containerType,
                                 SchemaName = schemaIdSelector.Invoke(containerType),
                                 Schema = schemaProvider.GetSchemaForType(containerType),
+                                Parameter = parameter,
+                                ParameterSchema = parameterSchema,
                             };
-
-                            var parameterSchema = FindParam(parameterItem);
-                            parameterItem = parameterItem with { ParameterSchema = parameterSchema };
-
-                            yield return parameterItem;
                         }
                     }
                 }
             }
 
-            schemasForParameters = GetParameters().ToArray();
+            var schemasForParameters = GetParameters().ToArray();
 
-            OpenApiSchema? FindParam(ParameterItem item)
-            {
-                //return many?
-                var path = swaggerDoc.Paths.FirstOrDefault(pair => pair.Key.TrimStart('/') == item.ApiDescription?.RelativePath);
-                var openApiParameter = path.Value?.Operations?.Values?.FirstOrDefault()?.Parameters?.FirstOrDefault(parameter => parameter.Name == item.ParameterDescription?.Name);
-#if OPENAPI_V2
-                return openApiParameter?.Schema as OpenApiSchema;
-#else
-                return openApiParameter?.Schema;
-#endif
-            }
-
+            // 1) Apply rules to component schemas — the document-filter counterpart of the
+            // FluentValidationRules schema filter (multi-validator, allOf/oneOf/anyOf, #198 refs).
             foreach (var item in schemasForTypes)
             {
-                IValidator? validator = null;
-                try
-                {
-                    validator = _validatorRegistry.GetValidator(item.ModelType);
-                }
-                catch (Exception e)
-                {
-                    _logger.LogWarning(0, e, $"GetValidator for type '{item.ModelType}' fails.");
-                }
+                var (validators, _) = Functional
+                    .Try(() => _validatorRegistry.GetValidators(item.ModelType).ToArray())
+                    .OnError(e => _logger.LogWarning(0, e, "GetValidators for type '{ModelType}' failed", item.ModelType));
 
-                if (validator == null)
+                if (validators == null || validators.Length == 0)
                     continue;
 
                 var typeContext = new TypeContext(item.ModelType, _schemaGenerationOptions);
-                ValidatorContext validatorContext = new ValidatorContext(typeContext, validator);
 
-                var schemaContext = new SchemaGenerationContext(
-                    schemaRepository: context.SchemaRepository,
-                    schemaGenerator: context.SchemaGenerator,
-                    schema: item.Schema,
-                    schemaType: item.ModelType,
-                    rules: _rules,
-                    schemaGenerationOptions: _schemaGenerationOptions);
+                var allSchemas = new List<OpenApiSchema>();
+                FluentValidationRules.ProcessAllSchemas(item.Schema, allSchemas);
 
-                ApplyRulesToSchema(schemaContext, validator);
-
-                try
+                foreach (var validator in validators)
                 {
-                    AddRulesFromIncludedValidators(schemaContext, validatorContext);
-                }
-                catch (Exception e)
-                {
-                    //TODO: functional
-                    _logger.LogWarning(0, e, $"Applying IncludeRules for type '{item.ModelType}' fails.");
+                    foreach (var schemaToProcess in allSchemas)
+                    {
+#if OPENAPI_V2
+                        // Issue #198: Snapshot $ref properties before rule application (see FluentValidationRules).
+                        var refSnapshot = OpenApiSchemaCompatibility.SnapshotRefs(schemaToProcess);
+#endif
+
+                        var validatorContext = new ValidatorContext(typeContext, validator);
+                        var schemaContext = new SchemaGenerationContext(
+                            schemaRepository: context.SchemaRepository,
+                            schemaGenerator: context.SchemaGenerator,
+                            schema: schemaToProcess,
+                            schemaType: item.ModelType,
+                            rules: _rules,
+                            schemaGenerationOptions: _schemaGenerationOptions);
+
+                        ApplyRulesToSchema(schemaContext, validator);
+
+                        try
+                        {
+                            AddRulesFromIncludedValidators(schemaContext, validatorContext);
+                        }
+                        catch (Exception e)
+                        {
+                            _logger.LogWarning(0, e, $"Applying IncludeRules for type '{item.ModelType}' fails.");
+                        }
+
+#if OPENAPI_V2
+                        // Issue #198: Restore $refs for properties that were not meaningfully modified by rules.
+                        OpenApiSchemaCompatibility.RestoreUnmodifiedRefs(schemaToProcess, refSnapshot, context.SchemaRepository);
+#endif
+                    }
                 }
             }
 
+            // 2) Copy constraints to operation parameters and mark them required (Issue #209).
             foreach (var item in schemasForParameters)
             {
                 var itemParameterDescription = item.ParameterDescription;
-                var fullParameterName = itemParameterDescription?.ModelMetadata?.BinderModelName ?? itemParameterDescription?.Name;
+                var fullParameterName = itemParameterDescription.ModelMetadata?.BinderModelName ?? itemParameterDescription.Name;
 
                 // Issue #211/#213: For a flattened nested [FromQuery] parameter only copy the nested type's
                 // value constraints when the SetValidator/ChildRules chain from the ROOT validator actually
@@ -224,9 +322,40 @@ namespace MicroElements.Swashbuckle.FluentValidation
                         schemaPropertyName = schemaPropertyName.Substring(dotIndex + 1);
                 }
 
-                var parameterSchema = item.ParameterSchema;
                 var schema = item.Schema;
-                if (schema != null && parameterSchema != null && schemaPropertyName != null)
+
+                if (schemaPropertyName == null || schema.Properties == null || schema.Properties.Count == 0)
+                    continue;
+
+                // Resolve the schema property key (handles camelCase / PascalCase differences).
+                var resolvedName = OpenApiSchemaCompatibility.GetProperties(schema)
+                    .Select(property => property.Key)
+                    .FirstOrDefault(key => key.EqualsIgnoreAll(schemaPropertyName)) ?? schemaPropertyName;
+
+                // Issue #209: a required leaf is only a required parameter when the WHOLE dot-path is required.
+                // Required is set on the PARAMETER, independent of the schema cast guard below (a $ref-typed
+                // parameter schema must not suppress required-marking — matching the operation filter).
+                if (fullParameterName != null
+                    && OpenApiSchemaCompatibility.RequiredContains(schema, resolvedName)
+                    && _requiredResolver.IsParameterPathRequired(
+                        fullParameterName,
+                        AsParametersHelper.GetMethodInfo(item.ApiDescription),
+                        context.SchemaRepository,
+                        context.SchemaGenerator,
+                        schemaProvider))
+                {
+#if OPENAPI_V2
+                    // In OpenApi 2.x, IOpenApiParameter.Required is read-only; cast to the concrete type to set it.
+                    if (item.Parameter is OpenApiParameter openApiParameter)
+                        openApiParameter.Required = true;
+#else
+                    if (item.Parameter != null)
+                        item.Parameter.Required = true;
+#endif
+                }
+
+                var parameterSchema = item.ParameterSchema;
+                if (parameterSchema != null)
                 {
                     if (OpenApiSchemaCompatibility.TryGetProperty(schema, schemaPropertyName.ToLowerCamelCase(), out var property, context.SchemaRepository)
                         || OpenApiSchemaCompatibility.TryGetProperty(schema, schemaPropertyName, out property, context.SchemaRepository))
@@ -250,7 +379,23 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 }
             }
 
-            // Issue #180: Remove schemas that we created as a side-effect of GetSchemaForType().
+            // 3) Apply rules to request bodies ([FromForm] + encoding.contentType, Issue #216) —
+            // shared logic with the operation filter (ADR-007).
+            foreach (var apiDescription in apiDescriptions)
+            {
+                var operation = FindOperation(apiDescription);
+                if (operation != null)
+                {
+                    _requestBodyApplicator.ApplyRulesToRequestBody(
+                        operation,
+                        apiDescription,
+                        context.SchemaRepository,
+                        context.SchemaGenerator,
+                        schemaProvider);
+                }
+            }
+
+            // 4) Issue #180: Remove schemas that we created as a side-effect of GetSchemaForType().
             // These schemas were not created by Swashbuckle and are not referenced elsewhere.
             if (existingSchemaIds != null)
             {
@@ -260,6 +405,23 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
                 foreach (var schemaId in schemasToRemove)
                 {
+#if OPENAPI_V2
+                    // Issue #226 / ADR-007: clear Swashbuckle's internal reserved-id together with the removal,
+                    // so third-party document filters running after this one never observe the
+                    // reserved-but-removed state for the container types this filter requested.
+                    // ReplaceSchemaId (Swashbuckle 10.1.0+) must run BEFORE the removal.
+                    var trackedType = schemaProvider.RequestedSchemaIds
+                        .FirstOrDefault(pair => pair.Value == schemaId).Key;
+                    if (trackedType != null)
+                    {
+                        var tempSchemaId = "__fv_removed_" + Guid.NewGuid().ToString("N");
+                        if (context.SchemaRepository.ReplaceSchemaId(trackedType, tempSchemaId))
+                        {
+                            schemaRepositorySchemas.Remove(tempSchemaId);
+                            continue;
+                        }
+                    }
+#endif
                     schemaRepositorySchemas.Remove(schemaId);
                 }
             }
@@ -282,7 +444,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 if (rootType == null)
                     return true;
 
-                var rootValidator = _validatorRegistry?.GetValidator(rootType);
+                var rootValidator = _validatorRegistry.GetValidator(rootType);
 
                 // No validator for the bound type — runtime validates nothing along this path.
                 if (rootValidator == null)
@@ -310,7 +472,10 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 schemaGenerationContext: schemaGenerationContext);
         }
 
-        [Obsolete("Есть повтор")]
+        /// <summary>
+        /// Adds rules from included validators (SetValidator/Include). Mirrors the private counterpart in
+        /// <see cref="FluentValidationRules"/>; both delegate to <see cref="FluentValidationSchemaBuilder"/>.
+        /// </summary>
         private void AddRulesFromIncludedValidators(SchemaGenerationContext schemaGenerationContext, ValidatorContext validatorContext)
         {
             FluentValidationSchemaBuilder.AddRulesFromIncludedValidators(
