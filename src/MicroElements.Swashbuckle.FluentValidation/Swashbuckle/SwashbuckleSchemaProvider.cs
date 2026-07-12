@@ -2,6 +2,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+#if OPENAPI_V2
+using System.Collections.Generic;
+#endif
 using MicroElements.OpenApi.FluentValidation;
 #if !OPENAPI_V2
 using Microsoft.OpenApi.Models;
@@ -18,6 +21,18 @@ namespace MicroElements.Swashbuckle.FluentValidation
         private readonly SchemaRepository _schemaRepository;
         private readonly ISchemaGenerator _schemaGenerator;
         private readonly Func<Type, string> _schemaIdSelector;
+
+#if OPENAPI_V2
+        private readonly Dictionary<Type, string> _requestedSchemaIds = new Dictionary<Type, string>();
+
+        /// <summary>
+        /// Gets the types passed to <see cref="GetSchemaForType"/> mapped to their schema ids.
+        /// The Issue #180 cleanup uses this map to heal Swashbuckle's internal reserved-id state via
+        /// <c>SchemaRepository.ReplaceSchemaId</c> (Swashbuckle 10.1.0+) before removing a schema (Issue #226).
+        /// Covers every call site: the parameters loop and the Issue #209 ancestor-requiredness walk.
+        /// </summary>
+        internal IReadOnlyDictionary<Type, string> RequestedSchemaIds => _requestedSchemaIds;
+#endif
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SwashbuckleSchemaProvider"/> class.
@@ -41,6 +56,8 @@ namespace MicroElements.Swashbuckle.FluentValidation
             var schemaId = _schemaIdSelector(type);
 
 #if OPENAPI_V2
+            _requestedSchemaIds[type] = schemaId;
+
             if (!_schemaRepository.Schemas.TryGetValue(schemaId, out var schemaInterface))
             {
                 schemaInterface = _schemaGenerator.GenerateSchema(type, _schemaRepository);

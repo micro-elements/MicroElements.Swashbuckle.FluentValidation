@@ -258,6 +258,24 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 {
                     if (!existingSchemaIds.Contains(schemaId))
                     {
+#if OPENAPI_V2
+                        // Issue #226: clear Swashbuckle's internal reserved-id together with the removal, so the
+                        // repository stays consistent and a later operation binding the same type (query, body or
+                        // response) regenerates a full component instead of emitting a $ref to a removed one.
+                        // ReplaceSchemaId (Swashbuckle 10.1.0+) is the only public API that reaches the reserved-id
+                        // map and it must run BEFORE the removal; the temp GUID key cannot collide with a real id.
+                        var trackedType = schemaProvider.RequestedSchemaIds
+                            .FirstOrDefault(pair => pair.Value == schemaId).Key;
+                        if (trackedType != null)
+                        {
+                            var tempSchemaId = "__fv_removed_" + Guid.NewGuid().ToString("N");
+                            if (context.SchemaRepository.ReplaceSchemaId(trackedType, tempSchemaId))
+                            {
+                                context.SchemaRepository.Schemas.Remove(tempSchemaId);
+                                continue;
+                            }
+                        }
+#endif
                         context.SchemaRepository.Schemas.Remove(schemaId);
                     }
                 }
