@@ -21,7 +21,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
     /// <summary>
     /// Issue #216 request-body logic ([FromForm] rules and <c>encoding.contentType</c>) shared by
     /// <see cref="FluentValidationOperationFilter"/> and <see cref="FluentValidationDocumentFilter"/>,
-    /// so the two pipelines cannot drift (ADR-007).
+    /// so the two pipelines cannot drift.
     /// </summary>
     internal sealed class RequestBodyRuleApplicator
     {

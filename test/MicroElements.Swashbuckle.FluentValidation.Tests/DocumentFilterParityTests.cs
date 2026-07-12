@@ -26,7 +26,7 @@ using Xunit;
 namespace MicroElements.Swashbuckle.FluentValidation.Tests
 {
     /// <summary>
-    /// ADR-007: parity tests for <see cref="FluentValidationDocumentFilter"/> against the default
+    /// Parity tests for <see cref="FluentValidationDocumentFilter"/> against the default
     /// SchemaFilter+OperationFilter pipeline — required-marking (#209), request bodies and
     /// encoding.contentType (#216), multi-verb paths, multi-validator, shared-DTO scenarios
     /// (#223/#226 — structurally impossible under the document filter), and OPENAPI_V2 specifics
@@ -206,7 +206,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             filter.Apply(doc, new DocumentFilterContext(new[] { apiDescription }, schemaGenerator, schemaRepository));
 
             operation.Parameters[0].Required.Should().BeTrue(
-                because: "NotEmpty must mark the parameter required (#209 parity, ADR-007)");
+                because: "NotEmpty must mark the parameter required (#209 parity)");
             paramSchema.MinLength.Should().Be(1);
             paramSchema.MaxLength.Should().Be(10);
         }
@@ -410,7 +410,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
 
             filter.Apply(doc, new DocumentFilterContext(new[] { apiDescription }, schemaGenerator, schemaRepository));
 
-            mediaType.Encoding.Should().ContainKey("File", because: "#216 encoding parity (ADR-007)");
+            mediaType.Encoding.Should().ContainKey("File", because: "#216 encoding parity");
             mediaType.Encoding["File"].ContentType.Should().Be("image/png");
         }
 
@@ -489,7 +489,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             filter.Apply(doc, new DocumentFilterContext(new[] { apiDescription }, schemaGenerator, schemaRepository));
 
             operation.Parameters![0].Required.Should().BeTrue(
-                because: "NotEmpty must mark the parameter required (#209 parity, ADR-007)");
+                because: "NotEmpty must mark the parameter required (#209 parity)");
             paramSchema.MinLength.Should().Be(1);
             paramSchema.MaxLength.Should().Be(10);
         }
@@ -589,7 +589,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             // The side-effect container component is removed by the #180 cleanup...
             schemaRepository.Schemas.Should().NotContainKey("HelloRequest");
 
-            // ...and thanks to the ReplaceSchemaId healing (ADR-006/ADR-007), a THIRD-PARTY document
+            // ...and thanks to the ReplaceSchemaId healing (Issue #226), a THIRD-PARTY document
             // filter running after ours can regenerate a full component instead of a dangling $ref.
             schemaGenerator.GenerateSchema(typeof(HelloRequest), schemaRepository);
             schemaRepository.Schemas.Should().ContainKey(
@@ -659,10 +659,10 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
         }
 
         /// <summary>
-        /// ADR-007 Phase 3 investigation test (gap 7): pins whether Swashbuckle emits
+        /// Investigation test: pins whether Swashbuckle emits
         /// OpenApiSchemaReference parameter schemas on the OPENAPI_V2 target. If this test starts
         /// failing after a Swashbuckle upgrade, re-evaluate the repository-resolution enhancement
-        /// (which per ADR-007 must then be added to BOTH pipelines via a shared helper).
+        /// (which must then be added to BOTH pipelines via a shared helper).
         /// </summary>
         [Fact]
         public void Investigation_Enum_Schema_Is_Emitted_As_Reference_V2()
@@ -674,7 +674,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
 
             // Documents the current Swashbuckle behavior: enums become components referenced via $ref,
             // so $ref-typed parameter schemas DO occur in practice. Both pipelines currently skip them
-            // in the copy-back (see ADR-007 gap 7) — this test pins the scenario for the future
+            // in the copy-back (a shared limitation of both pipelines) — this test pins the scenario for the future
             // both-pipelines repository-resolution enhancement.
             schema.Should().BeOfType<OpenApiSchemaReference>();
             schemaRepository.Schemas.Should().ContainKey("InvestigationEnum");

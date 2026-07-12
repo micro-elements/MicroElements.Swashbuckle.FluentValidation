@@ -18,7 +18,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
 {
     /// <summary>
     /// Issue #209 required-path logic shared by <see cref="FluentValidationOperationFilter"/> and
-    /// <see cref="FluentValidationDocumentFilter"/>, so the two pipelines cannot drift (ADR-007).
+    /// <see cref="FluentValidationDocumentFilter"/>, so the two pipelines cannot drift.
     /// A (possibly nested) operation parameter may be marked required only when EVERY ancestor
     /// segment of its dot-path is itself required.
     /// </summary>

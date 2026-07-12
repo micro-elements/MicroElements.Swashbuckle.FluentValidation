@@ -66,7 +66,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             _rules = fluentValidationRuleProvider.GetRules().ToArray().OverrideRules(rules);
             _schemaGenerationOptions = schemaGenerationOptions?.Value ?? new SchemaGenerationOptions();
 
-            // ADR-007: #209 and #216 logic is shared with FluentValidationDocumentFilter so the pipelines cannot drift.
+            // #209 and #216 logic is shared with FluentValidationDocumentFilter so the pipelines cannot drift.
             _requiredResolver = new ParameterRequiredResolver(_logger, _validatorRegistry, _rules, _schemaGenerationOptions);
             _requestBodyApplicator = new RequestBodyRuleApplicator(_logger, _validatorRegistry, _rules, _schemaGenerationOptions);
 

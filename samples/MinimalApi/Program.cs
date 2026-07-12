@@ -14,7 +14,7 @@ services.AddSwaggerGen();
 // Add FV validators
 services.AddValidatorsFromAssemblyContaining<Program>();
 
-// Add FV Rules to swagger (ADR-007: this sample exercises the document-filter pipeline)
+// Add FV Rules to swagger (this sample exercises the document-filter pipeline)
 services.AddFluentValidationRulesToSwagger(
     configureRegistration: options => options.UseDocumentFilter = true);
 

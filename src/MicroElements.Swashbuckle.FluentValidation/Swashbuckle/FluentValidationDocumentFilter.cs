@@ -46,7 +46,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// <param name="rules">External FluentValidation rules. External rule overrides default rule with the same name.</param>
         /// <param name="schemaGenerationOptions">Schema generation options.</param>
         /// <param name="nameResolver">Name resolver.</param>
-        /// <param name="fluentValidationRuleProvider">Rules provider. Appended last to keep positional call sites source-compatible (ADR-007).</param>
+        /// <param name="fluentValidationRuleProvider">Rules provider. Appended last to keep positional call sites source-compatible.</param>
         public FluentValidationDocumentFilter(
             /* System services */
             ILoggerFactory? loggerFactory = null,
@@ -72,7 +72,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             _rules = fluentValidationRuleProvider.GetRules().ToArray().OverrideRules(rules);
             _schemaGenerationOptions = schemaGenerationOptions?.Value ?? new SchemaGenerationOptions();
 
-            // ADR-007: #209 and #216 logic is shared with FluentValidationOperationFilter so the pipelines cannot drift.
+            // #209 and #216 logic is shared with FluentValidationOperationFilter so the pipelines cannot drift.
             _requiredResolver = new ParameterRequiredResolver(_logger, _validatorRegistry, _rules, _schemaGenerationOptions);
             _requestBodyApplicator = new RequestBodyRuleApplicator(_logger, _validatorRegistry, _rules, _schemaGenerationOptions);
 
@@ -220,7 +220,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                         {
                             var parameter = FindParameter(apiDescription, apiParameterDescription);
 #if OPENAPI_V2
-                            // Explicit cast-guard pattern (ADR-007): $ref-typed parameter schemas are skipped
+                            // Explicit cast-guard pattern: $ref-typed parameter schemas are skipped
                             // gracefully, matching the operation filter's behavior.
                             var parameterSchema = parameter?.Schema is OpenApiSchema concreteSchema ? concreteSchema : null;
 #else
@@ -380,7 +380,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             }
 
             // 3) Apply rules to request bodies ([FromForm] + encoding.contentType, Issue #216) —
-            // shared logic with the operation filter (ADR-007).
+            // shared logic with the operation filter.
             foreach (var apiDescription in apiDescriptions)
             {
                 var operation = FindOperation(apiDescription);
@@ -406,7 +406,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 foreach (var schemaId in schemasToRemove)
                 {
 #if OPENAPI_V2
-                    // Issue #226 / ADR-007: clear Swashbuckle's internal reserved-id together with the removal,
+                    // Issue #226: clear Swashbuckle's internal reserved-id together with the removal,
                     // so third-party document filters running after this one never observe the
                     // reserved-but-removed state for the container types this filter requested.
                     // ReplaceSchemaId (Swashbuckle 10.1.0+) must run BEFORE the removal.
