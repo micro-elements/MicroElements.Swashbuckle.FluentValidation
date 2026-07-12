@@ -44,7 +44,7 @@ Validators: 1 — `dotnet-artisan:dotnet-architect` (architecture/versions/semve
 
 ## Recommendation
 
-**Approve с правками** (правки применены в iteration 2; повторная валидация — см. iteration log).
+**Approve with fixes** (fixes applied in iteration 2; re-validation results — see the iteration log).
 
 ## Validator statistics
 
