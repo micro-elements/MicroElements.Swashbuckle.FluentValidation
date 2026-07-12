@@ -18,13 +18,13 @@ using Xunit;
 namespace MicroElements.Swashbuckle.FluentValidation.Tests
 {
     /// <summary>
-    /// Issue #226 (ADR-006): when the same DTO is bound as a flattened [FromQuery] container by one endpoint
+    /// Issue #226: when the same DTO is bound as a flattened [FromQuery] container by one endpoint
     /// and as a request body ([FromBody]/[FromForm]) by another, the Issue #180 cleanup after the query
     /// operation left the type "reserved-but-removed" in Swashbuckle's <see cref="SchemaRepository"/>.
     /// Generating the body operation then produced a $ref to a component that no longer exists (a dangling
     /// reference) and the FluentValidation rules never reached the emitted document.
     ///
-    /// The fix (ADR-006, net10.0/OPENAPI_V2 only) heals the repository state during the cleanup via
+    /// The fix (net10.0/OPENAPI_V2 only) heals the repository state during the cleanup via
     /// SchemaRepository.ReplaceSchemaId (Swashbuckle 10.1.0+): the reservation is cleared together with the
     /// component removal, so the body operation regenerates a full component and the FluentValidationRules
     /// schema filter re-applies the rules to the real document object.

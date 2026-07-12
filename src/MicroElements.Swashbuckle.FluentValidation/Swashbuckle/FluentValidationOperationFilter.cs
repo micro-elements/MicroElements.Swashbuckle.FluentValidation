@@ -32,6 +32,8 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
         private readonly IReadOnlyList<IFluentValidationRule<OpenApiSchema>> _rules;
         private readonly SchemaGenerationOptions _schemaGenerationOptions;
+        private readonly ParameterRequiredResolver _requiredResolver;
+        private readonly RequestBodyRuleApplicator _requestBodyApplicator;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FluentValidationOperationFilter"/> class.
@@ -63,6 +65,10 @@ namespace MicroElements.Swashbuckle.FluentValidation
             fluentValidationRuleProvider ??= new DefaultFluentValidationRuleProvider(schemaGenerationOptions);
             _rules = fluentValidationRuleProvider.GetRules().ToArray().OverrideRules(rules);
             _schemaGenerationOptions = schemaGenerationOptions?.Value ?? new SchemaGenerationOptions();
+
+            // #209 and #216 logic is shared with FluentValidationDocumentFilter so the pipelines cannot drift.
+            _requiredResolver = new ParameterRequiredResolver(_logger, _validatorRegistry, _rules, _schemaGenerationOptions);
+            _requestBodyApplicator = new RequestBodyRuleApplicator(_logger, _validatorRegistry, _rules, _schemaGenerationOptions);
 
             _logger.LogDebug("FluentValidationOperationFilter Created");
         }
@@ -98,7 +104,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
             }
 
             // Process RequestBody for FromForm and FromBody parameters
-            ApplyRulesToRequestBody(operation, context, schemaProvider);
+            _requestBodyApplicator.ApplyRulesToRequestBody(operation, context.ApiDescription, context.SchemaRepository, context.SchemaGenerator, schemaProvider);
         }
 
         private void ApplyRulesToParameters(OpenApiOperation operation, OperationFilterContext context, SwashbuckleSchemaProvider schemaProvider)
@@ -191,7 +197,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                         // is required. For a flattened nested [FromQuery] parameter (e.g. "OptionalSubType.SubProperty")
                         // an optional ancestor (e.g. an optional nested object) must keep the parameter optional.
                         if (OpenApiSchemaCompatibility.RequiredContains(schema, schemaPropertyName)
-                            && IsParameterPathRequired(operationParameter.Name, context, schemaProvider))
+                            && _requiredResolver.IsParameterPathRequired(operationParameter.Name, context.MethodInfo, context.SchemaRepository, context.SchemaGenerator, schemaProvider))
                         {
 #if OPENAPI_V2
                             // In OpenApi 2.x, IOpenApiParameter.Required is read-only
@@ -320,234 +326,6 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 // problematic validator skip the whole operation's parameters.
                 _logger.LogDebug(e, "Could not determine nested validation reachability for parameter '{ParameterName}'; assuming reachable.", parameterName);
                 return true;
-            }
-        }
-
-        /// <summary>
-        /// Determines whether a (possibly nested) operation parameter may be marked as required.
-        /// For a flattened nested [FromQuery] parameter (e.g. "OptionalSubType.SubProperty") the leaf
-        /// is a required parameter only when EVERY ancestor segment of the dot-path is itself required.
-        /// If any ancestor (e.g. an optional nested object) is not required, the parameter stays optional.
-        /// Issue #209.
-        /// </summary>
-        private bool IsParameterPathRequired(string parameterName, OperationFilterContext context, SwashbuckleSchemaProvider schemaProvider)
-        {
-            // Flat parameter: no ancestors to verify.
-            if (parameterName.IndexOf('.') < 0)
-                return true;
-
-            var segments = parameterName.Split('.');
-
-            // Resolve the root [FromQuery]/[AsParameters] type from the action method by matching the first segment.
-            var currentType = AsParametersHelper.ResolveRootType(segments[0], context.MethodInfo);
-
-            // If the root type cannot be determined, preserve the prior behavior (mark required).
-            if (currentType == null)
-                return true;
-
-            // Walk every ancestor segment (all but the leaf); leaf requiredness is handled by the caller.
-            // Resolving ancestor requiredness registers the ancestor (container) schemas in the repository,
-            // exactly like the leaf container is registered above. Those unused [FromQuery] container schemas
-            // are removed by the Issue #180 cleanup when RemoveUnusedQuerySchemas is enabled. We must NOT
-            // remove them mid-loop: Swashbuckle's generator remembers already-generated types and would not
-            // re-register the component on the next GetSchemaForType call, leaving an unresolvable $ref.
-            for (int i = 0; i < segments.Length - 1; i++)
-            {
-                if (!IsPropertyRequiredInType(currentType, segments[i], context, schemaProvider))
-                    return false;
-
-                var propertyInfo = currentType.GetProperty(segments[i], BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
-                if (propertyInfo == null)
-                    return true; // path does not map to a real property — preserve prior behavior
-
-                currentType = propertyInfo.PropertyType;
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        /// Checks whether <paramref name="propertyName"/> is required in <paramref name="containerType"/>,
-        /// combining the generated schema (native required, e.g. the C# 'required' modifier) with the
-        /// FluentValidation rules (NotNull/NotEmpty) of the container type's validator.
-        /// </summary>
-        private bool IsPropertyRequiredInType(Type containerType, string propertyName, OperationFilterContext context, SwashbuckleSchemaProvider schemaProvider)
-        {
-            OpenApiSchema schema = schemaProvider.GetSchemaForType(containerType);
-
-            // No properties to reason about — treat the ancestor as not required (safe-to-optional default,
-            // intentionally the opposite of IsParameterPathRequired's "assume required" fallback: there we
-            // could not resolve the path at all and keep prior behavior, here we positively know the type
-            // exposes nothing to require against).
-            if (schema.Properties == null || schema.Properties.Count == 0)
-                return false;
-
-            // Resolve the schema property key (handles camelCase / PascalCase differences).
-            var resolvedName = OpenApiSchemaCompatibility.GetProperties(schema)
-                .Select(property => property.Key)
-                .FirstOrDefault(key => key.EqualsIgnoreAll(propertyName)) ?? propertyName;
-
-            // GetSchemaForType runs the FluentValidationRules schema filter during generation, so the
-            // requiredness (native 'required' modifier + NotNull/NotEmpty rules) is usually already present.
-            // Check first to avoid the write side effect of re-applying rules on a shared cached schema.
-            if (OpenApiSchemaCompatibility.RequiredContains(schema, resolvedName))
-                return true;
-
-            // Fallback for setups whose schema generator has no FluentValidationRules filter: apply the
-            // container validator's rules explicitly, then re-check. _validatorRegistry is non-null here —
-            // ApplyInternal returns early when it is null, before any parameter processing.
-            var validator = _validatorRegistry!.GetValidator(containerType);
-            if (validator != null)
-            {
-                var schemaContext = new SchemaGenerationContext(
-                    schemaRepository: context.SchemaRepository,
-                    schemaGenerator: context.SchemaGenerator,
-                    schema: schema,
-                    schemaType: containerType,
-                    rules: _rules,
-                    schemaGenerationOptions: _schemaGenerationOptions,
-                    schemaProvider: schemaProvider);
-
-                FluentValidationSchemaBuilder.ApplyRulesToSchema(
-                    schemaType: containerType,
-                    schemaPropertyNames: new[] { resolvedName },
-                    validator: validator,
-                    logger: _logger,
-                    schemaGenerationContext: schemaContext);
-
-                return OpenApiSchemaCompatibility.RequiredContains(schema, resolvedName);
-            }
-
-            return false;
-        }
-
-        private void ApplyRulesToRequestBody(OpenApiOperation operation, OperationFilterContext context, SwashbuckleSchemaProvider schemaProvider)
-        {
-#if OPENAPI_V2
-            var requestBody = operation.RequestBody as OpenApiRequestBody;
-#else
-            var requestBody = operation.RequestBody;
-#endif
-            if (requestBody?.Content == null)
-                return;
-
-            // Content types used by [FromForm] attribute
-            var formContentTypes = new[] { "multipart/form-data", "application/x-www-form-urlencoded" };
-
-            foreach (var contentType in requestBody.Content)
-            {
-                if (!formContentTypes.Contains(contentType.Key, StringComparer.OrdinalIgnoreCase))
-                    continue;
-
-#if OPENAPI_V2
-                var rawSchema = contentType.Value.Schema;
-                var contentSchema = rawSchema as OpenApiSchema;
-                string? schemaRefId = rawSchema is OpenApiSchemaReference schemaRef ? schemaRef.Reference?.Id : null;
-#else
-                var contentSchema = contentType.Value.Schema;
-                string? schemaRefId = contentSchema?.Reference?.Id;
-#endif
-                if (contentSchema == null)
-                    continue;
-
-                // Find the parameter type from ApiDescription
-                var bodyParameter = context.ApiDescription.ParameterDescriptions
-                    .FirstOrDefault(p => p.Source?.Id == "Form" || p.Source?.Id == "Body");
-
-                Type? parameterType = null;
-                if (bodyParameter != null)
-                {
-                    parameterType = bodyParameter.ModelMetadata?.ContainerType ?? bodyParameter.ModelMetadata?.ModelType;
-                }
-
-                // If we couldn't find it from body parameter, try to find from schema reference
-                if (parameterType == null && schemaRefId != null)
-                {
-                    parameterType = context.ApiDescription.ParameterDescriptions
-                        .Select(p => p.ModelMetadata?.ModelType)
-                        .FirstOrDefault(t => t != null && _schemaGenerationOptions.SchemaIdSelector(t) == schemaRefId);
-                }
-
-                if (parameterType == null)
-                    continue;
-
-                var validator = _validatorRegistry!.GetValidator(parameterType);
-                if (validator == null)
-                    continue;
-
-                // Resolve the actual schema (dereference if needed)
-                OpenApiSchema resolvedSchema = contentSchema;
-                if (schemaRefId != null)
-                {
-                    resolvedSchema = schemaProvider.GetSchemaForType(parameterType);
-                }
-
-                if (resolvedSchema.Properties == null || resolvedSchema.Properties.Count == 0)
-                    continue;
-
-                var schemaContext = new SchemaGenerationContext(
-                    schemaRepository: context.SchemaRepository,
-                    schemaGenerator: context.SchemaGenerator,
-                    schema: resolvedSchema,
-                    schemaType: parameterType,
-                    rules: _rules,
-                    schemaGenerationOptions: _schemaGenerationOptions,
-                    schemaProvider: schemaProvider);
-
-                // Apply validation rules to all properties
-                FluentValidationSchemaBuilder.ApplyRulesToSchema(
-                    schemaType: parameterType,
-                    schemaPropertyNames: schemaContext.Properties,
-                    validator: validator,
-                    logger: _logger,
-                    schemaGenerationContext: schemaContext);
-
-                // Issue #216: emit encoding.contentType for IFormFile parts restricted via .FileContentType(...).
-                // Only multipart/form-data carries per-part media types (application/x-www-form-urlencoded does not).
-                if (string.Equals(contentType.Key, "multipart/form-data", StringComparison.OrdinalIgnoreCase))
-                {
-                    ApplyFileContentTypeEncoding(contentType.Value, resolvedSchema, parameterType, validator, context.SchemaRepository);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Issue #216: writes <c>encoding.&lt;part&gt;.contentType</c> for every binary file part that a
-        /// <c>.FileContentType(...)</c> rule restricts. Part keys are taken verbatim from the rendered schema and
-        /// matched to the rule name-insensitively. Content types reach this method via the SAME filtered rule
-        /// traversal the schema pipeline uses, so a conditional rule is included/excluded consistently.
-        /// </summary>
-        private void ApplyFileContentTypeEncoding(
-            OpenApiMediaType mediaType,
-            OpenApiSchema resolvedSchema,
-            Type parameterType,
-            IValidator validator,
-            SchemaRepository schemaRepository)
-        {
-            if (resolvedSchema.Properties == null || resolvedSchema.Properties.Count == 0)
-                return;
-
-            var contentTypeRules = FileUploadIntrospection
-                .GetFileContentTypeValidators(validator, parameterType, _schemaGenerationOptions)
-                .ToList();
-            if (contentTypeRules.Count == 0)
-                return;
-
-            foreach (var partKey in resolvedSchema.Properties.Keys)
-            {
-                var partSchema = OpenApiSchemaCompatibility.GetProperty(resolvedSchema, partKey, schemaRepository);
-                if (partSchema == null || !OpenApiSchemaCompatibility.IsBinaryFormat(partSchema))
-                    continue;
-
-                var allowed = contentTypeRules
-                    .Where(rule => rule.MemberName.EqualsIgnoreAll(partKey))
-                    .Select(rule => rule.Meta.AllowedContentTypes)
-                    .FirstOrDefault();
-                if (allowed == null || allowed.Count == 0)
-                    continue;
-
-                mediaType.Encoding ??= new Dictionary<string, OpenApiEncoding>();
-                mediaType.Encoding[partKey] = new OpenApiEncoding { ContentType = string.Join(", ", allowed) };
             }
         }
     }

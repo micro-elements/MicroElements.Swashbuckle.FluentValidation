@@ -40,7 +40,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.AspNetCore
             // Adds fluent validation rules to swagger
             if (registrationOptions.RegisterFluentValidationRules)
             {
-                if (registrationOptions.ExperimentalUseDocumentFilter)
+                if (registrationOptions.UseDocumentFilter)
                 {
                     services.TryAdd(new ServiceDescriptor(typeof(FluentValidationDocumentFilter), typeof(FluentValidationDocumentFilter), registrationOptions.ServiceLifetime));
                 }
@@ -53,7 +53,7 @@ namespace MicroElements.Swashbuckle.FluentValidation.AspNetCore
                 services.Configure<SwaggerGenOptions>(options =>
                 {
                     // Registers Swashbuckle filters
-                    if (registrationOptions.ExperimentalUseDocumentFilter)
+                    if (registrationOptions.UseDocumentFilter)
                     {
                         options.DocumentFilter<DocumentFilterScopeAdapter<FluentValidationDocumentFilter>>(registrationOptions.ServiceLifetime);
                     }
