@@ -139,12 +139,17 @@ namespace MicroElements.Swashbuckle.FluentValidation
                     if (validator == null)
                         continue;
 
+                    // A dot is legal in a header name ([FromHeader(Name = "X.Trace.Id")]), so the nested
+                    // [FromQuery] dot-path logic below must not apply to header-bound parameters.
+                    var isHeaderParameter = apiParameterDescription?.Source?.Id == "Header";
+
                     // Issue #211: For a flattened nested [FromQuery] parameter (e.g. "RequiredSubType.SubProperty")
                     // only reflect the nested type's validation when it is actually reachable from the ROOT
                     // validator via SetValidator/ChildRules. FluentValidation never auto-validates a child object
                     // from DI, so an unwired nested validator would document constraints (required, MinLength, ...)
                     // that runtime validation never enforces.
-                    if (operationParameter.Name.IndexOf('.') >= 0
+                    if (!isHeaderParameter
+                        && operationParameter.Name.IndexOf('.') >= 0
                         && !IsNestedValidationReachable(operationParameter.Name, context))
                     {
                         continue;
@@ -158,9 +163,13 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
                         // For nested [FromQuery] parameters (e.g., "operation.op"), use only the leaf
                         // property name since the schema for the nested type only has the leaf property.
-                        var dotIndex = schemaPropertyName.LastIndexOf('.');
-                        if (dotIndex >= 0)
-                            schemaPropertyName = schemaPropertyName.Substring(dotIndex + 1);
+                        // Header parameters are flat by definition — their dots are not path separators.
+                        if (!isHeaderParameter)
+                        {
+                            var dotIndex = schemaPropertyName.LastIndexOf('.');
+                            if (dotIndex >= 0)
+                                schemaPropertyName = schemaPropertyName.Substring(dotIndex + 1);
+                        }
 
                         var apiProperty = OpenApiSchemaCompatibility.GetProperties(schema)
                             .FirstOrDefault(property => property.Key.EqualsIgnoreAll(schemaPropertyName));
@@ -197,7 +206,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                         // is required. For a flattened nested [FromQuery] parameter (e.g. "OptionalSubType.SubProperty")
                         // an optional ancestor (e.g. an optional nested object) must keep the parameter optional.
                         if (OpenApiSchemaCompatibility.RequiredContains(schema, schemaPropertyName)
-                            && _requiredResolver.IsParameterPathRequired(operationParameter.Name, context.MethodInfo, context.SchemaRepository, context.SchemaGenerator, schemaProvider))
+                            && (isHeaderParameter || _requiredResolver.IsParameterPathRequired(operationParameter.Name, context.MethodInfo, context.SchemaRepository, context.SchemaGenerator, schemaProvider)))
                         {
 #if OPENAPI_V2
                             // In OpenApi 2.x, IOpenApiParameter.Required is read-only

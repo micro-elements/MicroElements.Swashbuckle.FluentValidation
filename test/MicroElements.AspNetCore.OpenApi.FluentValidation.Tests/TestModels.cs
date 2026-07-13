@@ -222,3 +222,23 @@ public class TestBigIntegerModelValidator : AbstractValidator<TestBigIntegerMode
         RuleFor(x => x.Name).NotEmpty().MaximumLength(100);
     }
 }
+
+// Issue #230 follow-up: header aliases (kebab-case and dotted) must get validation constraints;
+// a dot in a header name must not trigger the nested [FromQuery] dot-path logic.
+public class TestTraceHeaders
+{
+    [Microsoft.AspNetCore.Mvc.FromHeader(Name = "X.Trace.Id")]
+    public string? XTraceId { get; set; }
+
+    [Microsoft.AspNetCore.Mvc.FromHeader(Name = "X-Request-Id")]
+    public string? XRequestId { get; set; }
+}
+
+public class TestTraceHeadersValidator : AbstractValidator<TestTraceHeaders>
+{
+    public TestTraceHeadersValidator()
+    {
+        RuleFor(x => x.XTraceId).NotEmpty().MaximumLength(36);
+        RuleFor(x => x.XRequestId).NotEmpty().MaximumLength(64);
+    }
+}

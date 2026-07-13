@@ -8,7 +8,13 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddValidatorsFromAssemblyContaining<TestMarker>();
 builder.Services.AddFluentValidationRulesToOpenApi();
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        // Issue #230 follow-up: lets TraceHeaderController bind TestTraceHeaders properties
+        // from headers instead of inferring the whole parameter as FromBody.
+        options.SuppressInferBindingSourcesForParameters = true;
+    });
 builder.Services.AddOpenApi(options =>
 {
     options.AddFluentValidationRules();

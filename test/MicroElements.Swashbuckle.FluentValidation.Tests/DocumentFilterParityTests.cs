@@ -211,6 +211,28 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             paramSchema.MaxLength.Should().Be(10);
         }
 
+        /// <summary>
+        /// Swashbuckle's DescribeAllParametersInCamelCase emits the document parameter as "name"
+        /// while ApiExplorer reports "Name" — the operation filter matches these case-insensitively
+        /// and the document filter must do the same.
+        /// </summary>
+        [Fact]
+        public void DocumentFilter_Should_Match_Parameter_Names_Case_Insensitively()
+        {
+            var (filter, _) = CreateDocumentFilter(null, new HelloRequestValidator());
+            var (doc, operation, paramSchema) = BuildQueryDoc("api/hello", "name");
+            var apiDescription = QueryApiDescription(typeof(HelloRequest), nameof(HelloRequest.Name), "Name", "api/hello");
+
+            var schemaRepository = new SchemaRepository();
+            var schemaGenerator = TestExtensions.CreateSchemaGenerator();
+
+            filter.Apply(doc, new DocumentFilterContext(new[] { apiDescription }, schemaGenerator, schemaRepository));
+
+            paramSchema.MaxLength.Should().Be(10,
+                because: "a camelCase document parameter must be matched to its PascalCase ApiDescription (operation filter parity)");
+            operation.Parameters[0].Required.Should().BeTrue();
+        }
+
         [Fact]
         public void DocumentFilter_Should_Not_Mark_Required_When_Ancestor_Is_Optional()
         {

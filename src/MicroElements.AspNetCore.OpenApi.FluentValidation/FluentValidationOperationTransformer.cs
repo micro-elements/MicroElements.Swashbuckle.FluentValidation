@@ -205,21 +205,26 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
                     parameterGroups[parameterType] = cached;
                 }
 
+                // A dot is legal in a header name ([FromHeader(Name = "X.Trace.Id")]), so the nested
+                // [FromQuery] dot-path logic below must not apply to header-bound parameters.
+                var isHeaderParameter = apiParameterDescription?.Source?.Id == "Header";
+
                 // Issue #211: For a flattened nested [FromQuery] parameter (e.g. "RequiredSubType.SubProperty")
                 // only reflect the nested type's validation when it is actually reachable from the ROOT validator
                 // via SetValidator/ChildRules. FluentValidation never auto-validates a child object from DI, so an
                 // unwired nested validator would document constraints that runtime validation never enforces.
-                if (operationParameter.Name.IndexOf('.') >= 0
+                if (!isHeaderParameter
+                    && operationParameter.Name.IndexOf('.') >= 0
                     && !IsNestedValidationReachable(operationParameter.Name, methodInfo))
                 {
                     continue;
                 }
 
                 // Issue #209: a flattened nested parameter may be marked required only when EVERY ancestor
-                // segment of the dot-path is itself required.
-                var pathRequired = IsParameterPathRequired(operationParameter.Name, methodInfo);
+                // segment of the dot-path is itself required. Header parameters are flat by definition.
+                var pathRequired = isHeaderParameter || IsParameterPathRequired(operationParameter.Name, methodInfo);
 
-                ApplyRulesToParameter(operationParameter, parameterType, cached.Validator, cached.Schema, pathRequired);
+                ApplyRulesToParameter(operationParameter, parameterType, cached.Validator, cached.Schema, pathRequired, isHeaderParameter);
             }
         }
 
@@ -232,14 +237,19 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
             Type parameterType,
             IValidator validator,
             OpenApiSchema schema,
-            bool pathRequired)
+            bool pathRequired,
+            bool isHeaderParameter)
         {
             var schemaPropertyName = operationParameter.Name;
 
-            // For nested [FromQuery] parameters (e.g., "operation.op"), use only the leaf name
-            var dotIndex = schemaPropertyName.LastIndexOf('.');
-            if (dotIndex >= 0)
-                schemaPropertyName = schemaPropertyName.Substring(dotIndex + 1);
+            // For nested [FromQuery] parameters (e.g., "operation.op"), use only the leaf name.
+            // Header parameters are flat by definition — their dots are not path separators.
+            if (!isHeaderParameter)
+            {
+                var dotIndex = schemaPropertyName.LastIndexOf('.');
+                if (dotIndex >= 0)
+                    schemaPropertyName = schemaPropertyName.Substring(dotIndex + 1);
+            }
 
             // Find matching property in schema
             var apiProperty = OpenApiSchemaCompatibility.GetProperties(schema)

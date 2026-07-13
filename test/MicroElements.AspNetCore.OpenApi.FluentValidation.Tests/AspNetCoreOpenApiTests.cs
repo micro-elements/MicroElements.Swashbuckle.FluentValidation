@@ -388,6 +388,36 @@ public class AspNetCoreOpenApiTests : IClassFixture<AspNetCoreOpenApiTests.TestW
         HasMinLength(optional).Should().BeTrue(because: "the wired NotEmpty still constrains the value when provided");
     }
 
+    /// <summary>
+    /// Issue #230 follow-up: aliased header parameters (kebab-case AND dotted) must get validation
+    /// constraints; a dot in a header name must not trigger the nested [FromQuery] dot-path logic.
+    /// </summary>
+    [Fact]
+    public async Task HeaderParameters_WithAliases_ShouldHaveValidationConstraints()
+    {
+        var client = _factory.CreateClient();
+        var response = await client.GetAsync("/openapi/v1.json");
+        response.EnsureSuccessStatusCode();
+        var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+
+        var parameters = doc.RootElement.GetProperty("paths")
+            .GetProperty("/api/trace").GetProperty("get").GetProperty("parameters");
+
+        JsonElement Param(string name) => parameters.EnumerateArray()
+            .First(p => p.GetProperty("name").GetString() == name);
+
+        static bool IsRequired(JsonElement p) => p.TryGetProperty("required", out var r) && r.GetBoolean();
+
+        var dotted = Param("X.Trace.Id");
+        dotted.GetProperty("schema").GetProperty("maxLength").GetInt32().Should().Be(36,
+            because: "a dot in a header alias must not trigger the nested [FromQuery] dot-path truncation");
+        IsRequired(dotted).Should().BeTrue(because: "NotEmpty must mark the header parameter required");
+
+        var kebab = Param("X-Request-Id");
+        kebab.GetProperty("schema").GetProperty("maxLength").GetInt32().Should().Be(64);
+        IsRequired(kebab).Should().BeTrue();
+    }
+
     [Fact]
     public void TransformerCanResolveWithoutScope()
     {
