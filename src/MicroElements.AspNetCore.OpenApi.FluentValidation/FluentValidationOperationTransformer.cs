@@ -301,7 +301,10 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
 #endif
             if (parameterSchema != null)
             {
-                if (OpenApiSchemaCompatibility.TryGetProperty(schema, schemaPropertyName, out var property))
+                // camelCase-then-exact double attempt — constraint-copy parity with
+                // FluentValidationDocumentFilter and FluentValidationOperationFilter.
+                if (OpenApiSchemaCompatibility.TryGetProperty(schema, schemaPropertyName.ToLowerCamelCase(), out var property)
+                    || OpenApiSchemaCompatibility.TryGetProperty(schema, schemaPropertyName, out property))
                 {
                     if (property != null)
                     {

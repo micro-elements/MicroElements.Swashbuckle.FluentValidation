@@ -13,6 +13,8 @@ builder.Services.AddControllers()
     {
         // Issue #230 follow-up: lets TraceHeaderController bind TestTraceHeaders properties
         // from headers instead of inferring the whole parameter as FromBody.
+        // NOTE: this is a HOST-WIDE option — every controller in this test host must use
+        // explicit binding-source attributes ([FromQuery]/[FromHeader]/...) on complex parameters.
         options.SuppressInferBindingSourcesForParameters = true;
     });
 builder.Services.AddOpenApi(options =>
