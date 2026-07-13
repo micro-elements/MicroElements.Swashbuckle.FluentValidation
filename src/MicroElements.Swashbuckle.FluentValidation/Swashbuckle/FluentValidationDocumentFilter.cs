@@ -204,7 +204,11 @@ namespace MicroElements.Swashbuckle.FluentValidation
 #endif
             {
                 var operation = FindOperation(apiDescription);
-                return operation?.Parameters?.FirstOrDefault(parameter => parameter.Name == parameterDescription.Name);
+
+                // Case-insensitive: DescribeAllParametersInCamelCase emits "name" while ApiExplorer
+                // reports "Name" — matching the operation filter's parameter lookup.
+                return operation?.Parameters?.FirstOrDefault(parameter =>
+                    string.Equals(parameter.Name, parameterDescription.Name, StringComparison.InvariantCultureIgnoreCase));
             }
 
             IEnumerable<ParameterItem> GetParameters()
@@ -303,10 +307,15 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 var itemParameterDescription = item.ParameterDescription;
                 var fullParameterName = itemParameterDescription.ModelMetadata?.BinderModelName ?? itemParameterDescription.Name;
 
+                // A dot is legal in a header name ([FromHeader(Name = "X.Trace.Id")]), so the nested
+                // [FromQuery] dot-path logic below must not apply to header-bound parameters.
+                var isHeaderParameter = itemParameterDescription.Source?.Id == "Header";
+
                 // Issue #211/#213: For a flattened nested [FromQuery] parameter only copy the nested type's
                 // value constraints when the SetValidator/ChildRules chain from the ROOT validator actually
                 // reaches the leaf container. Otherwise FluentValidation never enforces them at runtime.
-                if (fullParameterName != null && fullParameterName.IndexOf('.') >= 0
+                if (!isHeaderParameter
+                    && fullParameterName != null && fullParameterName.IndexOf('.') >= 0
                     && !IsNestedValidationReachable(fullParameterName, item.ApiDescription))
                 {
                     continue;
@@ -315,7 +324,7 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 var schemaPropertyName = fullParameterName;
 
                 // For nested [FromQuery] parameters (e.g., "operation.op"), use only the leaf property name.
-                if (schemaPropertyName != null)
+                if (!isHeaderParameter && schemaPropertyName != null)
                 {
                     var dotIndex = schemaPropertyName.LastIndexOf('.');
                     if (dotIndex >= 0)
@@ -327,22 +336,36 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 if (schemaPropertyName == null || schema.Properties == null || schema.Properties.Count == 0)
                     continue;
 
-                // Resolve the schema property key (handles camelCase / PascalCase differences).
+                // Issue #230: resolve the schema property key and use it for BOTH required-marking and the
+                // constraint copy below. The symbol-only match handles camelCase / PascalCase / kebab-case
+                // aliases ("X-Correlation-Id" -> "XCorrelationId"); the NameResolver fallback handles renames
+                // beyond separators (e.g. [JsonPropertyName]) — matching the operation filter.
                 var resolvedName = OpenApiSchemaCompatibility.GetProperties(schema)
                     .Select(property => property.Key)
-                    .FirstOrDefault(key => key.EqualsIgnoreAll(schemaPropertyName)) ?? schemaPropertyName;
+                    .FirstOrDefault(key => key.EqualsIgnoreAll(schemaPropertyName));
+                if (resolvedName != null)
+                {
+                    schemaPropertyName = resolvedName;
+                }
+                else
+                {
+                    var propertyInfo = item.ModelType.GetProperty(schemaPropertyName);
+                    if (propertyInfo != null && _schemaGenerationOptions.NameResolver != null)
+                        schemaPropertyName = _schemaGenerationOptions.NameResolver.GetPropertyName(propertyInfo);
+                }
 
                 // Issue #209: a required leaf is only a required parameter when the WHOLE dot-path is required.
+                // Header parameters are flat by definition — their dots are not path separators.
                 // Required is set on the PARAMETER, independent of the schema cast guard below (a $ref-typed
                 // parameter schema must not suppress required-marking — matching the operation filter).
                 if (fullParameterName != null
-                    && OpenApiSchemaCompatibility.RequiredContains(schema, resolvedName)
-                    && _requiredResolver.IsParameterPathRequired(
+                    && OpenApiSchemaCompatibility.RequiredContains(schema, schemaPropertyName)
+                    && (isHeaderParameter || _requiredResolver.IsParameterPathRequired(
                         fullParameterName,
                         AsParametersHelper.GetMethodInfo(item.ApiDescription),
                         context.SchemaRepository,
                         context.SchemaGenerator,
-                        schemaProvider))
+                        schemaProvider)))
                 {
 #if OPENAPI_V2
                     // In OpenApi 2.x, IOpenApiParameter.Required is read-only; cast to the concrete type to set it.
