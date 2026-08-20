@@ -209,6 +209,26 @@ public class Issue232FormBodyTests : IClassFixture<AspNetCoreOpenApiTests.TestWe
     }
 
     [Fact]
+    public async Task ControllerFromForm_CollidingPropertyNames_StayWithTheirOwnParameter()
+    {
+        var schema = await GetFormSchemaAsync("/api/issue232-colliding", UrlEncoded);
+        var bags = schema.GetProperty("allOf").EnumerateArray().ToArray();
+
+        // The rule matcher compares property names only, so applying every parameter's validator to every bag
+        // would hand the left DTO's constraints to the right one and vice versa.
+        var left = bags[0];
+        left.GetProperty("properties").GetProperty("Name").GetProperty("minLength").GetInt32().Should().Be(1);
+        left.GetProperty("properties").GetProperty("Name").GetProperty("maxLength").GetInt32().Should().Be(5);
+        left.GetProperty("required").EnumerateArray().Select(e => e.GetString()).Should().BeEquivalentTo(["Name"]);
+
+        var right = bags[1];
+        var rightName = right.GetProperty("properties").GetProperty("Name");
+        rightName.GetProperty("maxLength").GetInt32().Should().Be(100);
+        rightName.TryGetProperty("minLength", out _).Should().BeFalse();
+        right.TryGetProperty("required", out _).Should().BeFalse();
+    }
+
+    [Fact]
     public async Task ControllerFromForm_IncludedValidatorRules_ReachTheFormSchema()
     {
         var schema = await GetFormSchemaAsync("/api/issue232-include", UrlEncoded);

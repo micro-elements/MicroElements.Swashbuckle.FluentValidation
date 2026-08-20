@@ -156,8 +156,17 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
             if (rootTypes.Length == 0)
                 return;
 
-            foreach (var propertyBag in formSchemas)
+            for (var bagIndex = 0; bagIndex < formSchemas.Count; bagIndex++)
             {
+                var propertyBag = formSchemas[bagIndex];
+
+                // Each allOf member is the property bag of one form parameter, in declaration order, so pair them
+                // up. Without that, a validator would be applied to every bag and an action binding two DTOs that
+                // share a property name would hand one DTO's constraints to the other.
+                var typesForBag = formSchemas.Count == rootTypes.Length
+                    ? new[] { rootTypes[bagIndex] }
+                    : rootTypes;
+
                 // The schema's own keys, verbatim: PascalCase binding names for a flattened controller form.
                 // They must be exact, because the schema-side lookup (and the "required" entry) is ordinal;
                 // the validator-side match is name-insensitive, so camelCase resolver output still binds.
@@ -171,7 +180,7 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
                 if (schemaPropertyNames.Length == 0)
                     continue;
 
-                foreach (var rootType in rootTypes)
+                foreach (var rootType in typesForBag)
                 {
                     foreach (var validator in _validatorRegistry.GetValidators(rootType))
                     {

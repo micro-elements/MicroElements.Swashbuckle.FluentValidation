@@ -212,3 +212,36 @@ public class Issue232IncludeController : ControllerBase
     [HttpPost]
     public IActionResult Post([FromForm] Issue232IncludeFormDto dto) => Ok(dto.Shared);
 }
+
+/// <summary>
+/// Two form parameters whose DTOs declare a property with the SAME name but different rules. The rule matcher
+/// has no type affinity, so each <c>allOf</c> bag must only ever see the validator of the parameter it belongs to.
+/// </summary>
+public class Issue232CollidingLeftDto
+{
+    public string Name { get; set; } = string.Empty;
+}
+
+public class Issue232CollidingLeftDtoValidator : AbstractValidator<Issue232CollidingLeftDto>
+{
+    public Issue232CollidingLeftDtoValidator() => RuleFor(x => x.Name).NotEmpty().MaximumLength(5);
+}
+
+public class Issue232CollidingRightDto
+{
+    public string Name { get; set; } = string.Empty;
+}
+
+public class Issue232CollidingRightDtoValidator : AbstractValidator<Issue232CollidingRightDto>
+{
+    public Issue232CollidingRightDtoValidator() => RuleFor(x => x.Name).MaximumLength(100);
+}
+
+[ApiController]
+[Route("api/issue232-colliding")]
+public class Issue232CollidingController : ControllerBase
+{
+    [HttpPost]
+    public IActionResult Post([FromForm] Issue232CollidingLeftDto left, [FromForm] Issue232CollidingRightDto right)
+        => Ok(left.Name + right.Name);
+}
