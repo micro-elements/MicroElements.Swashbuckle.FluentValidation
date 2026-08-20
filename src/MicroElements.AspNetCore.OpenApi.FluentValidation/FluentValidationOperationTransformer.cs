@@ -82,10 +82,11 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
         }
 
         /// <summary>
-        /// Issue #216: writes <c>encoding.&lt;part&gt;.contentType</c> for IFormFile parts restricted via
-        /// <c>.FileContentType(...)</c>. The part key is taken verbatim from the multipart schema and matched to the
-        /// rule name-insensitively, so it works whether the part schema is inline (net9) or a <c>$ref</c> (net10) —
-        /// only the property key is needed, never the resolved part schema.
+        /// Applies FluentValidation rules to the operation's form request body.
+        /// <para>
+        /// Issue #232: rules for an ApiExplorer-flattened controller <c>[FromForm]</c> body.
+        /// Issue #216: <c>encoding.&lt;part&gt;.contentType</c> for restricted IFormFile parts.
+        /// </para>
         /// </summary>
         private void ApplyRulesToRequestBody(OpenApiOperation operation, OpenApiOperationTransformerContext context)
         {
@@ -97,9 +98,162 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
             if (requestBody?.Content == null)
                 return;
 
-            if (!requestBody.Content.TryGetValue("multipart/form-data", out var mediaType) || mediaType == null)
+            foreach (var content in requestBody.Content)
+            {
+                var isMultipart = string.Equals(content.Key, "multipart/form-data", StringComparison.OrdinalIgnoreCase);
+                var isUrlEncoded = string.Equals(content.Key, "application/x-www-form-urlencoded", StringComparison.OrdinalIgnoreCase);
+
+                // Other content types (application/json, ...) are owned by FluentValidationSchemaTransformer.
+                if (!isMultipart && !isUrlEncoded)
+                    continue;
+
+                var mediaType = content.Value;
+                if (mediaType == null)
+                    continue;
+
+                // A throwing DTO must not skip the Issue #216 encoding step that runs after it.
+                try
+                {
+                    ApplyRulesToFlattenedFormSchema(mediaType, context);
+                }
+                catch (Exception e)
+                {
+                    _logger.LogWarning(0, e, "Error applying FluentValidation rules to the form request body");
+                }
+
+                // Only multipart carries per-part media types; x-www-form-urlencoded never gets an encoding object.
+                if (isMultipart)
+                    ApplyFileContentTypeEncoding(mediaType, context);
+            }
+        }
+
+        /// <summary>
+        /// Issue #232: MVC ApiExplorer flattens a controller's <c>[FromForm]</c> complex parameter into one
+        /// <c>ApiParameterDescription</c> per form field, and Microsoft.AspNetCore.OpenApi builds an INLINE
+        /// request-body schema from those descriptions — the DTO's <c>JsonTypeInfo</c> is never requested, so
+        /// <see cref="FluentValidationSchemaTransformer"/> never sees it. Apply the DTO's rules to that inline schema
+        /// here. Minimal API form bodies are not flattened and are already handled by the schema transformer.
+        /// </summary>
+        private void ApplyRulesToFlattenedFormSchema(OpenApiMediaType mediaType, OpenApiOperationTransformerContext context)
+        {
+            // Safety only, not the discriminator: never mutate a shared component from the operation transformer.
+#if OPENAPI_V2
+            var formSchema = mediaType.Schema as OpenApiSchema;
+#else
+            var formSchema = mediaType.Schema;
+            if (formSchema?.Reference != null)
+                formSchema = null;
+#endif
+            if (formSchema == null)
                 return;
 
+            // An action binding more than one form parameter gets an allOf of one property bag per parameter.
+            var formSchemas = GetFormPropertyBags(formSchema);
+            if (formSchemas.Count == 0)
+                return;
+
+            var rootTypes = GetFlattenedFormBodyTypes(context.Description).ToArray();
+            if (rootTypes.Length == 0)
+                return;
+
+            foreach (var propertyBag in formSchemas)
+            {
+                // The schema's own keys, verbatim: PascalCase binding names for a flattened controller form.
+                // They must be exact, because the schema-side lookup (and the "required" entry) is ordinal;
+                // the validator-side match is name-insensitive, so camelCase resolver output still binds.
+                // Dotted keys are ApiExplorer's binding path for a nested complex property ("Inner.City").
+                // Nested form fields are not supported (the rule name resolves to the leaf, never to the path),
+                // and the name-insensitive matcher skips the separator — so "Inner.City" would otherwise pick up
+                // the rules of an unrelated root property named "InnerCity". Drop them.
+                var schemaPropertyNames = propertyBag.Properties.Keys
+                    .Where(key => key.IndexOf('.') < 0)
+                    .ToArray();
+                if (schemaPropertyNames.Length == 0)
+                    continue;
+
+                foreach (var rootType in rootTypes)
+                {
+                    foreach (var validator in _validatorRegistry.GetValidators(rootType))
+                    {
+                        var schemaContext = new AspNetCoreSchemaGenerationContext(
+                            schema: propertyBag,
+                            schemaType: rootType,
+                            rules: _rules,
+                            schemaGenerationOptions: _schemaGenerationOptions,
+                            schemaProvider: new AspNetCoreSchemaProvider(null, _logger));
+
+                        FluentValidationSchemaBuilder.ApplyRulesToSchema(
+                            schemaType: rootType,
+                            schemaPropertyNames: schemaPropertyNames,
+                            validator: validator,
+                            logger: _logger,
+                            schemaGenerationContext: schemaContext);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Returns the schemas that actually carry the form fields: the body schema itself, or — when the action
+        /// binds more than one form parameter — the <c>allOf</c> members Microsoft.AspNetCore.OpenApi composes it
+        /// from. Mirrors the one-level traversal <see cref="FluentValidationSchemaTransformer"/> does.
+        /// </summary>
+        private static IReadOnlyList<OpenApiSchema> GetFormPropertyBags(OpenApiSchema formSchema)
+        {
+            var propertyBags = new List<OpenApiSchema>();
+
+            if (formSchema.Properties is { Count: > 0 })
+                propertyBags.Add(formSchema);
+
+            foreach (var embeddedSchema in OpenApiSchemaCompatibility.GetAllOf(formSchema))
+            {
+                if (embeddedSchema.Properties is { Count: > 0 })
+                    propertyBags.Add(embeddedSchema);
+            }
+
+            return propertyBags;
+        }
+
+        /// <summary>
+        /// Yields the distinct DTO types behind ApiExplorer-flattened form fields.
+        /// A non-null <c>ModelMetadata.ContainerType</c> on a form-bound description IS the flattening signal:
+        /// a minimal API form parameter describes the whole DTO and has no container.
+        /// </summary>
+        private static IEnumerable<Type> GetFlattenedFormBodyTypes(Microsoft.AspNetCore.Mvc.ApiExplorer.ApiDescription description)
+        {
+            var seen = new HashSet<Type>();
+
+            foreach (var parameterDescription in description.ParameterDescriptions)
+            {
+                var sourceId = parameterDescription.Source?.Id;
+                if (sourceId != "Form" && sourceId != "FormFile")
+                    continue;
+
+                // Not flattened => minimal API => already covered by FluentValidationSchemaTransformer.
+                if (parameterDescription.ModelMetadata?.ContainerType == null)
+                    continue;
+
+                // ContainerType is the IMMEDIATE container (the inner type for a nested "Inner.Name" field),
+                // while ParameterDescriptor.ParameterType is the root DTO the action actually binds.
+                var rootType = parameterDescription.ParameterDescriptor?.ParameterType
+                    ?? parameterDescription.ModelMetadata.ContainerType;
+
+                if (rootType == null || rootType.IsPrimitiveType())
+                    continue;
+
+                if (seen.Add(rootType))
+                    yield return rootType;
+            }
+        }
+
+        /// <summary>
+        /// Issue #216: writes <c>encoding.&lt;part&gt;.contentType</c> for IFormFile parts restricted via
+        /// <c>.FileContentType(...)</c>. The part key is taken verbatim from the multipart schema and matched to the
+        /// rule name-insensitively, so it works whether the part schema is inline (net9) or a <c>$ref</c> (net10) —
+        /// only the property key is needed, never the resolved part schema.
+        /// </summary>
+        private void ApplyFileContentTypeEncoding(OpenApiMediaType mediaType, OpenApiOperationTransformerContext context)
+        {
             var partKeys = GetFormPartKeys(mediaType.Schema, context);
             if (partKeys.Count == 0)
                 return;
@@ -108,31 +262,37 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
             if (methodInfo == null)
                 return;
 
+            // The first validator that restricts a part wins, so the single-validator output is unchanged.
+            var assignedParts = new HashSet<string>();
+
             foreach (var parameter in methodInfo.GetParameters())
             {
-                var validator = _validatorRegistry.GetValidator(parameter.ParameterType);
-                if (validator == null)
-                    continue;
-
-                var contentTypeRules = FileUploadIntrospection
-                    .GetFileContentTypeValidators(validator, parameter.ParameterType, _schemaGenerationOptions)
-                    .ToList();
-                if (contentTypeRules.Count == 0)
-                    continue;
-
-                foreach (var partKey in partKeys)
+                foreach (var validator in _validatorRegistry.GetValidators(parameter.ParameterType))
                 {
-                    var allowed = contentTypeRules
-                        .Where(rule => rule.MemberName.EqualsIgnoreAll(partKey))
-                        .Select(rule => rule.Meta.AllowedContentTypes)
-                        .FirstOrDefault();
-                    if (allowed == null || allowed.Count == 0)
+                    var contentTypeRules = FileUploadIntrospection
+                        .GetFileContentTypeValidators(validator, parameter.ParameterType, _schemaGenerationOptions)
+                        .ToList();
+                    if (contentTypeRules.Count == 0)
                         continue;
 
-                    mediaType.Encoding ??= new Dictionary<string, OpenApiEncoding>();
-                    if (!mediaType.Encoding.TryGetValue(partKey, out var encoding) || encoding == null)
-                        mediaType.Encoding[partKey] = encoding = new OpenApiEncoding();
-                    encoding.ContentType = string.Join(", ", allowed);
+                    foreach (var partKey in partKeys)
+                    {
+                        if (assignedParts.Contains(partKey))
+                            continue;
+
+                        var allowed = contentTypeRules
+                            .Where(rule => rule.MemberName.EqualsIgnoreAll(partKey))
+                            .Select(rule => rule.Meta.AllowedContentTypes)
+                            .FirstOrDefault();
+                        if (allowed == null || allowed.Count == 0)
+                            continue;
+
+                        mediaType.Encoding ??= new Dictionary<string, OpenApiEncoding>();
+                        if (!mediaType.Encoding.TryGetValue(partKey, out var encoding) || encoding == null)
+                            mediaType.Encoding[partKey] = encoding = new OpenApiEncoding();
+                        encoding.ContentType = string.Join(", ", allowed);
+                        assignedParts.Add(partKey);
+                    }
                 }
             }
         }

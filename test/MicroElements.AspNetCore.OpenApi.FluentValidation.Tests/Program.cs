@@ -22,6 +22,14 @@ builder.Services.AddOpenApi(options =>
     options.AddFluentValidationRules();
 });
 
+// Issue #232: the multipart controller fixture lives in its own document. Components are per-document, and
+// a second IFormFile-bearing endpoint in "v1" would promote IFormFile to a $ref component before the schema
+// transformer reaches UploadImageRequest.file — a pre-existing net10 limitation of the Issue #216 description.
+builder.Services.AddOpenApi("v2", options =>
+{
+    options.AddFluentValidationRules();
+});
+
 var app = builder.Build();
 
 app.MapOpenApi();
