@@ -245,3 +245,20 @@ public class Issue232CollidingController : ControllerBase
     public IActionResult Post([FromForm] Issue232CollidingLeftDto left, [FromForm] Issue232CollidingRightDto right)
         => Ok(left.Name + right.Name);
 }
+
+/// <summary>
+/// Three form-bound parameters against two DTO types: more <c>allOf</c> bags than DTOs, so the bags cannot be
+/// paired with the parameters by position alone. Isolated in the "v2" document like the other IFormFile fixture.
+/// </summary>
+[ApiController]
+[ApiExplorerSettings(GroupName = "v2")]
+[Route("api/issue232-colliding-with-file")]
+public class Issue232CollidingWithFileController : ControllerBase
+{
+    [HttpPost]
+    [Consumes("multipart/form-data")]
+    public IActionResult Post(
+        [FromForm] Issue232CollidingLeftDto left,
+        [FromForm] Issue232CollidingRightDto right,
+        IFormFile file) => Ok(left.Name + right.Name + file.Length);
+}

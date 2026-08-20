@@ -229,6 +229,27 @@ public class Issue232FormBodyTests : IClassFixture<AspNetCoreOpenApiTests.TestWe
     }
 
     [Fact]
+    public async Task ControllerFromForm_MoreBagsThanDtoTypes_StillPairsEachBagWithItsOwner()
+    {
+        // Three form-bound parameters, two DTO types: the extra IFormFile bag means the bag count no longer
+        // matches the DTO count, so pairing has to go by which parameter owns which field.
+        var mediaType = await GetFormMediaTypeAsync("/api/issue232-colliding-with-file", Multipart, "v2");
+        var bags = mediaType.GetProperty("schema").GetProperty("allOf").EnumerateArray().ToArray();
+
+        var left = bags[0].GetProperty("properties").GetProperty("Name");
+        left.GetProperty("minLength").GetInt32().Should().Be(1);
+        left.GetProperty("maxLength").GetInt32().Should().Be(5);
+
+        var right = bags[1].GetProperty("properties").GetProperty("Name");
+        right.GetProperty("maxLength").GetInt32().Should().Be(100);
+        right.TryGetProperty("minLength", out _).Should().BeFalse();
+        bags[1].TryGetProperty("required", out _).Should().BeFalse();
+
+        // The loose IFormFile parameter has no validated container and must be left alone.
+        bags[2].TryGetProperty("required", out _).Should().BeFalse();
+    }
+
+    [Fact]
     public async Task ControllerFromForm_IncludedValidatorRules_ReachTheFormSchema()
     {
         var schema = await GetFormSchemaAsync("/api/issue232-include", UrlEncoded);

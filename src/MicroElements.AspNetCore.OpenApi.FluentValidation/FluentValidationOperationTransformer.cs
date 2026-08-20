@@ -152,47 +152,54 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
             if (formSchemas.Count == 0)
                 return;
 
-            var rootTypes = GetFlattenedFormBodyTypes(context.Description).ToArray();
-            if (rootTypes.Length == 0)
+            var formParameters = GetFlattenedFormParameters(context.Description);
+            if (formParameters.Count == 0)
                 return;
 
-            for (var bagIndex = 0; bagIndex < formSchemas.Count; bagIndex++)
+            var claimed = new bool[formParameters.Count];
+
+            foreach (var propertyBag in formSchemas)
             {
-                var propertyBag = formSchemas[bagIndex];
+                // Each form parameter claims the bag keys it owns, in declaration order, and no key is claimed
+                // twice. Applying every parameter's validator to every bag would let two DTOs that declare a
+                // property with the same name exchange constraints — the rule matcher compares names only.
+                var unclaimedKeys = new HashSet<string>(propertyBag.Properties.Keys, StringComparer.Ordinal);
 
-                // Each allOf member is the property bag of one form parameter, in declaration order, so pair them
-                // up. Without that, a validator would be applied to every bag and an action binding two DTOs that
-                // share a property name would hand one DTO's constraints to the other.
-                var typesForBag = formSchemas.Count == rootTypes.Length
-                    ? new[] { rootTypes[bagIndex] }
-                    : rootTypes;
-
-                // The schema's own keys, verbatim: PascalCase binding names for a flattened controller form.
-                // They must be exact, because the schema-side lookup (and the "required" entry) is ordinal;
-                // the validator-side match is name-insensitive, so camelCase resolver output still binds.
-                // Dotted keys are ApiExplorer's binding path for a nested complex property ("Inner.City").
-                // Nested form fields are not supported (the rule name resolves to the leaf, never to the path),
-                // and the name-insensitive matcher skips the separator — so "Inner.City" would otherwise pick up
-                // the rules of an unrelated root property named "InnerCity". Drop them.
-                var schemaPropertyNames = propertyBag.Properties.Keys
-                    .Where(key => key.IndexOf('.') < 0)
-                    .ToArray();
-                if (schemaPropertyNames.Length == 0)
-                    continue;
-
-                foreach (var rootType in typesForBag)
+                for (var index = 0; index < formParameters.Count && unclaimedKeys.Count > 0; index++)
                 {
-                    foreach (var validator in _validatorRegistry.GetValidators(rootType))
+                    if (claimed[index])
+                        continue;
+
+                    var formParameter = formParameters[index];
+                    var ownedKeys = formParameter.FieldNames.Where(unclaimedKeys.Contains).ToArray();
+                    if (ownedKeys.Length == 0)
+                        continue;
+
+                    claimed[index] = true;
+                    foreach (var ownedKey in ownedKeys)
+                        unclaimedKeys.Remove(ownedKey);
+
+                    // The keys are used verbatim, because the schema-side lookup (and the "required" entry) is
+                    // ordinal; the validator-side match is name-insensitive, so camelCase resolver output still
+                    // binds. Dotted keys are ApiExplorer's binding path for a nested complex property
+                    // ("Inner.City"). Nested form fields are not supported (a rule name resolves to the leaf,
+                    // never to the path), and the name-insensitive matcher skips the separator — so "Inner.City"
+                    // would otherwise pick up the rules of an unrelated root property named "InnerCity".
+                    var schemaPropertyNames = ownedKeys.Where(key => key.IndexOf('.') < 0).ToArray();
+                    if (schemaPropertyNames.Length == 0)
+                        continue;
+
+                    foreach (var validator in _validatorRegistry.GetValidators(formParameter.RootType))
                     {
                         var schemaContext = new AspNetCoreSchemaGenerationContext(
                             schema: propertyBag,
-                            schemaType: rootType,
+                            schemaType: formParameter.RootType,
                             rules: _rules,
                             schemaGenerationOptions: _schemaGenerationOptions,
                             schemaProvider: new AspNetCoreSchemaProvider(null, _logger));
 
                         FluentValidationSchemaBuilder.ApplyRulesToSchema(
-                            schemaType: rootType,
+                            schemaType: formParameter.RootType,
                             schemaPropertyNames: schemaPropertyNames,
                             validator: validator,
                             logger: _logger,
@@ -224,13 +231,33 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
         }
 
         /// <summary>
-        /// Yields the distinct DTO types behind ApiExplorer-flattened form fields.
-        /// A non-null <c>ModelMetadata.ContainerType</c> on a form-bound description IS the flattening signal:
-        /// a minimal API form parameter describes the whole DTO and has no container.
+        /// One entry per ApiExplorer-flattened form parameter: the DTO the action binds, and the form field
+        /// names it was flattened into.
         /// </summary>
-        private static IEnumerable<Type> GetFlattenedFormBodyTypes(Microsoft.AspNetCore.Mvc.ApiExplorer.ApiDescription description)
+        private sealed class FlattenedFormParameter
         {
-            var seen = new HashSet<Type>();
+            public FlattenedFormParameter(object? descriptor, Type rootType)
+            {
+                Descriptor = descriptor;
+                RootType = rootType;
+            }
+
+            public object? Descriptor { get; }
+
+            public Type RootType { get; }
+
+            public List<string> FieldNames { get; } = new List<string>();
+        }
+
+        /// <summary>
+        /// Groups the flattened form field descriptions back into the action parameters they came from, in
+        /// declaration order. A non-null <c>ModelMetadata.ContainerType</c> on a form-bound description IS the
+        /// flattening signal: a minimal API form parameter describes the whole DTO and has no container.
+        /// </summary>
+        private static IReadOnlyList<FlattenedFormParameter> GetFlattenedFormParameters(
+            Microsoft.AspNetCore.Mvc.ApiExplorer.ApiDescription description)
+        {
+            var formParameters = new List<FlattenedFormParameter>();
 
             foreach (var parameterDescription in description.ParameterDescriptions)
             {
@@ -242,17 +269,32 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
                 if (parameterDescription.ModelMetadata?.ContainerType == null)
                     continue;
 
+                if (string.IsNullOrEmpty(parameterDescription.Name))
+                    continue;
+
                 // ContainerType is the IMMEDIATE container (the inner type for a nested "Inner.Name" field),
                 // while ParameterDescriptor.ParameterType is the root DTO the action actually binds.
+                var descriptor = (object?)parameterDescription.ParameterDescriptor;
                 var rootType = parameterDescription.ParameterDescriptor?.ParameterType
                     ?? parameterDescription.ModelMetadata.ContainerType;
 
                 if (rootType == null || rootType.IsPrimitiveType())
                     continue;
 
-                if (seen.Add(rootType))
-                    yield return rootType;
+                var formParameter = formParameters.LastOrDefault(candidate => descriptor != null
+                    ? ReferenceEquals(candidate.Descriptor, descriptor)
+                    : candidate.Descriptor == null && candidate.RootType == rootType);
+
+                if (formParameter == null)
+                {
+                    formParameter = new FlattenedFormParameter(descriptor, rootType);
+                    formParameters.Add(formParameter);
+                }
+
+                formParameter.FieldNames.Add(parameterDescription.Name);
             }
+
+            return formParameters;
         }
 
         /// <summary>
