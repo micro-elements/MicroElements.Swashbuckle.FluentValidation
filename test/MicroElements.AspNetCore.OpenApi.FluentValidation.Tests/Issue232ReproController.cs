@@ -262,3 +262,102 @@ public class Issue232CollidingWithFileController : ControllerBase
         [FromForm] Issue232CollidingRightDto right,
         IFormFile file) => Ok(left.Name + right.Name + file.Length);
 }
+
+// A parameter the action binds directly — a loose scalar, array or IFormFile — is not flattened out of a
+// container, but Microsoft.AspNetCore.OpenApi still gives it its own allOf property bag. If such a bag is not
+// accounted for, a DTO declared after it claims the foreign bag on a coinciding field name and is then locked
+// out of the bag it actually owns. The controllers below place the loose parameter first and in the middle.
+
+public class Issue232LooseFirstDto
+{
+    public string Name { get; set; } = string.Empty;
+}
+
+public class Issue232LooseFirstDtoValidator : AbstractValidator<Issue232LooseFirstDto>
+{
+    public Issue232LooseFirstDtoValidator() => RuleFor(x => x.Name).NotEmpty().MaximumLength(5);
+}
+
+[ApiController]
+[Route("api/issue232-loose-first")]
+public class Issue232LooseFirstController : ControllerBase
+{
+    [HttpPost]
+    public IActionResult Post([FromForm(Name = "Name")] string loose, [FromForm] Issue232LooseFirstDto dto)
+        => Ok(loose + dto.Name);
+}
+
+public class Issue232LooseMiddleSubDto
+{
+    public string Name { get; set; } = string.Empty;
+}
+
+public class Issue232LooseMiddleSubDtoValidator : AbstractValidator<Issue232LooseMiddleSubDto>
+{
+    public Issue232LooseMiddleSubDtoValidator() => RuleFor(x => x.Name).MaximumLength(5);
+}
+
+public class Issue232LooseMiddleSuperDto
+{
+    public string Name { get; set; } = string.Empty;
+
+    public string Age { get; set; } = string.Empty;
+}
+
+public class Issue232LooseMiddleSuperDtoValidator : AbstractValidator<Issue232LooseMiddleSuperDto>
+{
+    public Issue232LooseMiddleSuperDtoValidator()
+    {
+        RuleFor(x => x.Name).MaximumLength(100);
+        RuleFor(x => x.Age).MaximumLength(9);
+    }
+}
+
+[ApiController]
+[Route("api/issue232-loose-middle")]
+public class Issue232LooseMiddleController : ControllerBase
+{
+    [HttpPost]
+    public IActionResult Post(
+        [FromForm] Issue232LooseMiddleSubDto sub,
+        [FromForm(Name = "Age")] string loose,
+        [FromForm] Issue232LooseMiddleSuperDto super) => Ok(sub.Name + loose + super.Age);
+}
+
+/// <summary>
+/// The stolen bag can even hold a different JSON type, turning a string-length rule into an array-cardinality
+/// one — a document that contradicts the server in both directions.
+/// </summary>
+public class Issue232LooseArrayDto
+{
+    public string Tags { get; set; } = string.Empty;
+}
+
+public class Issue232LooseArrayDtoValidator : AbstractValidator<Issue232LooseArrayDto>
+{
+    public Issue232LooseArrayDtoValidator() => RuleFor(x => x.Tags).MaximumLength(7);
+}
+
+[ApiController]
+[Route("api/issue232-loose-array")]
+public class Issue232LooseArrayController : ControllerBase
+{
+    [HttpPost]
+    public IActionResult Post([FromForm(Name = "Tags")] string[] tags, [FromForm] Issue232LooseArrayDto dto)
+        => Ok(tags.Length + dto.Tags);
+}
+
+/// <summary>
+/// A file part inside an <c>allOf</c> bag: the Issue #216 <c>encoding.contentType</c> lookup has to walk the
+/// bags, not only the body schema's own properties. Isolated in the "v2" document like the other file fixtures.
+/// </summary>
+[ApiController]
+[ApiExplorerSettings(GroupName = "v2")]
+[Route("api/issue232-multipart-multiparam")]
+public class Issue232MultipartMultiParamController : ControllerBase
+{
+    [HttpPost]
+    [Consumes("multipart/form-data")]
+    public IActionResult Post([FromForm] Issue232FileFormDto file, [FromForm] Issue232MultiAlphaDto alpha)
+        => Ok(file.Title + alpha.Alpha);
+}

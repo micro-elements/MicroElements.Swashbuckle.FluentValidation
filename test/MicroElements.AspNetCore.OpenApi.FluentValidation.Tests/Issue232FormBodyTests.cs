@@ -250,6 +250,67 @@ public class Issue232FormBodyTests : IClassFixture<AspNetCoreOpenApiTests.TestWe
     }
 
     [Fact]
+    public async Task ControllerFromForm_LooseParameterFirst_DoesNotStealTheDtoRules()
+    {
+        var bags = await GetAllOfBagsAsync("/api/issue232-loose-first");
+
+        // bags[0] belongs to the loose string parameter, which has no validated container.
+        bags[0].GetProperty("properties").GetProperty("Name").TryGetProperty("maxLength", out _).Should().BeFalse();
+        bags[0].TryGetProperty("required", out _).Should().BeFalse();
+
+        var dto = bags[1].GetProperty("properties").GetProperty("Name");
+        dto.GetProperty("minLength").GetInt32().Should().Be(1);
+        dto.GetProperty("maxLength").GetInt32().Should().Be(5);
+        bags[1].GetProperty("required").EnumerateArray().Select(e => e.GetString()).Should().BeEquivalentTo(["Name"]);
+    }
+
+    [Fact]
+    public async Task ControllerFromForm_LooseParameterInTheMiddle_LeavesEveryDtoWithItsOwnRules()
+    {
+        var bags = await GetAllOfBagsAsync("/api/issue232-loose-middle");
+
+        bags[0].GetProperty("properties").GetProperty("Name").GetProperty("maxLength").GetInt32().Should().Be(5);
+
+        // bags[1] is the loose "Age" string; claiming it would lock the third parameter out of its own bag.
+        bags[1].GetProperty("properties").GetProperty("Age").TryGetProperty("maxLength", out _).Should().BeFalse();
+
+        var super = bags[2].GetProperty("properties");
+        super.GetProperty("Name").GetProperty("maxLength").GetInt32().Should().Be(100);
+        super.GetProperty("Age").GetProperty("maxLength").GetInt32().Should().Be(9);
+    }
+
+    [Fact]
+    public async Task ControllerFromForm_LooseArrayParameter_DoesNotReceiveAStringLengthRule()
+    {
+        var bags = await GetAllOfBagsAsync("/api/issue232-loose-array");
+
+        // A string MaximumLength applied to the array bag would surface as maxItems — a constraint the server
+        // does not enforce, on a parameter that has no validator at all.
+        var loose = bags[0].GetProperty("properties").GetProperty("Tags");
+        loose.TryGetProperty("maxItems", out _).Should().BeFalse();
+        loose.TryGetProperty("maxLength", out _).Should().BeFalse();
+
+        bags[1].GetProperty("properties").GetProperty("Tags").GetProperty("maxLength").GetInt32().Should().Be(7);
+    }
+
+    [Fact]
+    public async Task ControllerFromForm_FilePartInsideAnAllOfBag_StillEmitsEncoding()
+    {
+        var mediaType = await GetFormMediaTypeAsync("/api/issue232-multipart-multiparam", Multipart, "v2");
+
+        // With a single form parameter the part keys are the body schema's own properties; with several the
+        // body is an allOf and the parts live one level down.
+        var fileEncoding = mediaType.GetProperty("encoding").EnumerateObject()
+            .First(property => property.Name.Equals("File", StringComparison.OrdinalIgnoreCase))
+            .Value;
+        fileEncoding.GetProperty("contentType").GetString().Should().Be("image/jpeg, image/png");
+
+        var bags = mediaType.GetProperty("schema").GetProperty("allOf").EnumerateArray().ToArray();
+        bags[0].GetProperty("properties").GetProperty("Title").GetProperty("maxLength").GetInt32().Should().Be(20);
+        bags[1].GetProperty("properties").GetProperty("Alpha").GetProperty("maxLength").GetInt32().Should().Be(3);
+    }
+
+    [Fact]
     public async Task ControllerFromForm_IncludedValidatorRules_ReachTheFormSchema()
     {
         var schema = await GetFormSchemaAsync("/api/issue232-include", UrlEncoded);
@@ -279,6 +340,12 @@ public class Issue232FormBodyTests : IClassFixture<AspNetCoreOpenApiTests.TestWe
             schema.TryGetProperty("properties", out _).Should().BeFalse();
             schema.TryGetProperty("required", out _).Should().BeFalse();
         }
+    }
+
+    private async Task<JsonElement[]> GetAllOfBagsAsync(string path)
+    {
+        var schema = await GetFormSchemaAsync(path, UrlEncoded);
+        return schema.GetProperty("allOf").EnumerateArray().ToArray();
     }
 
     private async Task<JsonElement> GetDocumentAsync(string documentName = "v1")

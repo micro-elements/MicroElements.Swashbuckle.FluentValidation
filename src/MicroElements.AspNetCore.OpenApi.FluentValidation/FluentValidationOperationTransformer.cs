@@ -165,19 +165,23 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
                 // property with the same name exchange constraints — the rule matcher compares names only.
                 var unclaimedKeys = new HashSet<string>(propertyBag.Properties.Keys, StringComparer.Ordinal);
 
-                for (var index = 0; index < formParameters.Count && unclaimedKeys.Count > 0; index++)
+                while (unclaimedKeys.Count > 0)
                 {
-                    if (claimed[index])
-                        continue;
+                    var index = FindOwningParameter(formParameters, claimed, unclaimedKeys);
+                    if (index < 0)
+                        break;
 
                     var formParameter = formParameters[index];
                     var ownedKeys = formParameter.FieldNames.Where(unclaimedKeys.Contains).ToArray();
-                    if (ownedKeys.Length == 0)
-                        continue;
 
                     claimed[index] = true;
                     foreach (var ownedKey in ownedKeys)
                         unclaimedKeys.Remove(ownedKey);
+
+                    // A parameter the action binds directly (a loose scalar, array or IFormFile) has no
+                    // validated container — it only exists here to claim its own bag so that a DTO cannot.
+                    if (formParameter.RootType == null)
+                        continue;
 
                     // The keys are used verbatim, because the schema-side lookup (and the "required" entry) is
                     // ordinal; the validator-side match is name-insensitive, so camelCase resolver output still
@@ -210,6 +214,46 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
         }
 
         /// <summary>
+        /// Picks the form parameter that owns a property bag: the one whose whole field set is still available in
+        /// the bag, else the one with the widest overlap, with declaration order as the final tie-break. Matching
+        /// on the widest overlap rather than on any overlap keeps a parameter from being pulled into a foreign bag
+        /// by a single coinciding field name, which would also lock it out of the bag it really owns.
+        /// </summary>
+        private static int FindOwningParameter(
+            IReadOnlyList<FlattenedFormParameter> formParameters,
+            bool[] claimed,
+            HashSet<string> unclaimedKeys)
+        {
+            var bestIndex = -1;
+            var bestOverlap = 0;
+            var bestIsComplete = false;
+
+            for (var index = 0; index < formParameters.Count; index++)
+            {
+                if (claimed[index])
+                    continue;
+
+                var fieldNames = formParameters[index].FieldNames;
+                var overlap = fieldNames.Count(unclaimedKeys.Contains);
+                if (overlap == 0)
+                    continue;
+
+                var isComplete = overlap == fieldNames.Count;
+
+                if (bestIndex < 0
+                    || (isComplete && !bestIsComplete)
+                    || (isComplete == bestIsComplete && overlap > bestOverlap))
+                {
+                    bestIndex = index;
+                    bestOverlap = overlap;
+                    bestIsComplete = isComplete;
+                }
+            }
+
+            return bestIndex;
+        }
+
+        /// <summary>
         /// Returns the schemas that actually carry the form fields: the body schema itself, or — when the action
         /// binds more than one form parameter — the <c>allOf</c> members Microsoft.AspNetCore.OpenApi composes it
         /// from. Mirrors the one-level traversal <see cref="FluentValidationSchemaTransformer"/> does.
@@ -236,7 +280,7 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
         /// </summary>
         private sealed class FlattenedFormParameter
         {
-            public FlattenedFormParameter(object? descriptor, Type rootType)
+            public FlattenedFormParameter(object? descriptor, Type? rootType)
             {
                 Descriptor = descriptor;
                 RootType = rootType;
@@ -244,7 +288,7 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
 
             public object? Descriptor { get; }
 
-            public Type RootType { get; }
+            public Type? RootType { get; }
 
             public List<string> FieldNames { get; } = new List<string>();
         }
@@ -265,22 +309,27 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
                 if (sourceId != "Form" && sourceId != "FormFile")
                     continue;
 
-                // Not flattened => minimal API => already covered by FluentValidationSchemaTransformer.
-                if (parameterDescription.ModelMetadata?.ContainerType == null)
-                    continue;
-
                 if (string.IsNullOrEmpty(parameterDescription.Name))
                     continue;
 
-                // ContainerType is the IMMEDIATE container (the inner type for a nested "Inner.Name" field),
-                // while ParameterDescriptor.ParameterType is the root DTO the action actually binds.
+                // A null ContainerType means the description was NOT flattened out of a container: either a
+                // minimal API form body (already covered by FluentValidationSchemaTransformer, and such an
+                // operation never reaches the branch below) or a parameter the action binds directly, such as a
+                // loose scalar or IFormFile. The framework emits a property bag for those too, so they are kept
+                // as claimants with no root type — otherwise a DTO would claim their bag and lose its own.
+                Type? rootType = null;
+                if (parameterDescription.ModelMetadata?.ContainerType != null)
+                {
+                    // ContainerType is the IMMEDIATE container (the inner type for a nested "Inner.Name" field),
+                    // while ParameterDescriptor.ParameterType is the root DTO the action actually binds.
+                    rootType = parameterDescription.ParameterDescriptor?.ParameterType
+                        ?? parameterDescription.ModelMetadata.ContainerType;
+
+                    if (rootType != null && rootType.IsPrimitiveType())
+                        rootType = null;
+                }
+
                 var descriptor = (object?)parameterDescription.ParameterDescriptor;
-                var rootType = parameterDescription.ParameterDescriptor?.ParameterType
-                    ?? parameterDescription.ModelMetadata.ContainerType;
-
-                if (rootType == null || rootType.IsPrimitiveType())
-                    continue;
-
                 var formParameter = formParameters.LastOrDefault(candidate => descriptor != null
                     ? ReferenceEquals(candidate.Descriptor, descriptor)
                     : candidate.Descriptor == null && candidate.RootType == rootType);
@@ -363,6 +412,22 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
         {
             if (schema?.Properties is { Count: > 0 })
                 return schema.Properties.Keys.ToList();
+
+            // An action binding more than one form parameter composes the body as an allOf of property bags.
+#if OPENAPI_V2
+            if (schema is OpenApiSchema inlineSchema)
+#else
+            var inlineSchema = schema;
+            if (inlineSchema != null)
+#endif
+            {
+                var partKeys = OpenApiSchemaCompatibility.GetAllOf(inlineSchema)
+                    .Where(bag => bag.Properties is { Count: > 0 })
+                    .SelectMany(bag => bag.Properties.Keys)
+                    .ToList();
+                if (partKeys.Count > 0)
+                    return partKeys;
+            }
 
 #if OPENAPI_V2
             if (schema is OpenApiSchemaReference schemaRef
