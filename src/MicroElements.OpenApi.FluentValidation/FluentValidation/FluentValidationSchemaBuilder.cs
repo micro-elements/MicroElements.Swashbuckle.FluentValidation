@@ -53,7 +53,7 @@ namespace MicroElements.OpenApi.FluentValidation
                 foreach (var validationRuleContext in validationRuleInfoList)
                 {
                     var propertyValidators = validationRuleContext
-                        .GetValidators()
+                        .GetValidatorsForSchema(logger)
                         .ToArrayDebug();
 
                     foreach (var propertyValidator in propertyValidators)

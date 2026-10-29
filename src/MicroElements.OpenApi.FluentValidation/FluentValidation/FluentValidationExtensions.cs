@@ -8,6 +8,7 @@ using FluentValidation;
 using FluentValidation.Internal;
 using FluentValidation.Validators;
 using MicroElements.OpenApi.Core;
+using Microsoft.Extensions.Logging;
 
 namespace MicroElements.OpenApi.FluentValidation
 {
@@ -191,6 +192,52 @@ namespace MicroElements.OpenApi.FluentValidation
             }
 
             return null;
+        }
+
+        internal static IEnumerable<IPropertyValidator> GetValidatorsForSchema(this ValidationRuleContext validationRuleContext, ILogger logger)
+        {
+            return GetValidatorsForSchema(validationRuleContext, logger, new HashSet<IValidator>(ReferenceEqualityComparer.Instance) { validationRuleContext.ValidatorContext.Validator });
+        }
+
+        private static IEnumerable<IPropertyValidator> GetValidatorsForSchema(ValidationRuleContext validationRuleContext, ILogger logger, HashSet<IValidator> validatorPath)
+        {
+            foreach (var propertyValidator in validationRuleContext.GetValidators())
+            {
+                yield return propertyValidator;
+
+                if (propertyValidator is not IChildValidatorAdaptor childAdapter)
+                {
+                    continue;
+                }
+
+                var (childValidator, _) = Functional
+                    .Try(() => childAdapter.GetValidatorFromChildValidatorAdapter())
+                    .OnError(e => logger.LogWarning(0, e, "Resolving child validator for property '{PropertyName}' failed", validationRuleContext.ValidationRule.PropertyName));
+                if (childValidator is null || !validatorPath.Add(childValidator))
+                {
+                    continue;
+                }
+
+                var typeContext = new TypeContext(validationRuleContext.ValidationRule.TypeToValidate, validationRuleContext.SchemaGenerationOptions);
+                var childContext = new ValidatorContext(typeContext, childValidator);
+
+                // RuleFor(x => x) constrains the parent value, not a member of a separate child schema.
+                foreach (var childRule in childContext.GetValidationRules())
+                {
+                    var expression = childRule.ValidationRule.Expression;
+                    if (childRule.IsCollectionRule() || expression is null || expression.Body != expression.Parameters[0])
+                    {
+                        continue;
+                    }
+
+                    foreach (var childPropertyValidator in GetValidatorsForSchema(childRule, logger, validatorPath))
+                    {
+                        yield return childPropertyValidator;
+                    }
+                }
+
+                validatorPath.Remove(childValidator);
+            }
         }
     }
 }
