@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>net9.0;net10.0</TargetFrameworks>
+    <TargetFrameworks>net9.0;net10.0;net11.0</TargetFrameworks>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -11,7 +11,7 @@
     <PackageTags>OpenApi FluentValidation aspnetcore Microsoft.AspNetCore.OpenApi</PackageTags>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0'">
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0' Or '$(TargetFramework)' == 'net11.0'">
     <DefineConstants>$(DefineConstants);OPENAPI_V2</DefineConstants>
   </PropertyGroup>
 
@@ -27,6 +27,11 @@
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="[10.0.0,11.0.0)" />
+  </ItemGroup>
+
+  <!-- Dev range while .NET 11 is at RC; the shipped range [11.0.0,12.0.0) is applied at the Phase 4 GA gate. -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net11.0'">
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="[11.0.0-rc.3.26522.148,12.0.0)" />
   </ItemGroup>
 
   <ItemGroup>

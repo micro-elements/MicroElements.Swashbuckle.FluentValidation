@@ -107,7 +107,10 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
                 if (!isMultipart && !isUrlEncoded)
                     continue;
 
-                var mediaType = content.Value;
+                // Same reference-skip policy as the requestBody cast at the top of this method:
+                // only concrete OpenApiMediaType instances are mutated; references (e.g.
+                // OpenApiMediaTypeReference on OpenApi 3.x) are skipped by the null check below.
+                var mediaType = content.Value as OpenApiMediaType;
                 if (mediaType == null)
                     continue;
 
