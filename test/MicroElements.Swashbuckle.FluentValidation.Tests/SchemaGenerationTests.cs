@@ -130,14 +130,17 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             schema.GetProperty("ValueInRangeExclusive")!.GetMaximum().Should().Be(10);
             schema.GetProperty("ValueInRangeExclusive")!.GetExclusiveMaximum().Should().BeTrue();
 
-            schema.GetProperty("ValueInRangeFloat")!.GetMinimum().Should().Be((decimal)5.1f);
+            // Expected values are explicit decimal literals: they pin the runtime cast /
+            // Convert.ToDecimal semantics (SDK-independent), not compile-time constant
+            // folding, which changed for float/double sources in the .NET 11 SDK.
+            schema.GetProperty("ValueInRangeFloat")!.GetMinimum().Should().Be(5.1m);
             schema.GetProperty("ValueInRangeFloat")!.GetExclusiveMinimum().Should().BeNull();
-            schema.GetProperty("ValueInRangeFloat")!.GetMaximum().Should().Be((decimal)10.2f);
+            schema.GetProperty("ValueInRangeFloat")!.GetMaximum().Should().Be(10.2m);
             schema.GetProperty("ValueInRangeFloat")!.GetExclusiveMaximum().Should().BeNull();
 
-            schema.GetProperty("ValueInRangeDouble")!.GetMinimum().Should().Be((decimal)5.1d);
+            schema.GetProperty("ValueInRangeDouble")!.GetMinimum().Should().Be(5.1m);
             schema.GetProperty("ValueInRangeDouble")!.GetExclusiveMinimum().Should().BeTrue();
-            schema.GetProperty("ValueInRangeDouble")!.GetMaximum().Should().Be((decimal)10.2d);
+            schema.GetProperty("ValueInRangeDouble")!.GetMaximum().Should().Be(10.2m);
             schema.GetProperty("ValueInRangeDouble")!.GetExclusiveMaximum().Should().BeTrue();
 
             schema.GetProperty("DecimalValue")!.GetMinimum().Should().Be(1.333m);
