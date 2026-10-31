@@ -169,6 +169,23 @@ public void Configure(IApplicationBuilder app, IHostingEnvironment env)
 
 > .NET 8/9 use Swashbuckle 8.x (Microsoft.OpenApi 1.x); .NET 10 uses Swashbuckle 10.x (Microsoft.OpenApi 2.x).
 
+### .NET 11 — development branch
+
+The following describes the development work for **7.3.0** ([#236](https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/issues/236)), validated against .NET 11 RC. It does not describe the assets shipped in the 7.2.3 release.
+
+| Package | Target-framework assets in this branch | .NET 11 verification |
+|---|---|---|
+| `MicroElements.OpenApi.FluentValidation` | net8.0, net9.0, net10.0, **net11.0** | Built and exercised through the integrations below |
+| `MicroElements.AspNetCore.OpenApi.FluentValidation` | net9.0, net10.0, **net11.0** | `Microsoft.AspNetCore.OpenApi` 11 RC / `Microsoft.OpenApi` 3.x; default OpenAPI 3.2 and explicitly selected 3.1, at runtime and build time |
+| `MicroElements.Swashbuckle.FluentValidation` | net8.0, net9.0, net10.0 | The **net10.0 asset** was tested on a .NET 11 host with Swashbuckle 10.2.1 / Microsoft.OpenApi 2.7.5: **138/138**. There is no dedicated net11.0 asset |
+| `MicroElements.NSwag.FluentValidation` | net8.0, net9.0 | Existing assets tested on .NET 11 with NSwag 14.4.0 / NJsonSchema 11.3.2, including schema serialization: **8/8**. There is no dedicated net11.0 asset |
+
+**Numeric bounds:** .NET 11 changes float/double-to-decimal conversion. Generated bounds can therefore have longer fractional values than on older runtimes: for example, a `5.1f` lower bound is emitted as `5.099999904632568359375` rather than `5.1`. The library preserves the runtime conversion result **without additional rounding**. Tests use exact runtime-specific expectations; the green .NET 11 host row does not imply byte-identical numeric documents across runtimes.
+
+**Validation status:** the complete local Release test matrix passed **781/781** on macOS with SDK `11.0.100-rc.3.26522.148`. Both native OpenAPI document versions retain FluentValidation constraints. Linux/Windows CI and validation against the final .NET 11 release remain pending; these results are RC development evidence, not a stable 7.3.0 release announcement.
+
+For source builds, `global.json` uses `rollForward: latestFeature`: newer eligible **11.0** SDK feature bands and patches are allowed without automatically selecting SDK 12. This source-build policy does not add a net11.0 asset to the Swashbuckle or NSwag packages.
+
 ## Sample application
 
 See sample project: https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/tree/master/samples/SampleWebApi
@@ -226,7 +243,7 @@ Backend support:
 
 | Backend | size & content types in `description` | machine-readable `encoding.contentType` |
 |---|---|---|
-| Swashbuckle | ✅ | ✅ (net8/9 = OpenAPI 3.0; net10 = OpenAPI 3.1) |
+| Swashbuckle | ✅ | ✅ (OpenAPI 3.0 by default, including net10) |
 | NSwag | ✅ | ✅ via `FluentValidationOperationProcessor` (serialized as `encodingType` — a known NSwag limitation) |
 | Microsoft.AspNetCore.OpenApi | ✅ | ✅ (net9 + net10) |
 
