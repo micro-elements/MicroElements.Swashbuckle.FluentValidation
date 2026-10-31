@@ -27,6 +27,8 @@
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="[10.0.0,11.0.0)" />
+    <!-- Patched minimum for GHSA-v5pm-xwqc-g5wc; ASP.NET Core 10.0.0 otherwise resolves OpenApi 2.0.0. -->
+    <PackageReference Include="Microsoft.OpenApi" Version="2.7.5" />
   </ItemGroup>
 
   <!-- Dev range while .NET 11 is at RC; the shipped range [11.0.0,12.0.0) is applied at the Phase 4 GA gate. -->

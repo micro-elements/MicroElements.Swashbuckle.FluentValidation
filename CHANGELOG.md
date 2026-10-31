@@ -1,3 +1,10 @@
+# Changes in 7.3.0-beta.1
+- Security: the native ASP.NET Core OpenAPI adapter now requires `Microsoft.OpenApi` 2.7.5 or later on net10, excluding versions affected by GHSA-v5pm-xwqc-g5wc.
+- Added: `net11.0` assets for `MicroElements.OpenApi.FluentValidation` and `MicroElements.AspNetCore.OpenApi.FluentValidation`, using .NET 11 RC3 dependencies. The native ASP.NET Core adapter supports OpenAPI 3.2 and explicitly selected OpenAPI 3.1, with runtime and build-time generation coverage.
+- Compatibility: Swashbuckle and NSwag retain their existing package targets and generator dependencies. Their existing assets were tested in .NET 11 hosts. This beta does not include the separate Swashbuckle 11 / Microsoft.OpenApi 3.x experiment.
+- Behavior: on .NET 11, float and double validation bounds can appear with additional decimal digits in generated schemas because of runtime numeric conversion changes. The library preserves the runtime values without additional rounding; existing .NET 8–10 behavior is unchanged.
+- Development: added a shared .NET 11 RC3 SDK baseline with `rollForward: latestFeature`. Package consumers do not need this SDK unless targeting .NET 11. Automatic package upload remains disabled; beta publication requires a manually triggered workflow on the beta tag.
+
 # Changes in 7.2.3
 - Fixed: constraints inside `ChildRules(child => child.RuleFor(x => x).Matches(...).DependentRules(...))` were missing from the parent property's OpenAPI schema. Identity child rules now contribute their constraints to the owning property (or collection item), including nested identity validators, while honoring rule/component filters and conditional-rule settings. The fix is shared by Swashbuckle, NSwag, and Microsoft.AspNetCore.OpenApi. Runtime validation is unchanged; schema generation does not execute `Must` predicates or repository lookups, and does not infer constraints from `DependentRules`.
 - Fixed: identity child `NotNull`/`NotEmpty` rules preserve the owning property's nullability and optionality, matching FluentValidation's null-skipping child adapters. Non-empty string/array constraints and explicit parent presence rules are preserved.

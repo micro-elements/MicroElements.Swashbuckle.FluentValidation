@@ -2,6 +2,11 @@ name: Build and publish
 
 on:
   workflow_dispatch:  # Ручной запуск
+    inputs:
+      publish_beta:
+        description: 'Publish 7.3.0-beta.1 to MyGet (requires tag v7.3.0-beta.1)'
+        type: boolean
+        default: false
   push:
     branches: [ master ]  # Запуск при пуше в master
   pull_request:
@@ -76,3 +81,35 @@ jobs:
       run: |
         chmod a+x ./build.sh
         ./build.sh --target=Travis --verbosity=normal --ForceUploadPackages=false --UploadPackages=false
+
+    # Beta publication is explicit and restricted to this immutable release tag.
+    # Normal PR/master builds keep their existing non-publishing behavior.
+    - name: Pack beta release
+      if: runner.os == 'Linux' && github.event_name == 'workflow_dispatch' && inputs.publish_beta && github.ref == 'refs/tags/v7.3.0-beta.1'
+      shell: bash
+      run: |
+        set -euo pipefail
+        for project in MicroElements.OpenApi.FluentValidation MicroElements.Swashbuckle.FluentValidation MicroElements.NSwag.FluentValidation MicroElements.AspNetCore.OpenApi.FluentValidation; do
+          dotnet pack "src/$project/$project.csproj" -c Release -o "$PWD/artifacts/beta-release" -p:Version=7.3.0-beta.1 -p:PackageVersion=7.3.0-beta.1
+          test -f "artifacts/beta-release/$project.7.3.0-beta.1.nupkg"
+        done
+
+    - name: Store beta packages
+      if: runner.os == 'Linux' && github.event_name == 'workflow_dispatch' && inputs.publish_beta && github.ref == 'refs/tags/v7.3.0-beta.1'
+      uses: actions/upload-artifact@v7
+      with:
+        name: packages-7.3.0-beta.1
+        path: artifacts/beta-release/*.nupkg
+        if-no-files-found: error
+
+    - name: Publish beta to MyGet
+      if: runner.os == 'Linux' && github.event_name == 'workflow_dispatch' && inputs.publish_beta && github.ref == 'refs/tags/v7.3.0-beta.1'
+      env:
+        MYGET_API_KEY: ${{ secrets.UPLOAD_NUGET_API_KEY }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        test -n "$MYGET_API_KEY" || { echo 'MyGet API key is not configured'; exit 1; }
+        for project in MicroElements.OpenApi.FluentValidation MicroElements.Swashbuckle.FluentValidation MicroElements.NSwag.FluentValidation MicroElements.AspNetCore.OpenApi.FluentValidation; do
+          dotnet nuget push "artifacts/beta-release/$project.7.3.0-beta.1.nupkg" --source https://www.myget.org/F/micro-elements/api/v3/index.json --api-key "$MYGET_API_KEY"
+        done
