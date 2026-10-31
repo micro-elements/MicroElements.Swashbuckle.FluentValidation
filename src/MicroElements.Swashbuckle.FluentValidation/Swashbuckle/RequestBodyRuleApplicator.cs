@@ -139,7 +139,15 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 // Only multipart/form-data carries per-part media types (application/x-www-form-urlencoded does not).
                 if (string.Equals(contentType.Key, "multipart/form-data", StringComparison.OrdinalIgnoreCase))
                 {
-                    ApplyFileContentTypeEncoding(contentType.Value, resolvedSchema, parameterType, validator, schemaRepository);
+                    // Microsoft.OpenApi 3.x content values are IOpenApiMediaType; only concrete
+                    // OpenApiMediaType instances are mutated here — the same reference-skip policy
+                    // the native adapter uses. The null check below skips reference media types
+                    // (OpenApiMediaTypeReference).
+                    var mediaType = contentType.Value as OpenApiMediaType;
+                    if (mediaType == null)
+                        continue;
+
+                    ApplyFileContentTypeEncoding(mediaType, resolvedSchema, parameterType, validator, schemaRepository);
                 }
             }
         }

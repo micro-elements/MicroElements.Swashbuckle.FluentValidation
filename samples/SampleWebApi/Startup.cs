@@ -6,7 +6,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+#if NET11_0_OR_GREATER
+// Swashbuckle 11 preview (PR #3786): Microsoft.OpenApi 3.x — models moved to the Microsoft.OpenApi namespace.
+using Microsoft.OpenApi;
+#else
 using Microsoft.OpenApi.Models;
+#endif
 using SampleWebApi.Controllers;
 
 namespace SampleWebApi
@@ -100,7 +105,13 @@ namespace SampleWebApi
             });
 
             // Adds swagger
+#if NET11_0_OR_GREATER
+            // EXPERIMENT: OpenAPI 3.2 opt-in (Swashbuckle 11 preview, PR #3786 docs:
+            // configure-and-customize-swagger.md).
+            app.UseSwagger(o => o.OpenApiVersion = Microsoft.OpenApi.OpenApiSpecVersion.OpenApi3_2);
+#else
             app.UseSwagger();
+#endif
 
             // Adds swagger UI
             app.UseSwaggerUI(c =>
