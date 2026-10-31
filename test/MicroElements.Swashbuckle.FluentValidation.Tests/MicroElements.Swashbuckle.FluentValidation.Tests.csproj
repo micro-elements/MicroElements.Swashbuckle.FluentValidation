@@ -1,13 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <TargetFrameworks>net8.0;net9.0;net10.0;net11.0</TargetFrameworks>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0'">
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0' Or '$(TargetFramework)' == 'net11.0'">
     <DefineConstants>$(DefineConstants);OPENAPI_V2</DefineConstants>
   </PropertyGroup>
 
@@ -19,7 +19,8 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.0" PrivateAssets="all" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+  <!-- net11.0 is a test-host row only (ADR-008 Decision 3): the Swashbuckle package keeps its net10.0 asset. -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0' Or '$(TargetFramework)' == 'net11.0'">
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.1" />
     <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="10.2.1" />
     <!-- Patched: 2.3.0 is vulnerable to GHSA-v5pm-xwqc-g5wc / CVE-2026-49451. -->

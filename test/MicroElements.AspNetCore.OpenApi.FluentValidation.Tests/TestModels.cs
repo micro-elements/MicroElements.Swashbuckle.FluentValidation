@@ -251,6 +251,9 @@ public class TestChildRulesNullability
     public string[]? Countries { get; set; }
     public string? RequiredCountry { get; set; }
     public string? NotNullCountry { get; set; }
+
+    // Issue #236: scalar SetValidator case (#235 semantics on a scalar property, not an object property).
+    public string? WiredCode { get; set; }
 }
 
 public class TestChildRulesNullabilityValidator : AbstractValidator<TestChildRulesNullability>
@@ -261,5 +264,56 @@ public class TestChildRulesNullabilityValidator : AbstractValidator<TestChildRul
         RuleFor(x => x.Countries).ChildRules(child => child.RuleFor(x => x).NotEmpty());
         RuleFor(x => x.RequiredCountry).NotNull().ChildRules(child => child.RuleFor(x => x).NotEmpty());
         RuleFor(x => x.NotNullCountry).ChildRules(child => child.RuleFor(x => x).NotNull());
+        RuleFor(x => x.WiredCode).SetValidator(new TestWiredCodeValidator());
+    }
+}
+
+public class TestWiredCodeValidator : AbstractValidator<string>
+{
+    public TestWiredCodeValidator()
+    {
+        RuleFor(code => code).NotEmpty().MaximumLength(10);
+    }
+}
+
+// Issue #236: RuleForEach item constraints must reach the `items` schema of the collection property.
+public class TestRuleForEachModel
+{
+    public List<string> Skus { get; set; } = new();
+}
+
+public class TestRuleForEachModelValidator : AbstractValidator<TestRuleForEachModel>
+{
+    public TestRuleForEachModelValidator()
+    {
+        RuleFor(x => x.Skus).NotEmpty().ForEach(sku => sku.NotEmpty().MaximumLength(12));
+    }
+}
+
+// Issue #236: one DTO shared by two endpoints must stay a single constrained component schema.
+public class TestSharedDto
+{
+    public string Name { get; set; } = string.Empty;
+}
+
+public class TestSharedDtoValidator : AbstractValidator<TestSharedDto>
+{
+    public TestSharedDtoValidator()
+    {
+        RuleFor(x => x.Name).NotEmpty().MinimumLength(2).MaximumLength(40);
+    }
+}
+
+// Issue #236: decimal bounds must serialize as exact decimal strings (ADR-008 1.3 folding-class guard).
+public class TestDecimalBoundsModel
+{
+    public decimal Amount { get; set; }
+}
+
+public class TestDecimalBoundsModelValidator : AbstractValidator<TestDecimalBoundsModel>
+{
+    public TestDecimalBoundsModelValidator()
+    {
+        RuleFor(x => x.Amount).InclusiveBetween(5.1m, 10.2m);
     }
 }

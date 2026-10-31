@@ -461,6 +461,13 @@ public class AspNetCoreOpenApiTests : IClassFixture<AspNetCoreOpenApiTests.TestW
                 isNullable |= type.EnumerateArray().Any(x => x.GetString() == "null");
             isNullable.Should().BeTrue($"{name} is accepted as null by its child adapter");
         }
+
+        // Issue #236: scalar SetValidator case — the wired scalar property gets its own constraints
+        // and stays optional (the property is not NotNull/Required).
+        var wiredCode = properties.GetProperty("wiredCode");
+        wiredCode.GetProperty("minLength").GetInt32().Should().Be(1);
+        wiredCode.GetProperty("maxLength").GetInt32().Should().Be(10);
+        required.Should().NotContain("wiredCode");
     }
 
     private async Task<JsonElement> GetSchemasAsync()
