@@ -63,7 +63,7 @@ public class Issue236Net11Tests : IClassFixture<AspNetCoreOpenApiTests.TestWebAp
     [Fact]
     public async Task SharedSchema_AcrossTwoEndpoints_ShouldRetainConstraints()
     {
-        var document = await GetDocumentAsync();
+        var document = await GetDocumentAsync(_factory, "v1");
 
         foreach (var path in new[] { "/api/shared-a", "/api/shared-b" })
         {
@@ -141,15 +141,30 @@ public class Issue236Net11Tests : IClassFixture<AspNetCoreOpenApiTests.TestWebAp
         amount.GetProperty("maximum").GetRawText().Should().Be("10.2");
     }
 
+    /// <summary>
+    /// Small diagnostic: documents the culture the test host process actually runs under (the ru_RU
+    /// evidence runs and CI logs rely on this being visible). The value is recorded, not asserted:
+    /// a host may legitimately resolve to the invariant culture (empty name, e.g. a POSIX locale).
+    /// </summary>
+    [Fact]
+    public void Culture_Diagnostic()
+    {
+        var current = System.Globalization.CultureInfo.CurrentCulture;
+        Console.WriteLine(
+            $"PROBE CurrentCulture={current.Name}; CurrentUICulture={System.Globalization.CultureInfo.CurrentUICulture.Name}");
+        current.Should().NotBeNull();
+    }
+
 #if NET11_0_OR_GREATER
     // ----- §5.3: float/double bounds on the .NET 11 runtime (characterization) -----
 
     /// <summary>
-    /// Characterization only: on the .NET 11 runtime the float/double-to-decimal conversion yields the
-    /// exact binary expansion of the source literal (the .NET 8-10 runtimes round to 15 significant
-    /// digits — independently verified by the conversion probe in the implementation evidence, whose
-    /// output values these expectations are taken from). The bounds constrain the schema either way;
-    /// any future rounding decision is a maintainer call (Todo-for-human) and would revisit this test.
+    /// Characterization only: on the .NET 11 runtime the float/double-to-decimal conversion observably
+    /// yields the exact binary expansion of the source literal, while the .NET 8-10 runtimes observably
+    /// yielded 5.1 / 10.2 for the same literals (both facts from the independent conversion probe in the
+    /// implementation evidence; these expectations are taken from that probe, not from the library under
+    /// test). The bounds constrain the schema either way; any future rounding decision is a maintainer
+    /// call (Todo-for-human) and would revisit this test.
     /// </summary>
     [Fact]
     public async Task FloatDoubleBounds_OnNet11Runtime_Characterization()
@@ -195,7 +210,7 @@ public class Issue236Net11Tests : IClassFixture<AspNetCoreOpenApiTests.TestWebAp
     [InlineData("v31")]
     public async Task ConstraintParity_AcrossDocuments(string documentName)
     {
-        var document = await GetDocumentAsync(documentName);
+        var document = await GetDocumentAsync(_factory, documentName);
         var schemas = document.GetProperty("components").GetProperty("schemas");
 
         // required + length: TestCustomer firstName (NotEmpty + MaximumLength).
@@ -203,8 +218,24 @@ public class Issue236Net11Tests : IClassFixture<AspNetCoreOpenApiTests.TestWebAp
         var firstName = customer.GetProperty("properties").GetProperty("firstName");
         firstName.GetProperty("minLength").GetInt32().Should().Be(1);
         firstName.GetProperty("maxLength").GetInt32().Should().Be(50);
-        customer.GetProperty("required").EnumerateArray().Select(e => e.GetString())
-            .Should().Contain("firstName");
+        var required = customer.GetProperty("required").EnumerateArray().Select(e => e.GetString()).ToArray();
+        required.Should().Contain("firstName");
+
+        // conditional rule: the When-guarded Phone rule stays excluded from the schema and does not
+        // make the property required (default ConditionalRulesMode.Exclude).
+        customer.GetProperty("properties").GetProperty("phone")
+            .TryGetProperty("pattern", out _)
+            .Should().BeFalse(because: "ConditionalRulesMode.Exclude drops .When() rules from the schema");
+        required.Should().NotContain("phone");
+
+        // scalar SetValidator: the wired scalar property gets its own constraints, not required.
+        // (wiredCode lives on the identity fixture TestChildRulesNullability.)
+        var childRules = schemas.GetProperty("TestChildRulesNullability");
+        var wiredCode = childRules.GetProperty("properties").GetProperty("wiredCode");
+        wiredCode.GetProperty("minLength").GetInt32().Should().Be(1);
+        wiredCode.GetProperty("maxLength").GetInt32().Should().Be(10);
+        childRules.GetProperty("required").EnumerateArray().Select(e => e.GetString())
+            .Should().NotContain("wiredCode");
 
         // numeric bounds: TestCustomer age.
         var age = customer.GetProperty("properties").GetProperty("age");
@@ -244,11 +275,23 @@ public class Issue236Net11Tests : IClassFixture<AspNetCoreOpenApiTests.TestWebAp
     /// <summary>
     /// Representative form check on the net11 host: the Issue #232 controller form lives in the
     /// isolated "v2" document (GroupName), so it never mixes with the main IFormFile promotion.
+    /// The v2 document is exercised in its default version (3.2 on net11) and, via a test-only
+    /// named PostConfigure on the same host, as an explicit 3.1 document — the actual
+    /// <c>openapi</c> prefix is asserted for each variant.
     /// </summary>
-    [Fact]
-    public async Task FormConstraints_OnV2Document()
+    [Theory]
+    [InlineData("3.2")]
+    [InlineData("3.1")]
+    public async Task FormConstraints_OnV2Document(string docVersion)
     {
-        var document = await GetDocumentAsync("v2");
+        using var localFactory = docVersion == "3.1" ? CreateV2As31Factory() : null;
+        var factory = (WebApplicationFactory<TestMarker>?)localFactory ?? _factory;
+
+        var document = await GetDocumentAsync(factory, "v2");
+
+        // Tooling check: the variant must actually be what it claims to be.
+        document.GetProperty("openapi").GetString().Should().StartWith(docVersion == "3.1" ? "3.1." : "3.2.");
+
         var name = document.GetProperty("paths").GetProperty("/api/issue232-form")
             .GetProperty("post").GetProperty("requestBody")
             .GetProperty("content").GetProperty("application/x-www-form-urlencoded")
@@ -257,6 +300,21 @@ public class Issue236Net11Tests : IClassFixture<AspNetCoreOpenApiTests.TestWebAp
         name.GetProperty("minLength").GetInt32().Should().Be(1);
         name.GetProperty("maxLength").GetInt32().Should().Be(42);
     }
+
+    /// <summary>
+    /// Test-only override of the named "v2" document options — the same host, no new web app and no
+    /// product-side option.
+    /// </summary>
+    private WebApplicationFactory<TestMarker> CreateV2As31Factory() =>
+        _factory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureServices(services =>
+            {
+                services.PostConfigure<Microsoft.AspNetCore.OpenApi.OpenApiOptions>(
+                    "v2",
+                    options => options.OpenApiVersion = Microsoft.OpenApi.OpenApiSpecVersion.OpenApi3_1);
+            });
+        });
 
     private static JsonElement FindParameter(JsonElement document, string path, string operation, string name)
     {
@@ -358,8 +416,8 @@ public class Issue236Net11Tests : IClassFixture<AspNetCoreOpenApiTests.TestWebAp
     public async Task BinaryResponse_FrameworkSchema_NotModified()
     {
         await using var controlFactory = new NoRulesWebApplicationFactory();
-        var withRules = await GetDocumentAsync(_factory);
-        var withoutRules = await GetDocumentAsync(controlFactory);
+        var withRules = await GetDocumentAsync(_factory, "v1");
+        var withoutRules = await GetDocumentAsync(controlFactory, "v1");
 
         // Control: our rules must really be off in the control host (Customer.firstName carries
         // the FluentValidation MaximumLength(50) only when the rules are registered).
@@ -399,16 +457,6 @@ public class Issue236Net11Tests : IClassFixture<AspNetCoreOpenApiTests.TestWebAp
         var component = withRules.GetProperty("components").GetProperty("schemas").GetProperty("FileContentResult");
         component.GetProperty("type").GetString().Should().Be("string");
         component.GetProperty("format").GetString().Should().Be("binary");
-    }
-
-    private static async Task<JsonElement> GetDocumentAsync(WebApplicationFactory<TestMarker> factory)
-    {
-        var client = factory.CreateClient();
-        var response = await client.GetAsync("/openapi/v1.json");
-        response.EnsureSuccessStatusCode();
-        var json = await response.Content.ReadAsStringAsync();
-        using var document = JsonDocument.Parse(json);
-        return document.RootElement.Clone();
     }
 
     /// <summary>
@@ -517,9 +565,19 @@ public class Issue236Net11Tests : IClassFixture<AspNetCoreOpenApiTests.TestWebAp
     }
 #endif
 
+    private static async Task<JsonElement> GetDocumentAsync(WebApplicationFactory<TestMarker> factory, string documentName)
+    {
+        var client = factory.CreateClient();
+        var response = await client.GetAsync($"/openapi/{documentName}.json");
+        response.EnsureSuccessStatusCode();
+        var json = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(json);
+        return document.RootElement.Clone();
+    }
+
     private async Task<JsonElement> GetSchemasAsync(string documentName = "v1")
     {
-        var document = await GetDocumentAsync(documentName);
+        var document = await GetDocumentAsync(_factory, documentName);
         return document.GetProperty("components").GetProperty("schemas");
     }
 
@@ -529,17 +587,5 @@ public class Issue236Net11Tests : IClassFixture<AspNetCoreOpenApiTests.TestWebAp
         var response = await client.GetAsync($"/openapi/{documentName}.json");
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadAsStringAsync();
-    }
-
-    private async Task<JsonElement> GetDocumentAsync(string documentName = "v1")
-    {
-        var client = _factory.CreateClient();
-        var response = await client.GetAsync($"/openapi/{documentName}.json");
-        response.EnsureSuccessStatusCode();
-        var json = await response.Content.ReadAsStringAsync();
-
-        // Clone so the returned element does not depend on the disposed JsonDocument's pooled buffer.
-        using var document = JsonDocument.Parse(json);
-        return document.RootElement.Clone();
     }
 }

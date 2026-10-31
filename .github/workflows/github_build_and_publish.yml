@@ -33,12 +33,14 @@ jobs:
     # artifact-asserting test requires them to exist. Uses the SDK's GenerateOpenApiDocuments
     # target directly: the ADR §4 literal `dotnet build -f` commands do not trigger the
     # generation hook on this multi-targeted sample. The per-project OpenApiFiles cache is
-    # removed before the second run, otherwise the incremental check skips generation and the
-    # 3.1 document is never produced. Explicit existence checks = exit-on-error.
+    # removed before EACH run: otherwise the first run becomes an incremental no-op on any
+    # re-run (silently keeping the previous document), and the second run would skip generation
+    # for the 3.1 document. Explicit exit-code and existence checks throughout.
     - name: Generate net11 OpenAPI artifacts (Linux)
       if: runner.os == 'Linux'
       run: |
         set -e
+        rm -f samples/SampleAspNetCoreOpenApi/obj/SampleAspNetCoreOpenApi.OpenApiFiles.cache
         dotnet msbuild samples/SampleAspNetCoreOpenApi/SampleAspNetCoreOpenApi.csproj -restore -target:Build,GenerateOpenApiDocuments -p:TargetFramework=net11.0 -p:Configuration=Release -p:OpenApiGenerateDocuments=true -p:OpenApiDocumentsDirectory="$PWD/artifacts/net11/openapi-3.2" -p:OpenApiGenerationEnvironment=Staging
         rm -f samples/SampleAspNetCoreOpenApi/obj/SampleAspNetCoreOpenApi.OpenApiFiles.cache
         dotnet msbuild samples/SampleAspNetCoreOpenApi/SampleAspNetCoreOpenApi.csproj -restore -target:Build,GenerateOpenApiDocuments -p:TargetFramework=net11.0 -p:Configuration=Release -p:OpenApiGenerateDocuments=true -p:OpenApiDocumentsDirectory="$PWD/artifacts/net11/openapi-3.1" -p:OpenApiGenerationEnvironment=Production "-p:OpenApiGenerateDocumentsOptions=--openapi-version OpenApi3_1"
@@ -50,9 +52,12 @@ jobs:
       shell: powershell
       run: |
         $ErrorActionPreference = "Stop"
+        if (Test-Path "samples/SampleAspNetCoreOpenApi/obj/SampleAspNetCoreOpenApi.OpenApiFiles.cache") { Remove-Item -Force "samples/SampleAspNetCoreOpenApi/obj/SampleAspNetCoreOpenApi.OpenApiFiles.cache" }
         dotnet msbuild samples/SampleAspNetCoreOpenApi/SampleAspNetCoreOpenApi.csproj -restore -target:Build,GenerateOpenApiDocuments -p:TargetFramework=net11.0 -p:Configuration=Release -p:OpenApiGenerateDocuments=true -p:OpenApiDocumentsDirectory="$PWD/artifacts/net11/openapi-3.2" -p:OpenApiGenerationEnvironment=Staging
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         if (Test-Path "samples/SampleAspNetCoreOpenApi/obj/SampleAspNetCoreOpenApi.OpenApiFiles.cache") { Remove-Item -Force "samples/SampleAspNetCoreOpenApi/obj/SampleAspNetCoreOpenApi.OpenApiFiles.cache" }
         dotnet msbuild samples/SampleAspNetCoreOpenApi/SampleAspNetCoreOpenApi.csproj -restore -target:Build,GenerateOpenApiDocuments -p:TargetFramework=net11.0 -p:Configuration=Release -p:OpenApiGenerateDocuments=true -p:OpenApiDocumentsDirectory="$PWD/artifacts/net11/openapi-3.1" -p:OpenApiGenerationEnvironment=Production "-p:OpenApiGenerateDocumentsOptions=--openapi-version OpenApi3_1"
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         if (-not (Test-Path "artifacts/net11/openapi-3.2/SampleAspNetCoreOpenApi.json")) { throw "missing artifacts/net11/openapi-3.2/SampleAspNetCoreOpenApi.json" }
         if (-not (Test-Path "artifacts/net11/openapi-3.1/SampleAspNetCoreOpenApi.json")) { throw "missing artifacts/net11/openapi-3.1/SampleAspNetCoreOpenApi.json" }
 

@@ -324,9 +324,10 @@ public class TestDecimalBoundsModelValidator : AbstractValidator<TestDecimalBoun
 }
 
 // Issue #236: float/double-typed range bounds on the .NET 11 runtime. The runtime's float/double-to-decimal
-// conversion changed in .NET 11 (exact binary expansion; the .NET 8-10 runtimes round to 15 significant
-// digits — verified by the independent conversion probe in the implementation evidence). This fixture
-// characterizes the visible bound values on net11; the constraint itself is not lost.
+// conversion observably changed in .NET 11: it yields the exact binary expansion of the source literal,
+// while the .NET 8-10 runtimes observably yielded 5.1 / 10.2 for the same literals (both facts verified by
+// the independent conversion probe in the implementation evidence). This fixture characterizes the visible
+// bound values on net11; the constraint itself is not lost.
 public class TestFloatDoubleBoundsModel
 {
     public float FloatValue { get; set; }
