@@ -242,3 +242,24 @@ public class TestTraceHeadersValidator : AbstractValidator<TestTraceHeaders>
         RuleFor(x => x.XRequestId).NotEmpty().MaximumLength(64);
     }
 }
+
+
+// PR #235: a child adapter skips a null property, including identity presence rules.
+public class TestChildRulesNullability
+{
+    public string? Country { get; set; }
+    public string[]? Countries { get; set; }
+    public string? RequiredCountry { get; set; }
+    public string? NotNullCountry { get; set; }
+}
+
+public class TestChildRulesNullabilityValidator : AbstractValidator<TestChildRulesNullability>
+{
+    public TestChildRulesNullabilityValidator()
+    {
+        RuleFor(x => x.Country).ChildRules(child => child.RuleFor(x => x).NotEmpty().Matches("^[A-Z]+$"));
+        RuleFor(x => x.Countries).ChildRules(child => child.RuleFor(x => x).NotEmpty());
+        RuleFor(x => x.RequiredCountry).NotNull().ChildRules(child => child.RuleFor(x => x).NotEmpty());
+        RuleFor(x => x.NotNullCountry).ChildRules(child => child.RuleFor(x => x).NotNull());
+    }
+}

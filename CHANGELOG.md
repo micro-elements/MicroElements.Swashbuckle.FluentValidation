@@ -1,3 +1,7 @@
+# Changes in 7.2.3
+- Fixed: constraints inside `ChildRules(child => child.RuleFor(x => x).Matches(...).DependentRules(...))` were missing from the parent property's OpenAPI schema. Identity child rules now contribute their constraints to the owning property (or collection item), including nested identity validators, while honoring rule/component filters and conditional-rule settings. The fix is shared by Swashbuckle, NSwag, and Microsoft.AspNetCore.OpenApi. Runtime validation is unchanged; schema generation does not execute `Must` predicates or repository lookups, and does not infer constraints from `DependentRules`.
+- Fixed: identity child `NotNull`/`NotEmpty` rules preserve the owning property's nullability and optionality, matching FluentValidation's null-skipping child adapters. Non-empty string/array constraints and explicit parent presence rules are preserved.
+
 # Changes in 7.2.2
 - Fixed: `MicroElements.AspNetCore.OpenApi.FluentValidation` did not apply FluentValidation rules to a `[FromForm]` DTO bound by an **MVC controller** action (Issue #232, follow-up to the Swashbuckle-only #170 fix)
   - Root cause: MVC `ApiExplorer` flattens a controller's `[FromForm]` complex parameter into one form field per property, so `Microsoft.AspNetCore.OpenApi` builds the request body as an **inline** schema from those descriptions and never asks for the DTO's `JsonTypeInfo` — `FluentValidationSchemaTransformer` therefore never saw the type. Minimal API form bodies are not flattened and were never affected

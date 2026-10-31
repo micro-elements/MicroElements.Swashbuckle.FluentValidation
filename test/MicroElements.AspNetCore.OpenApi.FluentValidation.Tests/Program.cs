@@ -44,4 +44,6 @@ app.MapPost("/api/collections", (TestCollectionModel model) => Results.Ok(model)
 app.MapPost("/api/password", (TestPasswordModel model) => Results.Ok(model));
 app.MapPost("/api/upload", ([Microsoft.AspNetCore.Mvc.FromForm] UploadImageRequest request) => Results.Ok()).DisableAntiforgery();
 
+app.MapPost("/api/child-rules-nullability", (TestChildRulesNullability model) => Results.Ok(model));
+
 app.Run();
