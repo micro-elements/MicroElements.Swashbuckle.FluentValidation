@@ -14,6 +14,16 @@ services.AddFluentValidationRulesToOpenApi();
 services.AddOpenApi(options =>
 {
     options.AddFluentValidationRules();
+#if NET11_0_OR_GREATER
+    // Issue #236: environment-dependent document marker for build-time generation. The title proves
+    // that OpenApiGenerationEnvironment reached the generation process (ADR-008 §4 Phase 3).
+    var environmentName = builder.Environment.EnvironmentName;
+    options.AddDocumentTransformer((document, context, cancellationToken) =>
+    {
+        document.Info.Title = "env-" + environmentName;
+        return Task.CompletedTask;
+    });
+#endif
 });
 
 var app = builder.Build();

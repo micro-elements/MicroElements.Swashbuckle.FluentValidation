@@ -251,6 +251,9 @@ public class TestChildRulesNullability
     public string[]? Countries { get; set; }
     public string? RequiredCountry { get; set; }
     public string? NotNullCountry { get; set; }
+
+    // Issue #236: scalar SetValidator case (#235 semantics on a scalar property, not an object property).
+    public string? WiredCode { get; set; }
 }
 
 public class TestChildRulesNullabilityValidator : AbstractValidator<TestChildRulesNullability>
@@ -261,5 +264,81 @@ public class TestChildRulesNullabilityValidator : AbstractValidator<TestChildRul
         RuleFor(x => x.Countries).ChildRules(child => child.RuleFor(x => x).NotEmpty());
         RuleFor(x => x.RequiredCountry).NotNull().ChildRules(child => child.RuleFor(x => x).NotEmpty());
         RuleFor(x => x.NotNullCountry).ChildRules(child => child.RuleFor(x => x).NotNull());
+        RuleFor(x => x.WiredCode).SetValidator(new TestWiredCodeValidator());
+    }
+}
+
+public class TestWiredCodeValidator : AbstractValidator<string>
+{
+    public TestWiredCodeValidator()
+    {
+        RuleFor(code => code).NotEmpty().MaximumLength(10);
+    }
+}
+
+// Issue #236: collection item constraints must reach the `items` schema of the collection property.
+// The rule is declared with the direct RuleForEach form: it creates a CollectionPropertyRule, which the
+// generators map to `items` (verified net9/net10/net11, both adapters). The RuleFor(...).ForEach(...) shape
+// leaves item constraints in identity-child rules, which the schema walk skips — a pre-existing limitation
+// recorded for a separate follow-up, unrelated to #236.
+public class TestRuleForEachModel
+{
+    public List<string> Skus { get; set; } = new();
+}
+
+public class TestRuleForEachModelValidator : AbstractValidator<TestRuleForEachModel>
+{
+    public TestRuleForEachModelValidator()
+    {
+        RuleFor(x => x.Skus).NotEmpty(); // minItems: 1 on the collection property
+        RuleForEach(x => x.Skus).NotEmpty().MaximumLength(12); // minLength/maxLength on items
+    }
+}
+
+// Issue #236: one DTO shared by two endpoints must stay a single constrained component schema.
+public class TestSharedDto
+{
+    public string Name { get; set; } = string.Empty;
+}
+
+public class TestSharedDtoValidator : AbstractValidator<TestSharedDto>
+{
+    public TestSharedDtoValidator()
+    {
+        RuleFor(x => x.Name).NotEmpty().MinimumLength(2).MaximumLength(40);
+    }
+}
+
+// Issue #236: decimal bounds must serialize as exact decimal strings (ADR-008 1.3 folding-class guard).
+public class TestDecimalBoundsModel
+{
+    public decimal Amount { get; set; }
+}
+
+public class TestDecimalBoundsModelValidator : AbstractValidator<TestDecimalBoundsModel>
+{
+    public TestDecimalBoundsModelValidator()
+    {
+        RuleFor(x => x.Amount).InclusiveBetween(5.1m, 10.2m);
+    }
+}
+
+// Issue #236: float/double-typed range bounds on the .NET 11 runtime. The runtime's float/double-to-decimal
+// conversion observably changed in .NET 11: it yields the exact binary expansion of the source literal,
+// while the .NET 8-10 runtimes observably yielded 5.1 / 10.2 for the same literals (both facts verified by
+// the independent conversion probe in the implementation evidence). This fixture characterizes the visible
+// bound values on net11; the constraint itself is not lost.
+public class TestFloatDoubleBoundsModel
+{
+    public float FloatValue { get; set; }
+    public double DoubleValue { get; set; }
+}
+
+public class TestFloatDoubleBoundsModelValidator : AbstractValidator<TestFloatDoubleBoundsModel>
+{
+    public TestFloatDoubleBoundsModelValidator()
+    {
+        RuleFor(x => x.FloatValue).InclusiveBetween(5.1f, 10.2f);
+        RuleFor(x => x.DoubleValue).ExclusiveBetween(5.1, 10.2);
     }
 }

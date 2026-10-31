@@ -2,6 +2,11 @@ name: Build and publish
 
 on:
   workflow_dispatch:  # Ручной запуск
+    inputs:
+      publish_beta:
+        description: 'Publish 7.3.0-beta.1 to MyGet (requires tag v7.3.0-beta.1)'
+        type: boolean
+        default: false
   push:
     branches: [ master ]  # Запуск при пуше в master
   pull_request:
@@ -17,16 +22,49 @@ jobs:
 
     steps:
     # Шаг 1: Клонируем репозиторий
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v7
 
     # Шаг 2: Устанавливаем .NET SDK
     - name: Setup .NET SDK
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v6
       with:
         dotnet-version: |
           8.0.x
           9.0.x
           10.0.x
+          11.0.100-rc.3.26522.148
+
+    # Issue #236: generate the net11 build-time OpenAPI artifacts before the test run — the
+    # artifact-asserting test requires them to exist. Uses the SDK's GenerateOpenApiDocuments
+    # target directly: the ADR §4 literal `dotnet build -f` commands do not trigger the
+    # generation hook on this multi-targeted sample. The per-project OpenApiFiles cache is
+    # removed before EACH run: otherwise the first run becomes an incremental no-op on any
+    # re-run (silently keeping the previous document), and the second run would skip generation
+    # for the 3.1 document. Explicit exit-code and existence checks throughout.
+    - name: Generate net11 OpenAPI artifacts (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        set -e
+        rm -f samples/SampleAspNetCoreOpenApi/obj/SampleAspNetCoreOpenApi.OpenApiFiles.cache
+        dotnet msbuild samples/SampleAspNetCoreOpenApi/SampleAspNetCoreOpenApi.csproj -restore -target:Build,GenerateOpenApiDocuments -p:TargetFramework=net11.0 -p:Configuration=Release -p:OpenApiGenerateDocuments=true -p:OpenApiDocumentsDirectory="$PWD/artifacts/net11/openapi-3.2" -p:OpenApiGenerationEnvironment=Staging
+        rm -f samples/SampleAspNetCoreOpenApi/obj/SampleAspNetCoreOpenApi.OpenApiFiles.cache
+        dotnet msbuild samples/SampleAspNetCoreOpenApi/SampleAspNetCoreOpenApi.csproj -restore -target:Build,GenerateOpenApiDocuments -p:TargetFramework=net11.0 -p:Configuration=Release -p:OpenApiGenerateDocuments=true -p:OpenApiDocumentsDirectory="$PWD/artifacts/net11/openapi-3.1" -p:OpenApiGenerationEnvironment=Production "-p:OpenApiGenerateDocumentsOptions=--openapi-version OpenApi3_1"
+        test -f artifacts/net11/openapi-3.2/SampleAspNetCoreOpenApi.json
+        test -f artifacts/net11/openapi-3.1/SampleAspNetCoreOpenApi.json
+
+    - name: Generate net11 OpenAPI artifacts (Windows)
+      if: runner.os == 'Windows'
+      shell: powershell
+      run: |
+        $ErrorActionPreference = "Stop"
+        if (Test-Path "samples/SampleAspNetCoreOpenApi/obj/SampleAspNetCoreOpenApi.OpenApiFiles.cache") { Remove-Item -Force "samples/SampleAspNetCoreOpenApi/obj/SampleAspNetCoreOpenApi.OpenApiFiles.cache" }
+        dotnet msbuild samples/SampleAspNetCoreOpenApi/SampleAspNetCoreOpenApi.csproj -restore -target:Build,GenerateOpenApiDocuments -p:TargetFramework=net11.0 -p:Configuration=Release -p:OpenApiGenerateDocuments=true -p:OpenApiDocumentsDirectory="$PWD/artifacts/net11/openapi-3.2" -p:OpenApiGenerationEnvironment=Staging
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        if (Test-Path "samples/SampleAspNetCoreOpenApi/obj/SampleAspNetCoreOpenApi.OpenApiFiles.cache") { Remove-Item -Force "samples/SampleAspNetCoreOpenApi/obj/SampleAspNetCoreOpenApi.OpenApiFiles.cache" }
+        dotnet msbuild samples/SampleAspNetCoreOpenApi/SampleAspNetCoreOpenApi.csproj -restore -target:Build,GenerateOpenApiDocuments -p:TargetFramework=net11.0 -p:Configuration=Release -p:OpenApiGenerateDocuments=true -p:OpenApiDocumentsDirectory="$PWD/artifacts/net11/openapi-3.1" -p:OpenApiGenerationEnvironment=Production "-p:OpenApiGenerateDocumentsOptions=--openapi-version OpenApi3_1"
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        if (-not (Test-Path "artifacts/net11/openapi-3.2/SampleAspNetCoreOpenApi.json")) { throw "missing artifacts/net11/openapi-3.2/SampleAspNetCoreOpenApi.json" }
+        if (-not (Test-Path "artifacts/net11/openapi-3.1/SampleAspNetCoreOpenApi.json")) { throw "missing artifacts/net11/openapi-3.1/SampleAspNetCoreOpenApi.json" }
 
     - name: Build Windows
       if: runner.os == 'Windows'
@@ -42,4 +80,36 @@ jobs:
         UPLOAD_NUGET_API_KEY: ${{ secrets.UPLOAD_NUGET_API_KEY }}
       run: |
         chmod a+x ./build.sh
-        ./build.sh --target=Travis --verbosity=normal --ForceUploadPackages=true
+        ./build.sh --target=Travis --verbosity=normal --ForceUploadPackages=false --UploadPackages=false
+
+    # Beta publication is explicit and restricted to this immutable release tag.
+    # Normal PR/master builds keep their existing non-publishing behavior.
+    - name: Pack beta release
+      if: runner.os == 'Linux' && github.event_name == 'workflow_dispatch' && inputs.publish_beta && github.ref == 'refs/tags/v7.3.0-beta.1'
+      shell: bash
+      run: |
+        set -euo pipefail
+        for project in MicroElements.OpenApi.FluentValidation MicroElements.Swashbuckle.FluentValidation MicroElements.NSwag.FluentValidation MicroElements.AspNetCore.OpenApi.FluentValidation; do
+          dotnet pack "src/$project/$project.csproj" -c Release -o "$PWD/artifacts/beta-release" -p:Version=7.3.0-beta.1 -p:PackageVersion=7.3.0-beta.1
+          test -f "artifacts/beta-release/$project.7.3.0-beta.1.nupkg"
+        done
+
+    - name: Store beta packages
+      if: runner.os == 'Linux' && github.event_name == 'workflow_dispatch' && inputs.publish_beta && github.ref == 'refs/tags/v7.3.0-beta.1'
+      uses: actions/upload-artifact@v7
+      with:
+        name: packages-7.3.0-beta.1
+        path: artifacts/beta-release/*.nupkg
+        if-no-files-found: error
+
+    - name: Publish beta to MyGet
+      if: runner.os == 'Linux' && github.event_name == 'workflow_dispatch' && inputs.publish_beta && github.ref == 'refs/tags/v7.3.0-beta.1'
+      env:
+        MYGET_API_KEY: ${{ secrets.UPLOAD_NUGET_API_KEY }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        test -n "$MYGET_API_KEY" || { echo 'MyGet API key is not configured'; exit 1; }
+        for project in MicroElements.OpenApi.FluentValidation MicroElements.Swashbuckle.FluentValidation MicroElements.NSwag.FluentValidation MicroElements.AspNetCore.OpenApi.FluentValidation; do
+          dotnet nuget push "artifacts/beta-release/$project.7.3.0-beta.1.nupkg" --source https://www.myget.org/F/micro-elements/api/v3/index.json --api-key "$MYGET_API_KEY"
+        done
