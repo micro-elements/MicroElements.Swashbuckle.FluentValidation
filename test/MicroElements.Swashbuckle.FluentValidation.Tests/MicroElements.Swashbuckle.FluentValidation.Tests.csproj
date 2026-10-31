@@ -19,12 +19,21 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.0" PrivateAssets="all" />
   </ItemGroup>
 
-  <!-- net11.0 is a test-host row only (ADR-008 Decision 3): the Swashbuckle package keeps its net10.0 asset. -->
-  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0' Or '$(TargetFramework)' == 'net11.0'">
+  <!-- net10.0: ADR-008 Decision 3 host row (Swashbuckle 10.2.1 + Microsoft.OpenApi 2.7.5).
+       net11.0: EXPERIMENT (experiment/issue-236-swash11-openapi32) — Swashbuckle 11 preview from
+       PR #3786 (Microsoft.OpenApi 3.x flows transitively, no pin) with an OpenAPI 3.2 opt-in. -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.1" />
     <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="10.2.1" />
     <!-- Patched: 2.3.0 is vulnerable to GHSA-v5pm-xwqc-g5wc / CVE-2026-49451. -->
     <PackageReference Include="Microsoft.OpenApi" Version="2.7.5" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net11.0'">
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="11.0.0-pr.3786.3260" />
+    <PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="11.0.0-pr.3786.3260" />
+    <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="11.0.0-pr.3786.3260" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="11.0.0-rc.3.26522.148" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net8.0' Or '$(TargetFramework)' == 'net9.0'">
@@ -36,6 +45,9 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\MicroElements.Swashbuckle.FluentValidation\MicroElements.Swashbuckle.FluentValidation.csproj" />
     <ProjectReference Include="..\..\src\MicroElements.Swashbuckle.FluentValidation.AspNetCore\MicroElements.Swashbuckle.FluentValidation.AspNetCore.csproj" />
+    <!-- EXPERIMENT: the net11 row generates the real Swagger document through the existing sample host
+         (SampleWebApi multi-targets net9/net11, so the reference exists on net11 only). -->
+    <ProjectReference Include="..\..\samples\SampleWebApi\SampleWebApi.csproj" Condition="'$(TargetFramework)' == 'net11.0'" />
   </ItemGroup>
 
 </Project>
