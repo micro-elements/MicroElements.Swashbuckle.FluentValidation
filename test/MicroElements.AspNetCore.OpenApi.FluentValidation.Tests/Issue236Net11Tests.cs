@@ -83,12 +83,37 @@ public class Issue236Net11Tests : IClassFixture<AspNetCoreOpenApiTests.TestWebAp
             .Should().Contain("name");
     }
 
-    // ----- §5.2: RuleForEach items — BLOCKED, see ADR-008-implementation-notes.md -----
-    // The library does not map .ForEach(...) child rules to the collection's `items` schema on ANY TFM
-    // (verified net9.0/net10.0/net11.0: skus.items carries only the framework "type": "string").
-    // Adding the mapping is a behavior change outside the ADR-008 scope; the coordinator decides.
-    // The fixture and endpoint stay in TestModels.cs/Program.cs; the test returns with the decision.
+    // ----- §5.2: collection item constraints via RuleForEach -----
 
+    /// <summary>
+    /// Rules declared with the direct <c>RuleForEach</c> form reach the <c>items</c> schema of the
+    /// collection property on every TFM and (net11) in both the default 3.2 and the explicit 3.1
+    /// documents. The <c>RuleFor(...).ForEach(...)</c> shape is a separate pre-existing limitation
+    /// (see ADR-008-implementation-notes.md), not a #236 item.
+    /// </summary>
+    [Fact]
+    public async Task RuleForEach_Items_ShouldHaveConstraints()
+    {
+        var schemas = await GetSchemasAsync();
+        AssertRuleForEachItems(schemas);
+
+#if NET11_0_OR_GREATER
+        var schemas31 = await GetSchemasAsync("v31");
+        AssertRuleForEachItems(schemas31);
+#endif
+    }
+
+    private static void AssertRuleForEachItems(JsonElement schemas)
+    {
+        var skus = schemas.GetProperty("TestRuleForEachModel")
+            .GetProperty("properties").GetProperty("skus");
+
+        skus.GetProperty("minItems").GetInt32().Should().Be(1, because: "the collection-level NotEmpty rule");
+
+        var items = skus.GetProperty("items");
+        items.GetProperty("minLength").GetInt32().Should().Be(1);
+        items.GetProperty("maxLength").GetInt32().Should().Be(12);
+    }
     // ----- §5.3: exact decimal strings (ADR-008 §1.3 folding-class guard) -----
 
     /// <summary>
@@ -117,6 +142,34 @@ public class Issue236Net11Tests : IClassFixture<AspNetCoreOpenApiTests.TestWebAp
     }
 
 #if NET11_0_OR_GREATER
+    // ----- §5.3: float/double bounds on the .NET 11 runtime (characterization) -----
+
+    /// <summary>
+    /// Characterization only: on the .NET 11 runtime the float/double-to-decimal conversion yields the
+    /// exact binary expansion of the source literal (the .NET 8-10 runtimes round to 15 significant
+    /// digits — independently verified by the conversion probe in the implementation evidence, whose
+    /// output values these expectations are taken from). The bounds constrain the schema either way;
+    /// any future rounding decision is a maintainer call (Todo-for-human) and would revisit this test.
+    /// </summary>
+    [Fact]
+    public async Task FloatDoubleBounds_OnNet11Runtime_Characterization()
+    {
+        var schemas = await GetSchemasAsync();
+        var props = schemas.GetProperty("TestFloatDoubleBoundsModel").GetProperty("properties");
+
+        var floatValue = props.GetProperty("floatValue");
+        floatValue.GetProperty("minimum").GetRawText().Should().Be("5.099999904632568359375");
+        floatValue.GetProperty("maximum").GetRawText().Should().Be("10.19999980926513671875");
+
+        var doubleValue = props.GetProperty("doubleValue");
+        doubleValue.GetProperty("exclusiveMinimum").GetRawText().Should().Be("5.0999999999999996447286321199");
+        doubleValue.GetProperty("exclusiveMaximum").GetRawText().Should().Be("10.199999999999999289457264240");
+        doubleValue.TryGetProperty("minimum", out _).Should().BeFalse();
+        doubleValue.TryGetProperty("maximum", out _).Should().BeFalse();
+    }
+#endif
+
+#if NET11_0_OR_GREATER
     // ----- §5.1/§5.3: document versions (net11: "v1" = default 3.2, "v31" = explicit 3.1) -----
 
     [Fact]
@@ -130,6 +183,92 @@ public class Issue236Net11Tests : IClassFixture<AspNetCoreOpenApiTests.TestWebAp
 
         using var doc31 = JsonDocument.Parse(v31);
         doc31.RootElement.GetProperty("openapi").GetString().Should().StartWith("3.1.");
+    }
+
+    /// <summary>
+    /// §5.3 parity: the explicit 3.1 document carries the same FluentValidation constraints as the
+    /// default document — required, length, pattern, numeric bounds, shared $ref, collection items —
+    /// plus representative query and header parameter checks.
+    /// </summary>
+    [Theory]
+    [InlineData("v1")]
+    [InlineData("v31")]
+    public async Task ConstraintParity_AcrossDocuments(string documentName)
+    {
+        var document = await GetDocumentAsync(documentName);
+        var schemas = document.GetProperty("components").GetProperty("schemas");
+
+        // required + length: TestCustomer firstName (NotEmpty + MaximumLength).
+        var customer = schemas.GetProperty("TestCustomer");
+        var firstName = customer.GetProperty("properties").GetProperty("firstName");
+        firstName.GetProperty("minLength").GetInt32().Should().Be(1);
+        firstName.GetProperty("maxLength").GetInt32().Should().Be(50);
+        customer.GetProperty("required").EnumerateArray().Select(e => e.GetString())
+            .Should().Contain("firstName");
+
+        // numeric bounds: TestCustomer age.
+        var age = customer.GetProperty("properties").GetProperty("age");
+        age.GetProperty("minimum").GetInt32().Should().Be(0);
+        age.GetProperty("maximum").GetInt32().Should().Be(150);
+
+        // pattern: TestPasswordModel (merged Matches rules).
+        schemas.GetProperty("TestPasswordModel").GetProperty("properties").GetProperty("password")
+            .GetProperty("pattern").GetString()
+            .Should().Be("(?=[\\s\\S]*(?:[a-z]))(?=[\\s\\S]*(?:[A-Z]))(?=[\\s\\S]*(?:[0-9]))");
+
+        // shared $ref: two endpoints referencing one constrained component.
+        foreach (var path in new[] { "/api/shared-a", "/api/shared-b" })
+        {
+            document.GetProperty("paths").GetProperty(path).GetProperty("post")
+                .GetProperty("requestBody").GetProperty("content")
+                .GetProperty("application/json").GetProperty("schema")
+                .GetProperty("$ref").GetString().Should().Contain("TestSharedDto");
+        }
+        schemas.GetProperty("TestSharedDto").GetProperty("properties").GetProperty("name")
+            .GetProperty("maxLength").GetInt32().Should().Be(40);
+
+        // collection items: TestRuleForEachModel (RuleForEach form).
+        AssertRuleForEachItems(schemas);
+
+        // query parameters: /api/search Take (InclusiveBetween 1..100).
+        var take = FindParameter(document, "/api/search", "get", "Take");
+        take.GetProperty("schema").GetProperty("minimum").GetInt32().Should().Be(1);
+        take.GetProperty("schema").GetProperty("maximum").GetInt32().Should().Be(100);
+
+        // header parameters: aliased X-Request-Id (NotEmpty + MaximumLength 64).
+        var requestId = FindParameter(document, "/api/trace", "get", "X-Request-Id");
+        requestId.GetProperty("schema").GetProperty("maxLength").GetInt32().Should().Be(64);
+        requestId.GetProperty("required").GetBoolean().Should().BeTrue();
+    }
+
+    /// <summary>
+    /// Representative form check on the net11 host: the Issue #232 controller form lives in the
+    /// isolated "v2" document (GroupName), so it never mixes with the main IFormFile promotion.
+    /// </summary>
+    [Fact]
+    public async Task FormConstraints_OnV2Document()
+    {
+        var document = await GetDocumentAsync("v2");
+        var name = document.GetProperty("paths").GetProperty("/api/issue232-form")
+            .GetProperty("post").GetProperty("requestBody")
+            .GetProperty("content").GetProperty("application/x-www-form-urlencoded")
+            .GetProperty("schema").GetProperty("properties").GetProperty("Name");
+
+        name.GetProperty("minLength").GetInt32().Should().Be(1);
+        name.GetProperty("maxLength").GetInt32().Should().Be(42);
+    }
+
+    private static JsonElement FindParameter(JsonElement document, string path, string operation, string name)
+    {
+        var parameters = document.GetProperty("paths").GetProperty(path)
+            .GetProperty(operation).GetProperty("parameters");
+        foreach (var parameter in parameters.EnumerateArray())
+        {
+            if (parameter.GetProperty("name").GetString() == name)
+                return parameter;
+        }
+
+        throw new Xunit.Sdk.XunitException($"Parameter '{name}' not found on {path} {operation}");
     }
 
     /// <summary>
@@ -219,10 +358,24 @@ public class Issue236Net11Tests : IClassFixture<AspNetCoreOpenApiTests.TestWebAp
     public async Task BinaryResponse_FrameworkSchema_NotModified()
     {
         await using var controlFactory = new NoRulesWebApplicationFactory();
-        var withRules = await GetBinaryDescriptionAsync(_factory);
-        var withoutRules = await GetBinaryDescriptionAsync(controlFactory);
+        var withRules = await GetDocumentAsync(_factory);
+        var withoutRules = await GetDocumentAsync(controlFactory);
 
-        // Semantic comparison: type/format/$ref shape, not whole-document bytes.
+        // Control: our rules must really be off in the control host (Customer.firstName carries
+        // the FluentValidation MaximumLength(50) only when the rules are registered).
+        static (int? minLength, int? maxLength) NameConstraints(JsonElement document)
+        {
+            var firstName = document.GetProperty("components").GetProperty("schemas")
+                .GetProperty("TestCustomer").GetProperty("properties").GetProperty("firstName");
+            return (firstName.TryGetProperty("minLength", out var min) ? min.GetInt32() : null,
+                firstName.TryGetProperty("maxLength", out var max) ? max.GetInt32() : null);
+        }
+
+        NameConstraints(withRules).Should().Be((1, 50), because: "the main host registers the rules");
+        NameConstraints(withoutRules).Should().Be((null, null), because: "the control host must not register them");
+
+        // Semantic comparison of the framework-generated binary schema: type/format/$ref shape,
+        // not whole-document bytes.
         static (string? responseRef, string? componentType, string? componentFormat) Semantics(JsonElement document)
         {
             var responseSchema = document
@@ -248,7 +401,7 @@ public class Issue236Net11Tests : IClassFixture<AspNetCoreOpenApiTests.TestWebAp
         component.GetProperty("format").GetString().Should().Be("binary");
     }
 
-    private static async Task<JsonElement> GetBinaryDescriptionAsync(WebApplicationFactory<TestMarker> factory)
+    private static async Task<JsonElement> GetDocumentAsync(WebApplicationFactory<TestMarker> factory)
     {
         var client = factory.CreateClient();
         var response = await client.GetAsync("/openapi/v1.json");
@@ -261,8 +414,15 @@ public class Issue236Net11Tests : IClassFixture<AspNetCoreOpenApiTests.TestWebAp
     /// <summary>
     /// §4: build-time documents (SampleAspNetCoreOpenApi, net11.0) must exist for 3.2 (Staging) and
     /// 3.1 (Production), exactly one JSON per directory, with the environment marker as info.title —
-    /// proving OpenApiGenerationEnvironment reached the generation process.
-    /// Run the two ADR §4 Phase 3 build commands from the repository root to produce the artifacts.
+    /// proving OpenApiGenerationEnvironment reached the generation process — and with the
+    /// FluentValidation constraints present in the served schema (version/title alone only prove
+    /// tooling). Run the verified generation invocation (see ADR-008-implementation-notes.md erratum:
+    /// the ADR §4 literal `dotnet build -f` commands do not trigger the generation hook on this
+    /// multi-targeted sample) before running this test:
+    /// dotnet msbuild samples/SampleAspNetCoreOpenApi/SampleAspNetCoreOpenApi.csproj -restore \
+    ///   -target:Build,GenerateOpenApiDocuments -p:TargetFramework=net11.0 -p:Configuration=Release \
+    ///   -p:OpenApiGenerateDocuments=true -p:OpenApiDocumentsDirectory=&lt;absolute path&gt; \
+    ///   -p:OpenApiGenerationEnvironment=Staging   (3.1: + "-p:OpenApiGenerateDocumentsOptions=--openapi-version OpenApi3_1", Production)
     /// </summary>
     [Fact]
     public void BuildTimeDocuments_32And31_WithEnvironmentMarker()
@@ -290,13 +450,27 @@ public class Issue236Net11Tests : IClassFixture<AspNetCoreOpenApiTests.TestWebAp
     private static void AssertBuildTimeDocument(string directory, string expectedOpenApiPrefix, string expectedTitle)
     {
         Directory.Exists(directory).Should().BeTrue(
-            $"build-time artifacts are missing: run the ADR §4 Phase 3 generation commands (expected {directory})");
+            $"build-time artifacts are missing: run the verified generation invocation (expected {directory})");
         var files = Directory.GetFiles(directory, "*.json");
         files.Length.Should().Be(1, because: $"{directory} must contain exactly one generated document");
 
         using var document = JsonDocument.Parse(File.ReadAllText(files[0]));
         document.RootElement.GetProperty("openapi").GetString().Should().StartWith(expectedOpenApiPrefix);
         document.RootElement.GetProperty("info").GetProperty("title").GetString().Should().Be(expectedTitle);
+
+        // The generated document must carry the FluentValidation constraints, not just the framework
+        // scaffolding: Customer.firstName (NotEmpty + MaximumLength(50), required) and age bounds.
+        var firstName = document.RootElement.GetProperty("components").GetProperty("schemas")
+            .GetProperty("Customer").GetProperty("properties").GetProperty("firstName");
+        firstName.GetProperty("minLength").GetInt32().Should().Be(1);
+        firstName.GetProperty("maxLength").GetInt32().Should().Be(50);
+        document.RootElement.GetProperty("components").GetProperty("schemas")
+            .GetProperty("Customer").GetProperty("required").EnumerateArray().Select(e => e.GetString())
+            .Should().Contain("firstName");
+        var age = document.RootElement.GetProperty("components").GetProperty("schemas")
+            .GetProperty("Customer").GetProperty("properties").GetProperty("age");
+        age.GetProperty("minimum").GetInt32().Should().Be(0);
+        age.GetProperty("maximum").GetInt32().Should().Be(150);
     }
 
     /// <summary>

@@ -276,7 +276,11 @@ public class TestWiredCodeValidator : AbstractValidator<string>
     }
 }
 
-// Issue #236: RuleForEach item constraints must reach the `items` schema of the collection property.
+// Issue #236: collection item constraints must reach the `items` schema of the collection property.
+// The rule is declared with the direct RuleForEach form: it creates a CollectionPropertyRule, which the
+// generators map to `items` (verified net9/net10/net11, both adapters). The RuleFor(...).ForEach(...) shape
+// leaves item constraints in identity-child rules, which the schema walk skips — a pre-existing limitation
+// recorded for a separate follow-up, unrelated to #236.
 public class TestRuleForEachModel
 {
     public List<string> Skus { get; set; } = new();
@@ -286,7 +290,8 @@ public class TestRuleForEachModelValidator : AbstractValidator<TestRuleForEachMo
 {
     public TestRuleForEachModelValidator()
     {
-        RuleFor(x => x.Skus).NotEmpty().ForEach(sku => sku.NotEmpty().MaximumLength(12));
+        RuleFor(x => x.Skus).NotEmpty(); // minItems: 1 on the collection property
+        RuleForEach(x => x.Skus).NotEmpty().MaximumLength(12); // minLength/maxLength on items
     }
 }
 
@@ -315,5 +320,24 @@ public class TestDecimalBoundsModelValidator : AbstractValidator<TestDecimalBoun
     public TestDecimalBoundsModelValidator()
     {
         RuleFor(x => x.Amount).InclusiveBetween(5.1m, 10.2m);
+    }
+}
+
+// Issue #236: float/double-typed range bounds on the .NET 11 runtime. The runtime's float/double-to-decimal
+// conversion changed in .NET 11 (exact binary expansion; the .NET 8-10 runtimes round to 15 significant
+// digits — verified by the independent conversion probe in the implementation evidence). This fixture
+// characterizes the visible bound values on net11; the constraint itself is not lost.
+public class TestFloatDoubleBoundsModel
+{
+    public float FloatValue { get; set; }
+    public double DoubleValue { get; set; }
+}
+
+public class TestFloatDoubleBoundsModelValidator : AbstractValidator<TestFloatDoubleBoundsModel>
+{
+    public TestFloatDoubleBoundsModelValidator()
+    {
+        RuleFor(x => x.FloatValue).InclusiveBetween(5.1f, 10.2f);
+        RuleFor(x => x.DoubleValue).ExclusiveBetween(5.1, 10.2);
     }
 }
