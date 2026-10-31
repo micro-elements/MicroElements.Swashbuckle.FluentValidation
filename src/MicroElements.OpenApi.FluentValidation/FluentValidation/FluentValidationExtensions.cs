@@ -203,6 +203,19 @@ namespace MicroElements.OpenApi.FluentValidation
         {
             foreach (var propertyValidator in validationRuleContext.GetValidators())
             {
+                // Child adapters skip null values. Only a presence rule on the parent can require it.
+                if (validatorPath.Count > 1 && propertyValidator is INotNullValidator)
+                {
+                    continue;
+                }
+
+                if (validatorPath.Count > 1 && propertyValidator is INotEmptyValidator)
+                {
+                    // Keep the non-null length constraint without the Required/NotNull semantics.
+                    yield return new MinimumLengthValidator<object>(1);
+                    continue;
+                }
+
                 yield return propertyValidator;
 
                 if (propertyValidator is not IChildValidatorAdaptor childAdapter)

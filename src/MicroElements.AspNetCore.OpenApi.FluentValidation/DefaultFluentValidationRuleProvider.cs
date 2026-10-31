@@ -68,7 +68,7 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
                         if (lengthValidator.Min > 0)
                             schemaProperty.SetNewMin(p => p.MinItems, lengthValidator.Min, _options.Value.SetNotNullableIfMinLengthGreaterThenZero);
                     }
-                    else
+                    else if (OpenApiSchemaCompatibility.IsStringType(schemaProperty))
                     {
                         if (lengthValidator.Max > 0)
                             schemaProperty.SetNewMax(p => p.MaxLength, lengthValidator.Max);

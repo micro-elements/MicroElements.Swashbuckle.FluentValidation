@@ -434,6 +434,35 @@ public class AspNetCoreOpenApiTests : IClassFixture<AspNetCoreOpenApiTests.TestW
         transformer.Should().NotBeNull();
     }
 
+    [Fact]
+    public async Task Identity_child_presence_rules_should_preserve_nullable_properties()
+    {
+        var validator = new TestChildRulesNullabilityValidator();
+        validator.Validate(new TestChildRulesNullability { RequiredCountry = "GB" }).IsValid.Should().BeTrue();
+        var schemas = await GetSchemasAsync();
+        var schema = schemas.GetProperty("TestChildRulesNullability");
+        var required = schema.GetProperty("required").EnumerateArray().Select(x => x.GetString()).ToArray();
+        required.Should().Contain("requiredCountry");
+        required.Should().NotContain("country");
+        required.Should().NotContain("countries");
+        required.Should().NotContain("notNullCountry");
+        var properties = schema.GetProperty("properties");
+        properties.GetProperty("country").GetProperty("minLength").GetInt32().Should().Be(1);
+        properties.GetProperty("country").GetProperty("pattern").GetString().Should().Be("^[A-Z]+$");
+        properties.GetProperty("countries").GetProperty("minItems").GetInt32().Should().Be(1);
+        properties.GetProperty("countries").TryGetProperty("minLength", out _).Should().BeFalse();
+
+        foreach (var name in new[] { "country", "countries", "notNullCountry" })
+        {
+            var property = properties.GetProperty(name);
+            // OpenAPI 3.0 uses nullable; OpenAPI 3.1 includes null in the type array.
+            var isNullable = property.TryGetProperty("nullable", out var nullable) && nullable.GetBoolean();
+            if (property.TryGetProperty("type", out var type) && type.ValueKind == JsonValueKind.Array)
+                isNullable |= type.EnumerateArray().Any(x => x.GetString() == "null");
+            isNullable.Should().BeTrue($"{name} is accepted as null by its child adapter");
+        }
+    }
+
     private async Task<JsonElement> GetSchemasAsync()
     {
         var client = _factory.CreateClient();

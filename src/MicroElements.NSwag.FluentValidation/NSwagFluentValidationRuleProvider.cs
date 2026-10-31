@@ -124,13 +124,21 @@ namespace MicroElements.NSwag.FluentValidation
                         var lengthValidator = (ILengthValidator) context.PropertyValidator;
                         var property = schema.Properties[context.PropertyKey];
 
+                        if (property.Type.HasFlag(JsonObjectType.Array))
+                        {
+                            if (lengthValidator.Min > 0)
+                                property.MinItems = Math.Max(property.MinItems, lengthValidator.Min);
+                            return;
+                        }
+
+                        if (!property.Type.HasFlag(JsonObjectType.String))
+                            return;
+
                         if (lengthValidator.Max > 0)
                             property.MaxLength = lengthValidator.Max;
 
-                        if (lengthValidator.GetType() == typeof(MinimumLengthValidator<>)
-                            || lengthValidator.GetType() == typeof(ExactLengthValidator<>)
-                            || property.MinLength == null)
-                            property.MinLength = lengthValidator.Min;
+                        if (lengthValidator.Min > 0)
+                            property.MinLength = Math.Max(property.MinLength ?? 0, lengthValidator.Min);
 
                         if (_options.Value.SetNotNullableIfMinLengthGreaterThenZero && property.MinLength > 0)
                         {
