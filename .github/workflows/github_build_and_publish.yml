@@ -17,11 +17,11 @@ jobs:
 
     steps:
     # Шаг 1: Клонируем репозиторий
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v7
 
     # Шаг 2: Устанавливаем .NET SDK
     - name: Setup .NET SDK
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v6
       with:
         dotnet-version: |
           8.0.x
