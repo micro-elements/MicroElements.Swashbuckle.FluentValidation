@@ -37,6 +37,12 @@ public class SwaggerTestHost
     {
         // Json options by default no name policy.
         Services.Configure<JsonOptions>(options => options.JsonSerializerOptions.PropertyNamingPolicy = null);
+#if NET11_0_OR_GREATER
+        // Experiment (Swashbuckle 11 preview): the generator also reads the Http.Json options — keep
+        // the same no-naming-policy contract there, otherwise property keys come out camelCase.
+        Services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(
+            options => options.SerializerOptions.PropertyNamingPolicy = null);
+#endif
 
         // Add Swagger
         Services.AddSwaggerGen(c =>

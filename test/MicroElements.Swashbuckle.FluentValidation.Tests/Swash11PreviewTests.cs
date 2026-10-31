@@ -7,10 +7,10 @@
 
 #if NET11_0_OR_GREATER
 using System.Linq;
+using System.Reflection;
 using System.Text.Json;
 using System.Threading.Tasks;
 using FluentAssertions;
-using FluentValidation;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit;
@@ -21,15 +21,21 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests;
 /// Real end-to-end Swashbuckle generation on net11: SwaggerGen 11 preview generates the document for
 /// the existing SampleWebApi host and the Swagger middleware serializes it as OpenAPI 3.2 (opt-in
 /// <c>UseSwagger(o => o.OpenApiVersion = OpenApiSpecVersion.OpenApi3_2)</c> — PR #3786 docs).
-/// The assertions cover the raw served JSON: the 3.2 prefix and the FluentValidation constraints.
+/// One meaningful end-to-end check: HTTP 3.2 + FluentValidation constraints + loaded-package
+/// provenance.
 /// </summary>
 public class Swash11PreviewTests
 {
-    public const string ExpectedVersion = "11.0.0-pr.3786.3260";
-
     [Fact]
     public async Task SwaggerMiddleware_ServesOpenApi32_WithFluentValidationConstraints()
     {
+        // Provenance: the loaded SwaggerGen assembly is the pinned preview build (the version string
+        // was read from the real assembly metadata; full value
+        // 11.0.0-pr.3786.3260+e651d02ed63d75f10a0b3f3fc3d337ee430c999b).
+        var swaggerGen = typeof(global::Swashbuckle.AspNetCore.SwaggerGen.SchemaGenerator).Assembly;
+        swaggerGen.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+            .Should().StartWith("11.0.0-pr.3786.3260");
+
         await using var factory = new WebApplicationFactory<SampleWebApi.Program>();
         var client = factory.CreateClient();
         var response = await client.GetAsync("/swagger/v1/swagger.json");
@@ -80,18 +86,6 @@ public class Swash11PreviewTests
         // shared $ref: Dict.type stays a reference to the shared DataType component.
         schemas.GetProperty("Dict").GetProperty("properties").GetProperty("type")
             .GetProperty("$ref").GetString().Should().Contain("DataType");
-    }
-
-    [Fact]
-    public async Task SwaggerEndpoint_ServedByPreviewPackages()
-    {
-        // Sanity: the endpoint really is served by the preview build (the adapter asset on net11
-        // references Swashbuckle.AspNetCore.SwaggerGen 11.0.0-pr.3786.3260 / Microsoft.OpenApi 3.11.0).
-        await using var factory = new WebApplicationFactory<SampleWebApi.Program>();
-        var client = factory.CreateClient();
-        var response = await client.GetAsync("/swagger/v1/swagger.json");
-        response.EnsureSuccessStatusCode();
-        response.Headers.Should().NotBeNull();
     }
 }
 #endif
