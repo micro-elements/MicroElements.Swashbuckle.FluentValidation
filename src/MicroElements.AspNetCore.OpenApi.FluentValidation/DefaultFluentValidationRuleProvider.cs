@@ -60,6 +60,8 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
                     var lengthValidator = (ILengthValidator) context.PropertyValidator;
                     var schemaProperty = context.Property;
 
+                    // A custom JSON converter can leave Type unset until a later schema transformer.
+                    // Use the validation target only in that case; preserve explicit schema types.
                     if (OpenApiSchemaCompatibility.IsArrayType(schemaProperty))
                     {
                         if (lengthValidator.Max > 0)
@@ -68,7 +70,8 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
                         if (lengthValidator.Min > 0)
                             schemaProperty.SetNewMin(p => p.MinItems, lengthValidator.Min, _options.Value.SetNotNullableIfMinLengthGreaterThenZero);
                     }
-                    else if (OpenApiSchemaCompatibility.IsStringType(schemaProperty))
+                    else if (OpenApiSchemaCompatibility.IsStringType(schemaProperty)
+                             || (schemaProperty.Type is null && context is OpenApiRuleContext { IsStringProperty: true }))
                     {
                         if (lengthValidator.Max > 0)
                             schemaProperty.SetNewMax(p => p.MaxLength, lengthValidator.Max);
