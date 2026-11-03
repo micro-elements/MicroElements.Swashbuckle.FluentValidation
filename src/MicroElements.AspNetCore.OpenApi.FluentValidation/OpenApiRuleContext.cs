@@ -64,6 +64,8 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
         /// </summary>
         private ValidationRuleContext ValidationRuleInfo { get; }
 
+        internal bool IsStringProperty => ValidationRuleInfo.ValidationRule.TypeToValidate == typeof(string);
+
         /// <summary>
         /// Initializes a new instance of the <see cref="OpenApiRuleContext"/> class.
         /// </summary>

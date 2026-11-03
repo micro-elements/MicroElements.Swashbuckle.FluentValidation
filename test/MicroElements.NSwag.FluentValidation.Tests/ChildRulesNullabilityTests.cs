@@ -13,6 +13,22 @@ namespace MicroElements.NSwag.FluentValidation.Tests;
 
 public class ChildRulesNullabilityTests
 {
+    public record NullableLengthRequest(string? Description);
+
+    [Fact]
+    public void Nullable_string_should_keep_max_length()
+    {
+        var validator = new InlineValidator<NullableLengthRequest>();
+        validator.RuleFor(x => x.Description).MaximumLength(500);
+        var options = new SchemaGenerationOptions { SchemaIdSelector = type => type.Name }.FillDefaultValues(null);
+        var settings = new SystemTextJsonSchemaGeneratorSettings();
+        settings.SchemaProcessors.Add(new FluentValidationSchemaProcessor(
+            validatorFactory: new ValidatorRegistry(new[] { validator }, Options.Create(options)),
+            schemaGenerationOptions: Options.Create(options)));
+        var schema = JsonSchema.FromType<NullableLengthRequest>(settings);
+        schema.Properties[nameof(NullableLengthRequest.Description)].MaxLength.Should().Be(500);
+    }
+
     public class Request
     {
         public string? Country { get; set; }

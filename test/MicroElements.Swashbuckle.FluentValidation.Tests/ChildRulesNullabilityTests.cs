@@ -13,6 +13,17 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests;
 
 public class ChildRulesNullabilityTests
 {
+    public record NullableLengthRequest(string? Description);
+
+    [Fact]
+    public void Nullable_string_should_keep_max_length()
+    {
+        var validator = new InlineValidator<NullableLengthRequest>();
+        validator.RuleFor(x => x.Description).MaximumLength(500);
+        var schema = new SchemaRepository().GenerateSchemaForValidator(validator);
+        schema.GetProperty(nameof(NullableLengthRequest.Description))!.MaxLength.Should().Be(500);
+    }
+
     public class Request
     {
         public string? Country { get; set; }
