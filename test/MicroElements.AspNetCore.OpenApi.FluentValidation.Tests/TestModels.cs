@@ -244,6 +244,19 @@ public class TestTraceHeadersValidator : AbstractValidator<TestTraceHeaders>
 }
 
 
+public record TestNullableLengthRequest(string? Description, string? Code, string? Name);
+
+public class TestNullableLengthRequestValidator : AbstractValidator<TestNullableLengthRequest>
+{
+    public TestNullableLengthRequestValidator()
+    {
+        RuleFor(x => x.Description).MaximumLength(500);
+        RuleFor(x => x.Description).MinimumLength(10);
+        RuleFor(x => x.Code).MinimumLength(3);
+        RuleFor(x => x.Name).Length(2, 50);
+    }
+}
+
 // PR #235: a child adapter skips a null property, including identity presence rules.
 public class TestChildRulesNullability
 {

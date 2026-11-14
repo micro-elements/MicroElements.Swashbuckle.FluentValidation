@@ -5,6 +5,10 @@
 - Behavior: on .NET 11, float and double validation bounds can appear with additional decimal digits in generated schemas because of runtime numeric conversion changes. The library preserves the runtime values without additional rounding; existing .NET 8–10 behavior is unchanged.
 - Development: added a shared .NET 11 RC3 SDK baseline with `rollForward: latestFeature`. Package consumers do not need this SDK unless targeting .NET 11. Automatic package upload remains disabled; beta publication requires a manually triggered workflow on the beta tag.
 
+# Changes in 7.2.4
+- Fixed: `MicroElements.AspNetCore.OpenApi.FluentValidation` could lose string `minLength` and `maxLength` constraints when a custom JSON converter left the property's schema type unset (Issue #238, regression in 7.2.3). Length rules now fall back to the FluentValidation target's CLR string type only when the schema type is absent, preserving explicit schema types and the non-string `ChildRules` safeguards. A later transformer can restore the schema type without requiring registration order changes.
+- Added regression coverage for string converters, late type restoration, identity child rules, explicit non-string schema types, and untyped non-string values.
+
 # Changes in 7.2.3
 - Fixed: constraints inside `ChildRules(child => child.RuleFor(x => x).Matches(...).DependentRules(...))` were missing from the parent property's OpenAPI schema. Identity child rules now contribute their constraints to the owning property (or collection item), including nested identity validators, while honoring rule/component filters and conditional-rule settings. The fix is shared by Swashbuckle, NSwag, and Microsoft.AspNetCore.OpenApi. Runtime validation is unchanged; schema generation does not execute `Must` predicates or repository lookups, and does not infer constraints from `DependentRules`.
 - Fixed: identity child `NotNull`/`NotEmpty` rules preserve the owning property's nullability and optionality, matching FluentValidation's null-skipping child adapters. Non-empty string/array constraints and explicit parent presence rules are preserved.

@@ -77,6 +77,7 @@ app.MapPost("/api/password", (TestPasswordModel model) => Results.Ok(model));
 app.MapPost("/api/upload", ([Microsoft.AspNetCore.Mvc.FromForm] UploadImageRequest request) => Results.Ok()).DisableAntiforgery();
 
 app.MapPost("/api/child-rules-nullability", (TestChildRulesNullability model) => Results.Ok(model));
+app.MapPost("/api/nullable-length", (TestNullableLengthRequest model) => Results.Ok(model));
 
 // Issue #236 regression endpoints.
 app.MapPost("/api/shared-a", (TestSharedDto dto) => Results.Ok(dto));

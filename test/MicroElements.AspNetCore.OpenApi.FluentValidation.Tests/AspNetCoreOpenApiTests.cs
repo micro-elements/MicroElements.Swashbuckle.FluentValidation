@@ -19,6 +19,19 @@ public class AspNetCoreOpenApiTests : IClassFixture<AspNetCoreOpenApiTests.TestW
     public AspNetCoreOpenApiTests(TestWebApplicationFactory factory) => _factory = factory;
 
     [Fact]
+    public async Task NullableStrings_ShouldKeepLengthConstraints()
+    {
+        var schemas = await GetSchemasAsync();
+        var schema = schemas.GetProperty("TestNullableLengthRequest");
+        var properties = schema.GetProperty("properties");
+        properties.GetProperty("description").GetProperty("maxLength").GetInt32().Should().Be(500);
+        properties.GetProperty("description").GetProperty("minLength").GetInt32().Should().Be(10);
+        properties.GetProperty("code").GetProperty("minLength").GetInt32().Should().Be(3);
+        properties.GetProperty("name").GetProperty("minLength").GetInt32().Should().Be(2);
+        properties.GetProperty("name").GetProperty("maxLength").GetInt32().Should().Be(50);
+    }
+
+    [Fact]
     public async Task BasicValidationRules_ShouldAppearInOpenApiDocument()
     {
         var schemas = await GetSchemasAsync();
