@@ -106,8 +106,7 @@ namespace SampleWebApi
 
             // Adds swagger
 #if NET11_0_OR_GREATER
-            // EXPERIMENT: OpenAPI 3.2 opt-in (Swashbuckle 11 preview, PR #3786 docs:
-            // configure-and-customize-swagger.md).
+            // Swashbuckle 11 supports explicitly selected OpenAPI 3.2.
             app.UseSwagger(o => o.OpenApiVersion = Microsoft.OpenApi.OpenApiSpecVersion.OpenApi3_2);
 #else
             app.UseSwagger();

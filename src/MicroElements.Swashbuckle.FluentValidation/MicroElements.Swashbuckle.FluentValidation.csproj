@@ -23,8 +23,7 @@
     <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="10.2.1" />
   </ItemGroup>
 
-  <!-- EXPERIMENT (test/issue-236-swash11-stable): stable Swashbuckle 11.0.1
-       (Microsoft.OpenApi 3.x). Compatibility validation; not yet a release. -->
+  <!-- net11 uses Swashbuckle 11 and Microsoft.OpenApi 3.x; older targets retain their dependency families. -->
   <ItemGroup Condition="'$(TargetFramework)' == 'net11.0'">
     <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="11.0.1" />
     <PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="11.0.1" />

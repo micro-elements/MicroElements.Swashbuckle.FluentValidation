@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <!-- net10.0: ADR-008 Decision 3 host row (Swashbuckle 10.2.1 + Microsoft.OpenApi 2.7.5).
-       net11.0: EXPERIMENT (test/issue-236-swash11-stable) — stable Swashbuckle 11.0.1 (Microsoft.OpenApi 3.x flows transitively, no pin) with an OpenAPI 3.2 opt-in. -->
+       net11.0: stable Swashbuckle 11.0.1 / Microsoft.OpenApi 3.x with an OpenAPI 3.2 opt-in. -->
   <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.1" />
     <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="10.2.1" />
@@ -44,7 +44,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\MicroElements.Swashbuckle.FluentValidation\MicroElements.Swashbuckle.FluentValidation.csproj" />
     <ProjectReference Include="..\..\src\MicroElements.Swashbuckle.FluentValidation.AspNetCore\MicroElements.Swashbuckle.FluentValidation.AspNetCore.csproj" />
-    <!-- EXPERIMENT: the net11 row generates the real Swagger document through the existing sample host
+    <!-- The net11 row generates the real Swagger document through the existing sample host
          (SampleWebApi multi-targets net9/net11, so the reference exists on net11 only). -->
     <ProjectReference Include="..\..\samples\SampleWebApi\SampleWebApi.csproj" Condition="'$(TargetFramework)' == 'net11.0'" />
   </ItemGroup>

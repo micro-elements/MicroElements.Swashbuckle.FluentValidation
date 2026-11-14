@@ -1,3 +1,10 @@
+# Changes in 7.3.0
+- Added: stable `net11.0` assets for the shared core, native ASP.NET Core OpenAPI adapter, and Swashbuckle adapter. The net11 Swashbuckle asset uses stable Swashbuckle 11.0.1 / Microsoft.OpenApi 3.11.0 and supports explicitly selected OpenAPI 3.2. Existing net8/net9/net10 Swashbuckle dependency families are preserved.
+- Added: native OpenAPI 3.2 and explicitly selected 3.1 coverage at runtime and build time, preserving FluentValidation constraints on properties, child validators, collection items, parameters, forms, and shared schemas. .NET 11 dependencies and SDK baseline now use GA versions.
+- Security: the native net10 adapter requires Microsoft.OpenApi 2.7.5 or later, excluding versions affected by GHSA-v5pm-xwqc-g5wc.
+- Behavior: .NET 11 float/double bounds preserve the runtime's decimal conversion values without extra library rounding. Existing .NET 8–10 behavior and NSwag package targets are retained; existing NSwag assets are tested on a .NET 11 host.
+- Includes the 7.2.4 fix for untyped string length constraints (#238). Source builds require SDK 11.0.100 or an eligible newer 11.0 feature band. MyGet publication is manual and restricted to the release tag.
+
 # Changes in 7.3.0-beta.1
 - Security: the native ASP.NET Core OpenAPI adapter now requires `Microsoft.OpenApi` 2.7.5 or later on net10, excluding versions affected by GHSA-v5pm-xwqc-g5wc.
 - Added: `net11.0` assets for `MicroElements.OpenApi.FluentValidation` and `MicroElements.AspNetCore.OpenApi.FluentValidation`, using .NET 11 RC3 dependencies. The native ASP.NET Core adapter supports OpenAPI 3.2 and explicitly selected OpenAPI 3.1, with runtime and build-time generation coverage.

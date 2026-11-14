@@ -1,9 +1,7 @@
 // Copyright (c) MicroElements. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-// EXPERIMENT (test/issue-236-swash11-stable): stable Swashbuckle 11.0.1
-// (Microsoft.OpenApi 3.x) on net11.0 with an OpenAPI 3.2 opt-in. This is an experiment row only —
-// not a stable-release compatibility claim.
+// Swashbuckle 11 stable integration on net11.0 with an OpenAPI 3.2 opt-in.
 
 #if NET11_0_OR_GREATER
 using System.Linq;

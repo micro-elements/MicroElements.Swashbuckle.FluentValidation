@@ -1,9 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <!-- EXPERIMENT (test/issue-236-swash11-stable): net11.0 exercises the stable Swashbuckle 11.0.1
-         (Microsoft.OpenApi 3.x) with an OpenAPI 3.2 opt-in. net9.0 stays the
-         stable sample. -->
+    <!-- net11 uses Swashbuckle 11 / Microsoft.OpenApi 3.x with an OpenAPI 3.2 opt-in. -->
     <TargetFrameworks>net9.0;net11.0</TargetFrameworks>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
@@ -20,7 +18,7 @@
     <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="8.1.1" Condition="'$(TargetFramework)' != 'net11.0'" />
   </ItemGroup>
 
-  <!-- EXPERIMENT: Stable Swashbuckle 11.0.1 on net11.0; restored from nuget.org. -->
+  <!-- Stable Swashbuckle 11 packages for the net11 sample. -->
   <ItemGroup Condition="'$(TargetFramework)' == 'net11.0'">
     <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="11.0.1" />
     <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="11.0.1" />

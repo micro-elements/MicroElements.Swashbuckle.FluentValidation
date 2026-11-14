@@ -16,8 +16,8 @@
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net11.0'">
     <!-- Issue #236: build-time document generation (net11.0 only — the generation commands below
-         target net11.0; net9/net10 sample builds must not restore the RC-wave package). -->
-    <PackageReference Include="Microsoft.Extensions.ApiDescription.Server" Version="11.0.0-rc.3.26522.148" PrivateAssets="all" />
+         target net11.0; net9/net10 sample builds do not need the build-time package). -->
+    <PackageReference Include="Microsoft.Extensions.ApiDescription.Server" Version="11.0.0" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>

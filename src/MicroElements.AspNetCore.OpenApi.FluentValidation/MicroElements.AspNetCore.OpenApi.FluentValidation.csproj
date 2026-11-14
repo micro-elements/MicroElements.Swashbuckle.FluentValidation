@@ -31,9 +31,8 @@
     <PackageReference Include="Microsoft.OpenApi" Version="2.7.5" />
   </ItemGroup>
 
-  <!-- Dev range while .NET 11 is at RC; the shipped range [11.0.0,12.0.0) is applied at the Phase 4 GA gate. -->
   <ItemGroup Condition="'$(TargetFramework)' == 'net11.0'">
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="[11.0.0-rc.3.26522.148,12.0.0)" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="[11.0.0,12.0.0)" />
   </ItemGroup>
 
   <ItemGroup>
