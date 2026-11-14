@@ -1,8 +1,8 @@
 // Copyright (c) MicroElements. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-// EXPERIMENT (experiment/issue-236-swash11-openapi32): Swashbuckle 11 preview (PR #3786,
-// Microsoft.OpenApi 3.x) on net11.0 with an OpenAPI 3.2 opt-in. This is an experiment row only —
+// EXPERIMENT (test/issue-236-swash11-stable): stable Swashbuckle 11.0.1
+// (Microsoft.OpenApi 3.x) on net11.0 with an OpenAPI 3.2 opt-in. This is an experiment row only —
 // not a stable-release compatibility claim.
 
 #if NET11_0_OR_GREATER
@@ -18,9 +18,9 @@ using Xunit;
 namespace MicroElements.Swashbuckle.FluentValidation.Tests;
 
 /// <summary>
-/// Real end-to-end Swashbuckle generation on net11: SwaggerGen 11 preview generates the document for
+/// Real end-to-end Swashbuckle generation on net11: SwaggerGen 11.0.1 generates the document for
 /// the existing SampleWebApi host and the Swagger middleware serializes it as OpenAPI 3.2 (opt-in
-/// <c>UseSwagger(o => o.OpenApiVersion = OpenApiSpecVersion.OpenApi3_2)</c> — PR #3786 docs).
+/// <c>UseSwagger(o => o.OpenApiVersion = OpenApiSpecVersion.OpenApi3_2)</c>).
 /// One meaningful end-to-end check: HTTP 3.2 + FluentValidation constraints + loaded-package
 /// provenance.
 /// </summary>
@@ -29,12 +29,10 @@ public class Swash11PreviewTests
     [Fact]
     public async Task SwaggerMiddleware_ServesOpenApi32_WithFluentValidationConstraints()
     {
-        // Provenance: the loaded SwaggerGen assembly is the pinned preview build (the version string
-        // was read from the real assembly metadata; full value
-        // 11.0.0-pr.3786.3260+e651d02ed63d75f10a0b3f3fc3d337ee430c999b).
+        // Verify that the real host loads the stable SwaggerGen package under test.
         var swaggerGen = typeof(global::Swashbuckle.AspNetCore.SwaggerGen.SchemaGenerator).Assembly;
         swaggerGen.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
-            .Should().StartWith("11.0.0-pr.3786.3260");
+            .Should().StartWith("11.0.1");
 
         await using var factory = new WebApplicationFactory<SampleWebApi.Program>();
         var client = factory.CreateClient();

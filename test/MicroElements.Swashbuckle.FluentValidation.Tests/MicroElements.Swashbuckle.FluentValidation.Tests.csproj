@@ -20,8 +20,7 @@
   </ItemGroup>
 
   <!-- net10.0: ADR-008 Decision 3 host row (Swashbuckle 10.2.1 + Microsoft.OpenApi 2.7.5).
-       net11.0: EXPERIMENT (experiment/issue-236-swash11-openapi32) — Swashbuckle 11 preview from
-       PR #3786 (Microsoft.OpenApi 3.x flows transitively, no pin) with an OpenAPI 3.2 opt-in. -->
+       net11.0: EXPERIMENT (test/issue-236-swash11-stable) — stable Swashbuckle 11.0.1 (Microsoft.OpenApi 3.x flows transitively, no pin) with an OpenAPI 3.2 opt-in. -->
   <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.1" />
     <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="10.2.1" />
@@ -30,10 +29,10 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net11.0'">
-    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="11.0.0-pr.3786.3260" />
-    <PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="11.0.0-pr.3786.3260" />
-    <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="11.0.0-pr.3786.3260" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="11.0.0-rc.3.26522.148" />
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="11.0.1" />
+    <PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="11.0.1" />
+    <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="11.0.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="11.0.0" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net8.0' Or '$(TargetFramework)' == 'net9.0'">
