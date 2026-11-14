@@ -165,9 +165,34 @@ public void Configure(IApplicationBuilder app, IHostingEnvironment env)
 | [3.1.0, 4.2.1)                             | [5.2.0, 6.0.0)         | >=8.3.0          |
 | [4.2.0, 5.0.0)                             | [5.5.1, 7.0.0)         | [9.0.0, 10)      |
 | [5.0.0, 6.0.0)                             | [6.3.0, 7.0.0)         | [10.0.0, 12)     |
-| [7.0.0, 8.0.0)                             | [8.0.0, 11.0.0)        | [11.0.0, 13)     |
+| [7.0.0, 7.3.0)                             | [8.0.0, 11.0.0)        | [11.0.0, 13)     |
+| [7.3.0, 8.0.0)                             | [8.0.0, 12.0.0), by TFM | [12.0.0, 13)     |
 
-> .NET 8/9 use Swashbuckle 8.x (Microsoft.OpenApi 1.x); .NET 10 uses Swashbuckle 10.x (Microsoft.OpenApi 2.x).
+> .NET 8/9 use Swashbuckle 8.x / Microsoft.OpenApi 1.x; .NET 10 uses Swashbuckle 10.x / Microsoft.OpenApi 2.x; .NET 11 uses Swashbuckle 11.x / Microsoft.OpenApi 3.x. Select the matching target-framework asset; the net10 asset does not support Swashbuckle 11.
+
+### .NET 11 support — 7.3.0
+
+Version **7.3.0** adds stable .NET 11 support ([#236](https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/issues/236)).
+
+| Package | Target-framework assets | .NET 11 integration |
+|---|---|---|
+| `MicroElements.OpenApi.FluentValidation` | net8.0, net9.0, net10.0, **net11.0** | Shared core used by the integrations below |
+| `MicroElements.AspNetCore.OpenApi.FluentValidation` | net9.0, net10.0, **net11.0** | `Microsoft.AspNetCore.OpenApi` 11.x / `Microsoft.OpenApi` 3.x; default OpenAPI 3.2 and explicitly selected 3.1, at runtime and build time |
+| `MicroElements.Swashbuckle.FluentValidation` | net8.0, net9.0, net10.0, **net11.0** | Dedicated net11 asset using stable Swashbuckle **11.0.1** / Microsoft.OpenApi **3.11.0**; OpenAPI 3.2 generation with FV constraints |
+| `MicroElements.NSwag.FluentValidation` | net8.0, net9.0 | Existing assets tested on a .NET 11 host with NSwag 14.4.0 / NJsonSchema 11.3.2; no dedicated net11 asset |
+
+Swashbuckle 11 supports an explicit OpenAPI 3.2 selection in the middleware:
+
+```csharp
+app.UseSwagger(options =>
+    options.OpenApiVersion = Microsoft.OpenApi.OpenApiSpecVersion.OpenApi3_2);
+```
+
+**Numeric bounds:** .NET 11 changes float/double-to-decimal conversion. Generated bounds can therefore have longer fractional values than on older runtimes: for example, a `5.1f` lower bound is emitted as `5.099999904632568359375` rather than `5.1`. The library preserves the runtime conversion result **without additional rounding**. Tests use exact runtime-specific expectations.
+
+Release validation covers the .NET 8/9/10/11 test matrix, actual Swashbuckle middleware serialization, native OpenAPI 3.2/3.1 runtime and build-time generation, and Linux/Windows CI.
+
+For source builds, `global.json` requires SDK **11.0.100** with `rollForward: latestFeature`: newer eligible **11.0** feature bands and patches are allowed without automatically selecting SDK 12. Package consumers need the SDK for their own target framework, rather than this repository's SDK baseline.
 
 ## Sample application
 
@@ -226,7 +251,7 @@ Backend support:
 
 | Backend | size & content types in `description` | machine-readable `encoding.contentType` |
 |---|---|---|
-| Swashbuckle | ✅ | ✅ (net8/9 = OpenAPI 3.0; net10 = OpenAPI 3.1) |
+| Swashbuckle | ✅ | ✅ (OpenAPI 3.0 by default, including net10) |
 | NSwag | ✅ | ✅ via `FluentValidationOperationProcessor` (serialized as `encodingType` — a known NSwag limitation) |
 | Microsoft.AspNetCore.OpenApi | ✅ | ✅ (net9 + net10) |
 

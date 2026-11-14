@@ -1,10 +1,14 @@
 ﻿using FluentValidation;
 using FluentValidation.Validators;
+#if !NET11_0_OR_GREATER
 using JetBrains.Annotations;
+#endif
 
 namespace MicroElements.Swashbuckle.FluentValidation.Tests.Samples;
 
+#if !NET11_0_OR_GREATER
 [UsedImplicitly]
+#endif
 public class SampleValidator : AbstractValidator<Sample>
 {
     public SampleValidator()

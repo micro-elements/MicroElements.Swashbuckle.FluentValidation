@@ -94,7 +94,14 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
             {
                 RequestBody = new OpenApiRequestBody
                 {
+                    // Microsoft.OpenApi 3.x: Content values are IOpenApiMediaType; the concrete
+                    // OpenApiMediaType assigns implicitly there, so type the dictionary by the
+                    // interface on 3.x and concretely on 1.x/2.x to keep both code shapes.
+#if NET11_0_OR_GREATER
+                    Content = new Dictionary<string, IOpenApiMediaType>
+#else
                     Content = new Dictionary<string, OpenApiMediaType>
+#endif
                     {
                         ["multipart/form-data"] = new OpenApiMediaType { Schema = bodySchema },
                     },
