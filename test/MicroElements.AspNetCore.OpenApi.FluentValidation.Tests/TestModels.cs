@@ -1,8 +1,10 @@
 // Copyright (c) MicroElements. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System.ComponentModel.DataAnnotations;
 using System.Numerics;
 using FluentValidation;
+using FluentValidation.Validators;
 using MicroElements.OpenApi.FluentValidation.FileUpload;
 using Microsoft.AspNetCore.Http;
 
@@ -354,4 +356,85 @@ public class TestFloatDoubleBoundsModelValidator : AbstractValidator<TestFloatDo
         RuleFor(x => x.FloatValue).InclusiveBetween(5.1f, 10.2f);
         RuleFor(x => x.DoubleValue).ExclusiveBetween(5.1, 10.2);
     }
+}
+
+// ----- Issue #239: a [FromQuery] collection property validated by a custom ILengthValidator
+// (Min = 0, Max = 10) must produce maxItems: 10 on the array parameter, not maxLength. -----
+
+public record TestListQueryDto
+{
+    public IReadOnlyList<Guid>? Ids { get; init; }
+    public string? Text { get; init; }
+}
+
+/// <summary>
+/// Issue #239 stand: a custom <see cref="ILengthValidator"/> (Min = 0, Max = 10) applied via SetValidator.
+/// </summary>
+public class TestListCountLimitValidator : PropertyValidator<TestListQueryDto, IReadOnlyList<Guid>?>, ILengthValidator
+{
+    public int Min => 0;
+
+    public int Max => 10;
+
+    public override string Name => "CountLimit";
+
+    public override bool IsValid(ValidationContext<TestListQueryDto> context, IReadOnlyList<Guid>? value)
+        => value is null || value.Count <= Max;
+}
+
+public class TestListQueryDtoValidator : AbstractValidator<TestListQueryDto>
+{
+    public TestListQueryDtoValidator()
+    {
+        RuleFor(x => x.Ids).SetValidator(new TestListCountLimitValidator());
+        // Distinct bounds on a second parameter of the same DTO keep the cache-isolation test meaningful.
+        RuleFor(x => x.Text).Length(2, 7);
+    }
+}
+
+// F1: an item-level rule (RuleForEach) constrains ELEMENTS, not the collection — it must not turn
+// into maxItems on the array query parameter.
+public class TestItemRuleQueryDto
+{
+    public string[] Words { get; set; } = System.Array.Empty<string>();
+}
+
+public class TestItemRuleQueryDtoValidator : AbstractValidator<TestItemRuleQueryDto>
+{
+    public TestItemRuleQueryDtoValidator()
+    {
+        RuleForEach(x => x.Words).MaximumLength(10);
+    }
+}
+
+// F2: a DataAnnotations bound on the collection reaches the parameter schema as maxItems; the #239
+// length validator (Max = 10) must keep that annotation bound (maxItems = 3), not overwrite it.
+// The CLR collection type is deliberately distinct from TestListQueryDto.Ids: the ASP.NET Core 9
+// generator hands the SAME schema object to same-typed query properties, which would leak the
+// annotation bound across endpoints (a base-generator behavior this patch does not work around).
+public class TestAnnotatedListQueryDto
+{
+    [MaxLength(3)]
+    public Guid[]? Ids { get; init; }
+}
+
+public class TestAnnotatedListQueryDtoValidator : AbstractValidator<TestAnnotatedListQueryDto>
+{
+    public TestAnnotatedListQueryDtoValidator()
+    {
+        // Same custom ILengthValidator shape as #239 (Min = 0, Max = 10), typed to this DTO.
+        RuleFor(x => x.Ids).SetValidator(new TestAnnotatedListCountLimitValidator());
+    }
+}
+
+public class TestAnnotatedListCountLimitValidator : PropertyValidator<TestAnnotatedListQueryDto, Guid[]?>, ILengthValidator
+{
+    public int Min => 0;
+
+    public int Max => 10;
+
+    public override string Name => "CountLimit";
+
+    public override bool IsValid(ValidationContext<TestAnnotatedListQueryDto> context, Guid[]? value)
+        => value is null || value.Length <= Max;
 }

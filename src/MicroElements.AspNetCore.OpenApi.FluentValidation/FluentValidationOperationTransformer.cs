@@ -546,9 +546,54 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
                 }
             }
 
+            // Issue #239: the temporary schema is reflected from CLR types and cached per container type,
+            // so its property types are approximations. For a collection query parameter such as
+            // IReadOnlyList<Guid>, the approximation was "string" and the stock Length rule then produced
+            // maxLength instead of maxItems on the array parameter. When the actual parameter schema IS an
+            // array, mirror that outer type onto the matching property of a FRESH throwaway container (the
+            // cached schema is reused by other parameters and must stay pristine) and use the local schema
+            // for rules, the required flag and the constraint copy. Only the outer Type is set — the Length
+            // rule branches on it alone, and the parameter's real items schema is not replaced.
+#if OPENAPI_V2
+            var parameterSchema = operationParameter.Schema as OpenApiSchema;
+#else
+            var parameterSchema = operationParameter.Schema;
+#endif
+            var ruleSchema = schema;
+            if (parameterSchema != null && OpenApiSchemaCompatibility.IsArrayType(parameterSchema))
+            {
+                var localSchema = BuildSchemaForType(parameterType);
+                var localProperty = OpenApiSchemaCompatibility.GetProperties(localSchema)
+                    .FirstOrDefault(property => property.Key.EqualsIgnoreAll(schemaPropertyName));
+                if (localProperty.Key != null)
+                {
+#if OPENAPI_V2
+                    localProperty.Value.Type = JsonSchemaType.Array;
+#else
+                    localProperty.Value.Type = "array";
+#endif
+                    // Issue #239 F1: give the array a fresh scratch Items schema so item-level rules
+                    // (RuleForEach, a CollectionPropertyRule) resolve to the scratch items and cannot
+                    // land a length bound on the array itself; CopyValidationProperties reads only the
+                    // property, so scratch items are never copied to the parameter. The actual parameter
+                    // Items is not passed around or mutated, and root-bounds rules (a plain RuleFor with
+                    // ILengthValidator) are unaffected — they do not resolve to Items.
+                    localProperty.Value.Items = new OpenApiSchema();
+
+                    // Issue #239 F2: the framework may already have written item bounds onto the actual
+                    // parameter schema (e.g. [MaxLength(3)] generates maxItems: 3). Seed them BEFORE the
+                    // rules so the stock SetNewMax/SetNewMin merge (min/max) keeps the annotation bound;
+                    // an explicit stricter validator bound still wins.
+                    localProperty.Value.MinItems = parameterSchema.MinItems;
+                    localProperty.Value.MaxItems = parameterSchema.MaxItems;
+
+                    ruleSchema = localSchema;
+                }
+            }
+
             var schemaProvider = new AspNetCoreSchemaProvider(null, _logger);
             var schemaContext = new AspNetCoreSchemaGenerationContext(
-                schema: schema,
+                schema: ruleSchema,
                 schemaType: parameterType,
                 rules: _rules,
                 schemaGenerationOptions: _schemaGenerationOptions,
@@ -562,7 +607,7 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
                 schemaGenerationContext: schemaContext);
 
             // Copy required flag (Issue #209: only when the whole dot-path is required)
-            if (pathRequired && OpenApiSchemaCompatibility.RequiredContains(schema, schemaPropertyName))
+            if (pathRequired && OpenApiSchemaCompatibility.RequiredContains(ruleSchema, schemaPropertyName))
             {
 #if OPENAPI_V2
                 if (operationParameter is OpenApiParameter openApiParameter)
@@ -573,17 +618,12 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
             }
 
             // Copy validation constraints from schema property to parameter schema
-#if OPENAPI_V2
-            var parameterSchema = operationParameter.Schema as OpenApiSchema;
-#else
-            var parameterSchema = operationParameter.Schema;
-#endif
             if (parameterSchema != null)
             {
                 // camelCase-then-exact double attempt — constraint-copy parity with
                 // FluentValidationDocumentFilter and FluentValidationOperationFilter.
-                if (OpenApiSchemaCompatibility.TryGetProperty(schema, schemaPropertyName.ToLowerCamelCase(), out var property)
-                    || OpenApiSchemaCompatibility.TryGetProperty(schema, schemaPropertyName, out property))
+                if (OpenApiSchemaCompatibility.TryGetProperty(ruleSchema, schemaPropertyName.ToLowerCamelCase(), out var property)
+                    || OpenApiSchemaCompatibility.TryGetProperty(ruleSchema, schemaPropertyName, out property))
                 {
                     if (property != null)
                     {
@@ -624,6 +664,8 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
         /// Sets basic type information on a schema from a CLR type.
         /// TODO: Add support for DateTime, DateTimeOffset, Guid, enum types, and collections.
         /// Currently these all fall through to "string" which may cause incorrect schema types.
+        /// Issue #239: collection query parameters are handled by mirroring the actual parameter
+        /// schema type in <see cref="ApplyRulesToParameter"/> instead of by guessing from the CLR type.
         /// </summary>
         private static void SetSchemaType(OpenApiSchema schema, Type type)
         {
