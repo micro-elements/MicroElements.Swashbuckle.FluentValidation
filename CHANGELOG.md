@@ -1,3 +1,7 @@
+# Changes in 7.3.1
+- Fixed array length constraints for MVC query parameters in `MicroElements.AspNetCore.OpenApi.FluentValidation`. Collection length validators now emit `minItems` and `maxItems`, preserve the item schema, and respect stricter bounds already in the OpenAPI document.
+- Element length rules configured with `RuleForEach` no longer produce a collection count limit. [Issue #239](https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/issues/239)
+
 # Changes in 7.3.0
 - Added: stable `net11.0` assets for the shared core, native ASP.NET Core OpenAPI adapter, and Swashbuckle adapter. The net11 Swashbuckle asset uses stable Swashbuckle 11.0.1 / Microsoft.OpenApi 3.11.0 and supports explicitly selected OpenAPI 3.2. Existing net8/net9/net10 Swashbuckle dependency families are preserved.
 - Added: native OpenAPI 3.2 and explicitly selected 3.1 coverage at runtime and build time, preserving FluentValidation constraints on properties, child validators, collection items, parameters, forms, and shared schemas. .NET 11 dependencies and SDK baseline now use GA versions.
