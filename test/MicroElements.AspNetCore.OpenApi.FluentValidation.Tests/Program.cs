@@ -84,6 +84,7 @@ app.MapPost("/api/shared-a", (TestSharedDto dto) => Results.Ok(dto));
 app.MapPost("/api/shared-b", (TestSharedDto dto) => Results.Ok(dto));
 app.MapPost("/api/ruleforeach", (TestRuleForEachModel model) => Results.Ok(model));
 app.MapPost("/api/decimal-bounds", (TestDecimalBoundsModel model) => Results.Ok(model));
+app.MapPost("/api/not-empty-formatted", (TestNotEmptyFormattedModel model) => Results.Ok(model));
 #if NET11_0_OR_GREATER
 app.MapPost("/api/float-double-bounds", (TestFloatDoubleBoundsModel model) => Results.Ok(model));
 #endif

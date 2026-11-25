@@ -106,7 +106,9 @@ namespace MicroElements.NSwag.FluentValidation
                             property.OneOf.Clear();
                         }
 
-                        property.MinLength = 1;
+                        // NotEmpty on a Guid or DateTime means "not the default value", which minLength cannot express.
+                        if (!ValueTypeStringFormats.IsValueTypeFormat(property.Format))
+                            property.MinLength = 1;
 
                         if (_options.Value.SetNotNullableIfMinLengthGreaterThenZero)
                         {
