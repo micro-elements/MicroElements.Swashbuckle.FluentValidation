@@ -1,3 +1,7 @@
+# Changes in 7.3.2
+
+- Fix multipart request-body rules on .NET 10 with Swashbuckle 11.0.1. The same adapter assembly also supports Swashbuckle 10.2.1. [#241](https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/issues/241)
+
 # Changes in 7.3.1
 - Fixed array length constraints for MVC query parameters in `MicroElements.AspNetCore.OpenApi.FluentValidation`. Collection length validators now emit `minItems` and `maxItems`, preserve the item schema, and respect stricter bounds already in the OpenAPI document.
 - Element length rules configured with `RuleForEach` no longer produce a collection count limit. [Issue #239](https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/issues/239)
