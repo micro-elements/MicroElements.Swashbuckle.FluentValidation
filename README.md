@@ -168,7 +168,8 @@ public void Configure(IApplicationBuilder app, IHostingEnvironment env)
 | [7.0.0, 7.3.0)                             | [8.0.0, 11.0.0)        | [11.0.0, 13)     |
 | [7.3.0, 8.0.0)                             | [8.0.0, 12.0.0), by TFM | [12.0.0, 13)     |
 
-> .NET 8/9 use Swashbuckle 8.x / Microsoft.OpenApi 1.x; .NET 10 uses Swashbuckle 10.x / Microsoft.OpenApi 2.x; .NET 11 uses Swashbuckle 11.x / Microsoft.OpenApi 3.x. Select the matching target-framework asset; the net10 asset does not support Swashbuckle 11.
+> .NET 8/9 use Swashbuckle 8.x with Microsoft.OpenApi 1.x. .NET 11 uses Swashbuckle 11.x with Microsoft.OpenApi 3.x.
+> On .NET 10, the adapter is built against Swashbuckle 10.2.1 with Microsoft.OpenApi 2.x. The same asset also works with Swashbuckle 11.0.1 and Microsoft.OpenApi 3.11.0 starting with the fix for [#241](https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/issues/241). Published versions 7.3.0 and 7.3.1 require Swashbuckle 10.x on .NET 10.
 
 ### .NET 11 support — 7.3.0
 

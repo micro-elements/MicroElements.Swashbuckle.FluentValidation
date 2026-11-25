@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(SwashbuckleVersion)' == '11.0.1'">
+    <DefineConstants>$(DefineConstants);SWASHBUCKLE_11</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="[10.0.0]" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="[$(SwashbuckleVersion)]" />
+    <PackageReference Include="MicroElements.Swashbuckle.FluentValidation" Version="[$(AdapterVersion)]" />
+  </ItemGroup>
+</Project>
