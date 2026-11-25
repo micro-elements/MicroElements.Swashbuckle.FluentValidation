@@ -1,6 +1,6 @@
 # Issue #241 package test
 
-Run from the repository root with the SDK in `global.json` and the .NET 10 runtime. The probe installs the same `net10.0` adapter package with two Swashbuckle versions. It checks the actual Swagger response for JSON, multipart, a generic-only request content dictionary, a URL-encoded form, and an operation without a body. The Swashbuckle 11 run also checks schema enrichment for a media type reference and verifies that its encoding stays intact.
+This standalone probe takes package versions from the command line. It lives outside Cake's automatic test discovery under `test/`. Run from the repository root with the SDK in `global.json` and the .NET 10 runtime. The probe installs the same `net10.0` adapter package with two Swashbuckle versions. It checks the actual Swagger response for JSON, multipart, a generic-only request content dictionary, a URL-encoded form, and an operation without a body. The Swashbuckle 11 run also checks schema enrichment for a media type reference and verifies that its encoding stays intact.
 
 ```bash
 set -e
@@ -15,7 +15,7 @@ for id in MicroElements.OpenApi.FluentValidation MicroElements.Swashbuckle.Fluen
     -p:GeneratePackageOnBuild=false -p:PackageVersion="$version" -o "$feed"
 done
 
-probe=test/Issue241.PackageProbe/Issue241.PackageProbe.csproj
+probe=eng/Issue241.PackageProbe/Issue241.PackageProbe.csproj
 for swash in 10.2.1 11.0.1; do
   out="$scratch/$swash"
   dotnet restore "$probe" -p:AdapterVersion="$version" -p:SwashbuckleVersion="$swash" \
