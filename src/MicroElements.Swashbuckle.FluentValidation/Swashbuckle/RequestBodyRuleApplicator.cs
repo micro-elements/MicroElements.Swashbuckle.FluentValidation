@@ -4,6 +4,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+#if NET10_0
+using System.Reflection;
+#endif
 using FluentValidation;
 using MicroElements.OpenApi;
 using MicroElements.OpenApi.Core;
@@ -13,6 +16,9 @@ using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.Extensions.Logging;
 #if !OPENAPI_V2
 using Microsoft.OpenApi.Models;
+using RequestBodySchema = Microsoft.OpenApi.Models.OpenApiSchema;
+#else
+using RequestBodySchema = Microsoft.OpenApi.IOpenApiSchema;
 #endif
 using Swashbuckle.AspNetCore.SwaggerGen;
 
@@ -25,6 +31,11 @@ namespace MicroElements.Swashbuckle.FluentValidation
     /// </summary>
     internal sealed class RequestBodyRuleApplicator
     {
+#if NET10_0
+        private static readonly Func<OpenApiRequestBody, IEnumerable<(string Key, RequestBodySchema? Schema, OpenApiMediaType? MediaType)>>
+            ReadCompatibleFormContent = CreateFormContentReader();
+#endif
+
         private readonly ILogger _logger;
         private readonly IValidatorRegistry _validatorRegistry;
         private readonly IReadOnlyList<IFluentValidationRule<OpenApiSchema>> _rules;
@@ -61,23 +72,21 @@ namespace MicroElements.Swashbuckle.FluentValidation
 #else
             var requestBody = operation.RequestBody;
 #endif
-            if (requestBody?.Content == null)
+            if (requestBody == null)
                 return;
 
-            // Content types used by [FromForm] attribute
-            var formContentTypes = new[] { "multipart/form-data", "application/x-www-form-urlencoded" };
-
-            foreach (var contentType in requestBody.Content)
+#if NET10_0
+            var formContent = ReadCompatibleFormContent(requestBody);
+#else
+            var formContent = ReadFormContent(requestBody.Content, mediaType => mediaType.Schema);
+#endif
+            foreach (var (contentType, rawSchema, mediaType) in formContent)
             {
-                if (!formContentTypes.Contains(contentType.Key, StringComparer.OrdinalIgnoreCase))
-                    continue;
-
 #if OPENAPI_V2
-                var rawSchema = contentType.Value.Schema;
                 var contentSchema = rawSchema as OpenApiSchema;
                 string? schemaRefId = rawSchema is OpenApiSchemaReference schemaRef ? schemaRef.Reference?.Id : null;
 #else
-                var contentSchema = contentType.Value.Schema;
+                var contentSchema = rawSchema;
                 string? schemaRefId = contentSchema?.Reference?.Id;
 #endif
                 if (contentSchema == null)
@@ -137,20 +146,54 @@ namespace MicroElements.Swashbuckle.FluentValidation
 
                 // Issue #216: emit encoding.contentType for IFormFile parts restricted via .FileContentType(...).
                 // Only multipart/form-data carries per-part media types (application/x-www-form-urlencoded does not).
-                if (string.Equals(contentType.Key, "multipart/form-data", StringComparison.OrdinalIgnoreCase))
+                // Reference media types contribute their schema but cannot be mutated here.
+                if (mediaType != null && string.Equals(contentType, "multipart/form-data", StringComparison.OrdinalIgnoreCase))
                 {
-                    // Microsoft.OpenApi 3.x content values are IOpenApiMediaType; only concrete
-                    // OpenApiMediaType instances are mutated here — the same reference-skip policy
-                    // the native adapter uses. The null check below skips reference media types
-                    // (OpenApiMediaTypeReference).
-                    var mediaType = contentType.Value as OpenApiMediaType;
-                    if (mediaType == null)
-                        continue;
-
                     ApplyFileContentTypeEncoding(mediaType, resolvedSchema, parameterType, validator, schemaRepository);
                 }
             }
         }
+
+        private static IEnumerable<(string Key, RequestBodySchema? Schema, OpenApiMediaType? MediaType)> ReadFormContent<TMediaType>(
+            IDictionary<string, TMediaType>? content,
+            Func<TMediaType, RequestBodySchema?> getSchema)
+            where TMediaType : class
+        {
+            if (content == null)
+                yield break;
+
+            foreach (var entry in content)
+            {
+                if (string.Equals(entry.Key, "multipart/form-data", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(entry.Key, "application/x-www-form-urlencoded", StringComparison.OrdinalIgnoreCase))
+                {
+                    yield return (entry.Key, getSchema(entry.Value), entry.Value as OpenApiMediaType);
+                }
+            }
+        }
+
+#if NET10_0
+        private static Func<OpenApiRequestBody, IEnumerable<(string Key, RequestBodySchema? Schema, OpenApiMediaType? MediaType)>> CreateFormContentReader()
+        {
+            // Swashbuckle 10 and 11 bind Content to different return types. Bind once to the
+            // installed signature, then enumerate through IDictionary<string, TMediaType>.
+            var contentGetter = typeof(OpenApiRequestBody).GetProperty(nameof(OpenApiRequestBody.Content))!.GetMethod!;
+            var mediaType = contentGetter.ReturnType.GetGenericArguments()[1];
+            var bindReader = typeof(RequestBodyRuleApplicator).GetMethod(nameof(BindFormContentReader), BindingFlags.NonPublic | BindingFlags.Static)!;
+            var reader = bindReader.MakeGenericMethod(mediaType).Invoke(null, new object[] { contentGetter });
+            return (Func<OpenApiRequestBody, IEnumerable<(string, RequestBodySchema?, OpenApiMediaType?)>>)reader!;
+        }
+
+        private static Func<OpenApiRequestBody, IEnumerable<(string Key, RequestBodySchema? Schema, OpenApiMediaType? MediaType)>> BindFormContentReader<TMediaType>(
+            MethodInfo contentGetter)
+            where TMediaType : class
+        {
+            var getContent = contentGetter.CreateDelegate<Func<OpenApiRequestBody, IDictionary<string, TMediaType>?>>();
+            var schemaGetter = typeof(TMediaType).GetProperty(nameof(OpenApiMediaType.Schema))!.GetMethod!;
+            var getSchema = schemaGetter.CreateDelegate<Func<TMediaType, RequestBodySchema?>>();
+            return requestBody => ReadFormContent(getContent(requestBody), getSchema);
+        }
+#endif
 
         /// <summary>
         /// Issue #216: writes <c>encoding.&lt;part&gt;.contentType</c> for every binary file part that a
