@@ -4,7 +4,7 @@ on:
   workflow_dispatch:  # Ручной запуск
     inputs:
       publish_release:
-        description: 'Publish 7.3.2 to MyGet (requires tag v7.3.2)'
+        description: 'Publish 7.3.3 to MyGet (requires tag v7.3.3)'
         type: boolean
         default: false
   push:
@@ -85,25 +85,25 @@ jobs:
     # Release publication is explicit and restricted to this immutable release tag.
     # Normal PR/master builds keep their existing non-publishing behavior.
     - name: Pack release
-      if: runner.os == 'Linux' && github.event_name == 'workflow_dispatch' && inputs.publish_release && github.ref == 'refs/tags/v7.3.2'
+      if: runner.os == 'Linux' && github.event_name == 'workflow_dispatch' && inputs.publish_release && github.ref == 'refs/tags/v7.3.3'
       shell: bash
       run: |
         set -euo pipefail
         for project in MicroElements.OpenApi.FluentValidation MicroElements.Swashbuckle.FluentValidation MicroElements.NSwag.FluentValidation MicroElements.AspNetCore.OpenApi.FluentValidation; do
-          dotnet pack "src/$project/$project.csproj" -c Release -o "$PWD/artifacts/release-packages" -p:Version=7.3.2 -p:PackageVersion=7.3.2
-          test -f "artifacts/release-packages/$project.7.3.2.nupkg"
+          dotnet pack "src/$project/$project.csproj" -c Release -o "$PWD/artifacts/release-packages" -p:Version=7.3.3 -p:PackageVersion=7.3.3
+          test -f "artifacts/release-packages/$project.7.3.3.nupkg"
         done
 
     - name: Store release packages
-      if: runner.os == 'Linux' && github.event_name == 'workflow_dispatch' && inputs.publish_release && github.ref == 'refs/tags/v7.3.2'
+      if: runner.os == 'Linux' && github.event_name == 'workflow_dispatch' && inputs.publish_release && github.ref == 'refs/tags/v7.3.3'
       uses: actions/upload-artifact@v7
       with:
-        name: packages-7.3.2
+        name: packages-7.3.3
         path: artifacts/release-packages/*.nupkg
         if-no-files-found: error
 
     - name: Publish release to MyGet
-      if: runner.os == 'Linux' && github.event_name == 'workflow_dispatch' && inputs.publish_release && github.ref == 'refs/tags/v7.3.2'
+      if: runner.os == 'Linux' && github.event_name == 'workflow_dispatch' && inputs.publish_release && github.ref == 'refs/tags/v7.3.3'
       env:
         MYGET_API_KEY: ${{ secrets.UPLOAD_NUGET_API_KEY }}
       shell: bash
@@ -111,5 +111,5 @@ jobs:
         set -euo pipefail
         test -n "$MYGET_API_KEY" || { echo 'MyGet API key is not configured'; exit 1; }
         for project in MicroElements.OpenApi.FluentValidation MicroElements.Swashbuckle.FluentValidation MicroElements.NSwag.FluentValidation MicroElements.AspNetCore.OpenApi.FluentValidation; do
-          dotnet nuget push "artifacts/release-packages/$project.7.3.2.nupkg" --source https://www.myget.org/F/micro-elements/api/v3/index.json --api-key "$MYGET_API_KEY"
+          dotnet nuget push "artifacts/release-packages/$project.7.3.3.nupkg" --source https://www.myget.org/F/micro-elements/api/v3/index.json --api-key "$MYGET_API_KEY"
         done
