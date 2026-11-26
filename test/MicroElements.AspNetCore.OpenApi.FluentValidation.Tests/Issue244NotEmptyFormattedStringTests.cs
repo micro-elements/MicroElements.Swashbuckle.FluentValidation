@@ -17,7 +17,7 @@ public class Issue244NotEmptyFormattedStringTests : IClassFixture<AspNetCoreOpen
 {
     private readonly AspNetCoreOpenApiTests.TestWebApplicationFactory _factory;
 
-    public NotEmptyFormattedStringTests(AspNetCoreOpenApiTests.TestWebApplicationFactory factory) => _factory = factory;
+    public Issue244NotEmptyFormattedStringTests(AspNetCoreOpenApiTests.TestWebApplicationFactory factory) => _factory = factory;
 
     [Theory]
     [InlineData("personId", "uuid")]
@@ -42,6 +42,9 @@ public class Issue244NotEmptyFormattedStringTests : IClassFixture<AspNetCoreOpen
         var properties = await GetPropertiesAsync();
 
         properties.GetProperty("name").GetProperty("minLength").GetInt32().Should().Be(1);
+        var externalId = properties.GetProperty("externalId");
+        externalId.GetProperty("format").GetString().Should().Be("uuid");
+        externalId.GetProperty("minLength").GetInt32().Should().Be(1);
     }
 
     [Fact]

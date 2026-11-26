@@ -33,7 +33,10 @@ namespace MicroElements.NSwag.FluentValidation
             ValidationRuleContext validationRuleContext,
             IPropertyValidator propertyValidator)
         {
-            return new NSwagRuleContext(Schema, schemaPropertyName, propertyValidator);
+            return new NSwagRuleContext(Schema, schemaPropertyName, propertyValidator)
+            {
+                IsValueTypeProperty = validationRuleContext.ValidationRule.TypeToValidate.IsValueType,
+            };
         }
 
         /// <inheritdoc />

@@ -444,6 +444,7 @@ public class TestNotEmptyFormattedModel
 {
     public Guid PersonId { get; set; }
     public Guid? OptionalPersonId { get; set; }
+    public string ExternalId { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
     public DateOnly BirthDate { get; set; }
@@ -458,6 +459,7 @@ public class TestNotEmptyFormattedModelValidator : AbstractValidator<TestNotEmpt
     {
         RuleFor(x => x.PersonId).NotEmpty();
         RuleFor(x => x.OptionalPersonId).NotEmpty();
+        RuleFor(x => x.ExternalId).NotEmpty();
         RuleFor(x => x.CreatedAt).NotEmpty();
         RuleFor(x => x.UpdatedAt).NotEmpty();
         RuleFor(x => x.BirthDate).NotEmpty();

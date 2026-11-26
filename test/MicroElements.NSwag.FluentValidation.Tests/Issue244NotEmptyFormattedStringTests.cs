@@ -26,6 +26,9 @@ public class Issue244NotEmptyFormattedStringTests
         public DateTime CreatedAt { get; set; }
         public DateTimeOffset UpdatedAt { get; set; }
         public TimeSpan Duration { get; set; }
+        [NJsonSchema.Annotations.JsonSchema(JsonObjectType.String, Format = "uuid")]
+        public string ExternalId { get; set; } = string.Empty;
+
         public string Name { get; set; } = string.Empty;
     }
 
@@ -51,6 +54,9 @@ public class Issue244NotEmptyFormattedStringTests
         var schema = GenerateSchema();
 
         schema.Properties[nameof(Request.Name)].MinLength.Should().Be(1);
+        var externalId = schema.Properties[nameof(Request.ExternalId)];
+        externalId.Format.Should().Be("uuid");
+        externalId.MinLength.Should().Be(1);
     }
 
     private static JsonSchema GenerateSchema()
@@ -62,6 +68,7 @@ public class Issue244NotEmptyFormattedStringTests
         validator.RuleFor(x => x.UpdatedAt).NotEmpty();
         validator.RuleFor(x => x.Duration).NotEmpty();
         validator.RuleFor(x => x.Name).NotEmpty();
+        validator.RuleFor(x => x.ExternalId).NotEmpty();
 
         var options = new SchemaGenerationOptions { SchemaIdSelector = type => type.Name }.FillDefaultValues(null);
         var settings = new SystemTextJsonSchemaGeneratorSettings();

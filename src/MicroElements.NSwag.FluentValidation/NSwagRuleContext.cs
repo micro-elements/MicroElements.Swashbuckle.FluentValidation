@@ -12,6 +12,8 @@ namespace MicroElements.NSwag.FluentValidation
     /// </summary>
     public class NSwagRuleContext : IRuleContext<SchemaProcessorContext>
     {
+        internal bool IsValueTypeProperty { get; init; }
+
         /// <inheritdoc/>
         public string PropertyKey { get; }
 

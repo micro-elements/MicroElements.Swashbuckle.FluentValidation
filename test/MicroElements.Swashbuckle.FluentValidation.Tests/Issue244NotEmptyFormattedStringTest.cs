@@ -4,6 +4,12 @@
 using System;
 using FluentAssertions;
 using FluentValidation;
+#if OPENAPI_V2
+using Microsoft.OpenApi;
+#else
+using Microsoft.OpenApi.Models;
+#endif
+using Swashbuckle.AspNetCore.SwaggerGen;
 using Xunit;
 
 namespace MicroElements.Swashbuckle.FluentValidation.Tests
@@ -93,6 +99,23 @@ namespace MicroElements.Swashbuckle.FluentValidation.Tests
         {
             var schema = new SchemaBuilder<Model>().AddRule(x => x.Name, rule => rule.NotEmpty());
             schema.MinLength.Should().Be(1);
+        }
+
+        [Fact]
+        public void NotEmpty_on_string_mapped_to_uuid_should_emit_min_length()
+        {
+            var validator = new InlineValidator<Model>();
+            validator.RuleFor(x => x.Name).NotEmpty();
+            var stringSchema = SchemaGenerator().GenerateSchema(typeof(string), new SchemaRepository());
+            var generator = SchemaGenerator(options =>
+            {
+                options.CustomTypeMappings[typeof(string)] = () => new OpenApiSchema { Type = stringSchema.Type, Format = "uuid" };
+                ConfigureGenerator(options, new[] { validator });
+            });
+            var schema = generator.GenerateAndResolve<Model>(new SchemaRepository());
+            var property = schema.GetProperty(nameof(Model.Name))!;
+            property.Format.Should().Be("uuid");
+            property.MinLength.Should().Be(1);
         }
 
         [Fact]

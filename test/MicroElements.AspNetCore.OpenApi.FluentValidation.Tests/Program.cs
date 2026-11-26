@@ -39,6 +39,14 @@ builder.Services.AddControllers()
     });
 builder.Services.AddOpenApi(options =>
 {
+    options.AddSchemaTransformer((schema, context, _) =>
+    {
+        if (context.JsonPropertyInfo?.AttributeProvider is System.Reflection.PropertyInfo member
+            && member.DeclaringType == typeof(TestNotEmptyFormattedModel) && member.Name == nameof(TestNotEmptyFormattedModel.ExternalId))
+            schema.Format = "uuid";
+
+        return Task.CompletedTask;
+    });
     if (enableValidationRules)
         options.AddFluentValidationRules();
 });

@@ -47,7 +47,8 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
                 .WithApply(context =>
                 {
                     // NotEmpty on a Guid or DateTime means "not the default value", which minLength cannot express.
-                    if (OpenApiSchemaCompatibility.IsStringType(context.Property) && !ValueTypeStringFormats.IsValueTypeFormat(context.Property.Format))
+                    if (OpenApiSchemaCompatibility.IsStringType(context.Property)
+                        && !(context is OpenApiRuleContext { IsValueTypeProperty: true } && ValueTypeStringFormats.IsValueTypeFormat(context.Property.Format)))
                         context.Property.SetNewMin(p => p.MinLength, 1, _options.Value.SetNotNullableIfMinLengthGreaterThenZero);
 
                     if (OpenApiSchemaCompatibility.IsArrayType(context.Property))
