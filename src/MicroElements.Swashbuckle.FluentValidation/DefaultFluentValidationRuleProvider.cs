@@ -46,7 +46,9 @@ namespace MicroElements.Swashbuckle.FluentValidation
                 .WithCondition(validator => validator is INotEmptyValidator)
                 .WithApply(context =>
                 {
-                    if (OpenApiSchemaCompatibility.IsStringType(context.Property))
+                    // NotEmpty on a Guid or DateTime means "not the default value", which minLength cannot express.
+                    if (OpenApiSchemaCompatibility.IsStringType(context.Property)
+                        && !(context is OpenApiRuleContext { IsValueTypeProperty: true } && ValueTypeStringFormats.IsValueTypeFormat(context.Property.Format)))
                         context.Property.SetNewMin(p => p.MinLength, 1, _options.Value.SetNotNullableIfMinLengthGreaterThenZero);
 
                     if (OpenApiSchemaCompatibility.IsArrayType(context.Property))

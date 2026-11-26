@@ -64,6 +64,8 @@ namespace MicroElements.AspNetCore.OpenApi.FluentValidation
         /// </summary>
         private ValidationRuleContext ValidationRuleInfo { get; }
 
+        internal bool IsValueTypeProperty => ValidationRuleInfo.ValidationRule.TypeToValidate.IsValueType;
+
         internal bool IsStringProperty => ValidationRuleInfo.ValidationRule.TypeToValidate == typeof(string);
 
         /// <summary>

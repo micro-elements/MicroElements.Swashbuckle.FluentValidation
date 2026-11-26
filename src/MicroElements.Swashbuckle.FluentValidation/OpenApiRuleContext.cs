@@ -69,6 +69,8 @@ namespace MicroElements.Swashbuckle.FluentValidation
         /// </summary>
         private ValidationRuleContext ValidationRuleInfo { get; }
 
+        internal bool IsValueTypeProperty => ValidationRuleInfo.ValidationRule.TypeToValidate.IsValueType;
+
         private readonly SchemaRepository? _schemaRepository;
 
         /// <summary>

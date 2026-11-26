@@ -438,3 +438,33 @@ public class TestAnnotatedListCountLimitValidator : PropertyValidator<TestAnnota
     public override bool IsValid(ValidationContext<TestAnnotatedListQueryDto> context, Guid[]? value)
         => value is null || value.Length <= Max;
 }
+
+// NotEmpty on a value type serialized as a formatted string (uuid, date-time, ...) must not emit minLength.
+public class TestNotEmptyFormattedModel
+{
+    public Guid PersonId { get; set; }
+    public Guid? OptionalPersonId { get; set; }
+    public string ExternalId { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public DateOnly BirthDate { get; set; }
+    public TimeOnly StartTime { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+}
+
+public class TestNotEmptyFormattedModelValidator : AbstractValidator<TestNotEmptyFormattedModel>
+{
+    public TestNotEmptyFormattedModelValidator()
+    {
+        RuleFor(x => x.PersonId).NotEmpty();
+        RuleFor(x => x.OptionalPersonId).NotEmpty();
+        RuleFor(x => x.ExternalId).NotEmpty();
+        RuleFor(x => x.CreatedAt).NotEmpty();
+        RuleFor(x => x.UpdatedAt).NotEmpty();
+        RuleFor(x => x.BirthDate).NotEmpty();
+        RuleFor(x => x.StartTime).NotEmpty();
+        RuleFor(x => x.Name).NotEmpty();
+        RuleFor(x => x.Email).EmailAddress().NotEmpty();
+    }
+}

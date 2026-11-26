@@ -39,6 +39,14 @@ builder.Services.AddControllers()
     });
 builder.Services.AddOpenApi(options =>
 {
+    options.AddSchemaTransformer((schema, context, _) =>
+    {
+        if (context.JsonPropertyInfo?.AttributeProvider is System.Reflection.PropertyInfo member
+            && member.DeclaringType == typeof(TestNotEmptyFormattedModel) && member.Name == nameof(TestNotEmptyFormattedModel.ExternalId))
+            schema.Format = "uuid";
+
+        return Task.CompletedTask;
+    });
     if (enableValidationRules)
         options.AddFluentValidationRules();
 });
@@ -84,6 +92,7 @@ app.MapPost("/api/shared-a", (TestSharedDto dto) => Results.Ok(dto));
 app.MapPost("/api/shared-b", (TestSharedDto dto) => Results.Ok(dto));
 app.MapPost("/api/ruleforeach", (TestRuleForEachModel model) => Results.Ok(model));
 app.MapPost("/api/decimal-bounds", (TestDecimalBoundsModel model) => Results.Ok(model));
+app.MapPost("/api/not-empty-formatted", (TestNotEmptyFormattedModel model) => Results.Ok(model));
 #if NET11_0_OR_GREATER
 app.MapPost("/api/float-double-bounds", (TestFloatDoubleBoundsModel model) => Results.Ok(model));
 #endif
