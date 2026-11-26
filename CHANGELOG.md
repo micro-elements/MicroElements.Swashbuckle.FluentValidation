@@ -1,3 +1,7 @@
+# Changes in 7.3.3
+
+- Fixed OpenAPI generation for `NotEmpty()` on GUIDs and date/time values with a recognized string format. These properties stay required without acquiring `minLength: 1`. CLR strings retain their minimum length, including strings explicitly mapped to `uuid`. [#244](https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/issues/244)
+
 # Changes in 7.3.2
 
 - Fix multipart request-body rules on .NET 10 with Swashbuckle 11.0.1. The same adapter assembly also supports Swashbuckle 10.2.1. [#241](https://github.com/micro-elements/MicroElements.Swashbuckle.FluentValidation/issues/241)
